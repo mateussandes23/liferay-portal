@@ -74,19 +74,17 @@ definition {
 				key_itemName = "Description",
 				locator1 = "FrontendDataSet#SELECT_OPTION_CUSTOM_VIEW");
 	test CanBeEdited {
-		
-		task("And Given A custom view is created and selected"){
+		task ("And Given A custom view is created and selected") {
 			FDSCustomView.createNewView(key_nameView = "New View");
 		}
 
-		task("When Make some changes to dataset display"){
-			
+		task ("When Make some changes to dataset display") {
 			FDSCustomView.selectColumn(key_optionName = "Description");
-		
+
 			FDSCustomView.editFilters(
-				key_filter = "Color",
 				key_disableFilters = "Blue",
-				key_enableFilters = "Red");
+				key_enableFilters = "Red",
+				key_filter = "Color");
 		}
 
 			Click(locator1 = "FrontendDataSet#SELECT_OPTION_HEADER");
@@ -165,29 +163,7 @@ definition {
 				key_valueIndex1 = "1",
 				key_valueIndex2 = "2");
 		}
+	
 	}
 
-
-		task("Click save view"){
-			FDSCustomView.saveView();
-		}
-		
-		task("Then The changes are applied to current custom view"){
-			FDSCustomView.verifyCustomView(key_nameCustomView = "New View");
-		
-			FDSCustomView.verifyFilterSummaryLabel(key_filter = "Green, Yellow, Red");
-
-			FDSCustomView.viewNoColumn(key_column = "Description");
-		}
-
-		task("Change selection to default view and assert an aspect from default view"){
-			Click(locator1 = "FrontendDataSet#SELECT_CUSTOM_VIEW");
-
-			FDSCustomView.changeCustomView(key_optionName = "Default View");
-		
-			FDSCustomView.verifyCustomView(key_nameCustomView = "Default View");
-
-			FDSCustomView.verifyFilterSummaryLabel(key_filter = "Blue, Green, Yellow");
-		}
-	}
 }
