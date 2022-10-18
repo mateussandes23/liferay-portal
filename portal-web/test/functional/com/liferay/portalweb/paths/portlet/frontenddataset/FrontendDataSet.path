@@ -189,6 +189,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>OPEN_SELECT_FIELD</td>
+	<td>//button[contains(@aria-label, "Open Fields Menu")]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>SELECT_CUSTOM_VIEW</td>
 	<td>//div[contains(@class,'custom-views-selection')]</td>
 	<td></td>
@@ -196,6 +201,30 @@
 <tr>
 	<td>SELECT_OPTION_CUSTOM_VIEW</td>
 	<td>//button[contains(@class,'dropdown-item') and contains(text(), '${key_itemName}')]</td>
+</tr>
+<tr>
+	<td>SELECT_OPTION</td>
+	<td>//button[contains(@class,'dropdown-item') and contains(text(), '${key_optionName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>INPUT_CUSTOM_VIEW_NAME</td>
+	<td>//input[contains(@id,'LabelInput')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>TABLE_CELL</td>
+	<td>xpath=(//div[@class='dnd-td' and position()='${key_columnIndex}'])['${key_valueIndex}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SAVE_BUTTON</td>
+	<td>//button[contains(text(), 'Save View')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SELECT_OPTION</td>
+	<td>//button[contains(@class,'dropdown-item') and contains(text(), '${key_optionName}')]</td>
 	<td></td>
 </tr>
 <tr>
