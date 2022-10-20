@@ -49,6 +49,42 @@ definition {
 	@description = "LPS-164617. Assert that it's possible to make changes in the FDS "
 	@priority = "4"
 	test CanBeEditted {
+		task("And Given A custom view is created and selected"){
+			FDSCustomView.createNewView(key_nameView = "New View");
+		}
+
+		task("When Make some changes to dataset display"){
+			
+			FDSCustomView.selectColumn(key_optionName = "Description");
+		
+			FDSCustomView.editFilters(
+				key_filter = "Color",
+				key_disableFilters = "Blue",
+				key_enableFilters = "Red");
+		
+
+			Click(locator1 = "FrontendDataSet#SELECT_OPTION_HEADER");
+
+			Click(
+				key_itemName = "Save View",
+				locator1 = "FrontendDataSet#SELECT_OPTION_HEADER");
+		}
+
+		task ("Then A new custom view is created and selected as current view") {
+			Click(locator1 = "FrontendDataSet#SELECT_CUSTOM_VIEW");
+
+			FDSCustomView.selectView(key_itemName = "Default View");
+
+			AssertElementPresent(
+				columnName = "Description",
+				locator1 = "FrontendDataSet#COLUMN_NAME");
+
+			Click(locator1 = "FrontendDataSet#SELECT_CUSTOM_VIEW");
+
+			FDSCustomView.selectView(key_itemName = "TEST");
+
+			ObjectCustomViews.assertColumnNotPresent(columnName = "Description");
+		}
 	}
 
 	@description = "LPS-164616. Assert that it's possible to create A new custom view and selected as current view"
@@ -73,7 +109,8 @@ definition {
 			Click(
 				key_itemName = "Description",
 				locator1 = "FrontendDataSet#SELECT_OPTION_CUSTOM_VIEW");
-	test CanBeEdited {
+		}		
+
 		task ("And Given A custom view is created and selected") {
 			FDSCustomView.createNewView(key_nameView = "New View");
 		}
@@ -85,7 +122,7 @@ definition {
 				key_disableFilters = "Blue",
 				key_enableFilters = "Red",
 				key_filter = "Color");
-		}
+		
 
 			Click(locator1 = "FrontendDataSet#SELECT_OPTION_HEADER");
 
