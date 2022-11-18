@@ -257,6 +257,40 @@ definition {
 		}
 	}
 
+	@description = "LPS-165672 - Simplify how actions are shown in the custom views section"
+	@priority = "3"
+	test HasActionsOnlyOnEllipsis {
+		task ("And Given created custom view") {
+			FDSCustomView.createNewView(key_nameView = "New View");
+		}
+
+		task ("When open ellipsis next to custom view") {
+			Click(locator1 = "FrontendDataSet#SELECT_OPTION_HEADER");
+		}
+
+		task ("Then actions to save and delete views are available in dropdown menu") {
+			FDSCustomView.assertMenuItem(key_menuItem = "Save View");
+
+			FDSCustomView.assertMenuItem(key_menuItem = "Delete View");
+		}
+
+		task ("When open select custom view button") {
+			FDSCustomView.changeCustomView(key_itemName = "Default View");
+
+			Click(locator1 = "FrontendDataSet#SELECT_OPTION_HEADER");
+		}
+
+		task ("Then actions to save and delete views are not available in dropdown menu") {
+			AssertElementNotPresent(
+				key_itemName = "Save View",
+				locator1 = "FrontendDataSet#SELECT_OPTION_CUSTOM_VIEW");
+
+			AssertElementNotPresent(
+				key_itemName = "Delete View",
+				locator1 = "FrontendDataSet#SELECT_OPTION_CUSTOM_VIEW");
+		}
+	}
+
 	@description = "LPS-164602 Frontend Dataset - column labels are not localized "
 	@priority = "4"
 	test ManagementBarCanBeLocalized {
@@ -306,6 +340,27 @@ definition {
 			AssertElementPresent(
 				locator1 = "FrontendDataSet#RESET_FILTERS",
 				reset_filter = "Restablecer filtros");
+		}
+	}
+
+	@description = "LPS-168356 - Allow users to rename a custom view"
+	@priority = "3"
+	test NameCanBeUpdated {
+
+		task("And Given created custom view"){
+			FDSCustomView.createNewView(key_nameView = "New View");
+		}
+
+		task("When edit custom view name"){
+			FDSCustomView.renameView(key_nameView = "Second view");
+		}
+
+		task("Then name of custom view is updated in select custom view"){
+			Click(locator1 = "FrontendDataSet#SELECT_CUSTOM_VIEW");
+
+			AssertElementPresent(
+				locator1 = "FrontendDataSet#SELECT_OPTION_CUSTOM_VIEW",
+				key_itemName = "Second view");
 		}
 	}
 
