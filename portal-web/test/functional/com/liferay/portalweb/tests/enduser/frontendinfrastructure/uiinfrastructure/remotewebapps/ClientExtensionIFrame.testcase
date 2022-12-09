@@ -24,7 +24,7 @@ definition {
 		}
 	}
 
-	@description = "LPS-168960 - create automated test for Client Extensions"
+	@description = "LPS-170582 - create automated test for Client Extensions"
 	@priority = "3"
 	test HasWidgetCategory {
 		task ("When access IFrame type client extension") {
@@ -39,5 +39,4 @@ definition {
 				value1 = "Client Extensions");
 		}
 	}
-
 }
