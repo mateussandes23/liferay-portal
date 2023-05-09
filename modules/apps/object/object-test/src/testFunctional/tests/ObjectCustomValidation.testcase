@@ -1217,6 +1217,8 @@ definition {
 				fieldType = "Integer",
 				isRequired = "false",
 				objectName = "CustomObject156696");
+
+			ObjectAdmin.publishObjectViaAPI(objectName = "CustomObject156696");
 		}
 
 		task ("On Custom Object, go to validations tab") {
