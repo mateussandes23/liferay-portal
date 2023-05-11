@@ -2014,6 +2014,8 @@ definition {
 			validationType = "Groovy");
 	}
 
+	
+
 	@description = "LPS-144474 - Verify that the user, when modeling an Object, is able to add validations using Groovy"
 	@priority = 4
 	test CanPreventEntryCreationViaGroovy {
