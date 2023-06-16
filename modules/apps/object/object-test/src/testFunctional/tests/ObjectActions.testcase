@@ -1294,6 +1294,7 @@ definition {
 	@description = "LPS-171793 - Verify it's possible to create a notification action with the trigger On Order Status Update"
 	@priority = 5
 	test CanCreateActionNotificationWithOnOrderStatusUpdate {
+		property portal.acceptance = "mateussandes";
 		property portal.acceptance = "true";
 		property test.smtp.server.enabled = "true";
 
@@ -1332,6 +1333,8 @@ definition {
 			JSONAccountEntry.addAccountEntry(
 				accountEntryName = "Accounts Name",
 				accountEntryType = "Business");
+
+			Refresh();
 
 			CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 
