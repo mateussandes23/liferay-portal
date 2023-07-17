@@ -1,0 +1,113 @@
+@component-name = "data-engine"
+definition {
+
+	property portal.release = "true";
+	property portal.upstream = "true";
+	property testray.main.component.name = "Data Engine";
+
+	setUp {
+		TestCase.setUpPortalInstance();
+
+		User.firstLoginPG();
+	}
+
+	tearDown {
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
+
+		if (${testLiferayVirtualInstance} == "true") {
+			PortalInstances.tearDownCP();
+		}
+		else {
+			WebContentStructures.tearDownCP();
+		}
+	}
+
+	@description = "LPS-168179 - It's possible to reorder Web Content with Structure of repeatable fields"
+	@priority = 5
+	test ReorderRepeatableFieldsByDragAndDrop {
+		task ("Given a Web Structure that contains repeatable fields") {
+			ProductMenu.gotoPortlet(
+				category = "Content & Data",
+				portlet = "Web Content");
+
+			NavItem.gotoStructures();
+
+			WebContentStructures.addCP(structureName = "WC Structure Title");
+
+			DEBuilder.addField(
+				fieldLabel = "Text field 1",
+				fieldName = "Text",
+				value = "Entry 1");
+
+			Click(
+				key_fieldLabel = "Text field 1",
+				key_fieldName = "Text",
+				locator1 = "FormFields#TEXT_FIELD",
+				value1 = "Text field 1");
+
+			FormViewBuilder.setPlaceholder(fieldValue = "Entry 1");
+
+			Form.gotoAdvancedTab();
+
+			Check.checkToggleSwitch(
+				checkboxName = "Repeatable",
+				locator1 = "Checkbox#ANY_CHECKBOX");
+
+			WaitForElementPresent(locator1 = "Button#PLUS");
+
+			Button.clickSave();
+
+			WaitForPageLoad();
+		}
+
+		task ("And given a Web Content using the Structure") {
+			NavItem.gotoWebContent();
+
+			WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Title");
+
+			WaitForPageLoad();
+		}
+
+		task ("When the user re-orders the repeatable fields using drag and drop") {
+			Click(locator1 = "Button#DUPLICATE");
+
+			Click(
+				key_fieldLabel = "Text field 1",
+				key_fieldName = "Text",
+				locator1 = "FormFields#TEXT_FIELD",
+				value1 = "Text field 1");
+
+			Type(
+				key_fieldLabel = "Text field 1",
+				key_fieldName = "Text",
+				locator1 = "FormFields#TEXT_FIELD",
+				value1 = "Entry 2");
+
+			AssertElementPresent(
+				key_fieldLabel = "Text field 1",
+				key_fieldName = "Text",
+				locator1 = "FormFields#TEXT_FIELD",
+				value1 = "Entry 2");
+
+			Form.viewFormPlaceholderText(fieldPlaceholderText = "Entry 1");
+
+			DragAndDrop.javaScriptDragAndDropToObject(
+				key_fieldFieldGroupLabel = "Text field 1",
+				key_fieldFieldLabel = "Text field 1",
+				key_index = 1,
+				locator1 = "DDMEditStructure#FORM_FIELD_CONTAINER_LABEL_ANY",
+				locator2 = "DDMEditStructure#FORM_FIELD_GROUP_TARGET_SPACE");
+		}
+
+		task ("Then the field are re-ordered") {
+			Form.viewFormPlaceholderText(fieldPlaceholderText = "Entry 1");
+
+			AssertElementPresent(
+				key_fieldLabel = "Text field 1",
+				key_fieldName = "Text",
+				locator1 = "FormFields#TEXT_FIELD",
+				value1 = "Entry 2");
+		}
+	}
+
+}
