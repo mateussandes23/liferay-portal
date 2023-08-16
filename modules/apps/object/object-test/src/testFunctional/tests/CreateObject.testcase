@@ -1633,7 +1633,21 @@ definition {
 
 		ObjectAdmin.openObjectAdmin();
 
-		AssertElementNotPresent(locator1 = "Button#PLUS");
+		Button.click(button = "Create New Object");
+
+		Type(
+			locator1 = "ObjectAdmin#LABEL_CUSTOM_OBJECT",
+			value1 = "New Custom Object");
+
+		Type(
+			locator1 = "ObjectAdmin#PLURAL_LABEL_CUSTOM_OBJECT",
+			value1 = "New Custom Objects");
+
+		Button.clickSave();
+
+		var userId = JSONUserAPI._getUserIdByEmailAddress(userEmailAddress = "userea@liferay.com");
+
+		Alert.viewErrorMessage(errorMessage = "User ${userId} must have ADD_OBJECT_DEFINITION permission for com.liferay.object");
 	}
 
 	@description = "LPS-135397 - Verify if it's not possible to add a Tab with Relationship Type in an Object without Relashionsip"
