@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
@@ -23,13 +14,13 @@ import {HTML5Backend} from 'react-dnd-html5-backend';
 
 import {filterArrayByQuery} from '../../utils/array';
 import {getLocalizableLabel} from '../../utils/string';
-import {Card} from '../Card';
 import {ManagementToolbarSearch} from '../ManagementToolbar/ManagementToolbarSearch';
 import BuilderListItem from './BuilderListItem';
 
 import './BuilderScreen.scss';
 
 export function BuilderScreen({
+	builderScreenItems,
 	creationLanguageId,
 	defaultSort,
 	disableEdit,
@@ -37,7 +28,6 @@ export function BuilderScreen({
 	filter,
 	firstColumnHeader,
 	hasDragAndDrop,
-	objectColumns,
 	onChangeColumnOrder,
 	onDeleteColumn,
 	onEditing,
@@ -46,22 +36,21 @@ export function BuilderScreen({
 	openModal,
 	secondColumnHeader,
 	thirdColumnHeader,
-	title,
 }: IProps) {
 	const [query, setQuery] = useState('');
 
 	const filteredItems = useMemo(() => {
 		return filterArrayByQuery({
-			array: objectColumns,
+			array: builderScreenItems,
 			query,
 			str: 'fieldLabel',
 		});
-	}, [objectColumns, query]);
+	}, [builderScreenItems, query]);
 
-	const tableItems = query ? filteredItems : objectColumns;
+	const tableItems = query ? filteredItems : builderScreenItems;
 
 	return (
-		<Card title={title}>
+		<>
 			<ManagementToolbar.Container>
 				<ManagementToolbar.ItemList expand>
 					<ManagementToolbarSearch
@@ -191,7 +180,7 @@ export function BuilderScreen({
 					</ClayEmptyState>
 				</div>
 			)}
-		</Card>
+		</>
 	);
 }
 
@@ -200,9 +189,10 @@ type TLabelValueObject = {
 	value: string;
 };
 
-type TBuilderScreenColumn = {
+export type TBuilderScreenItem = {
 	defaultSort?: boolean;
 	disableEdit?: boolean;
+	externalReferenceCode?: string;
 	fieldLabel?: string;
 	filterBy?: string;
 	label: LocalizedValue<string>;
@@ -216,6 +206,7 @@ type TBuilderScreenColumn = {
 };
 
 interface IProps {
+	builderScreenItems: TBuilderScreenItem[];
 	creationLanguageId?: Liferay.Language.Locale;
 	defaultSort?: boolean;
 	disableEdit?: boolean;
@@ -227,14 +218,12 @@ interface IProps {
 	filter?: boolean;
 	firstColumnHeader: string;
 	hasDragAndDrop?: boolean;
-	objectColumns: TBuilderScreenColumn[];
 	onChangeColumnOrder?: (draggedIndex: number, targetIndex: number) => void;
 	onDeleteColumn: (objectFieldName: string) => void;
 	onEditing?: (boolean: boolean) => void;
 	onEditingObjectFieldName?: (objectFieldName: string) => void;
-	onVisibleEditModal: (boolean: boolean) => void;
+	onVisibleEditModal?: (boolean: boolean) => void;
 	openModal: () => void;
 	secondColumnHeader: string;
 	thirdColumnHeader?: string;
-	title: string;
 }

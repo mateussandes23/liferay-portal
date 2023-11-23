@@ -1,22 +1,12 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import {
-	AutoComplete,
 	CodeEditorLocalized,
 	SidebarCategory,
-	filterArrayByQuery,
+	SingleSelect,
 	getLocalizableLabel,
 } from '@liferay/object-js-components-web';
 import {createResourceURL, fetch} from 'frontend-js-web';
@@ -38,11 +28,10 @@ export function FreeMarkerTemplateEditor({
 	setValues,
 	values,
 }: FreeMarkerTemplateEditorProps) {
-	const [query, setQuery] = useState<string>('');
-	const [selectedEntity, setSelectedEntity] = useState<ObjectDefinition>();
+	const [selectedEntityValue, setSelectedEntityValue] = useState<number>();
 	const [entityFields, setEntityFields] = useState<SidebarCategory[]>([]);
 
-	const filteredEntities = useMemo(() => {
+	const objectDefinitionItems = useMemo(() => {
 		const availableObjectDefinitions = objectDefinitions.filter(
 			(objectDefinition) => {
 				const {label: statusLabel} = objectDefinition.status;
@@ -60,12 +49,13 @@ export function FreeMarkerTemplateEditor({
 			}
 		);
 
-		return filterArrayByQuery({
-			array: availableObjectDefinitions,
-			query,
-			str: 'label',
-		});
-	}, [objectDefinitions, query]);
+		return availableObjectDefinitions.map(
+			({defaultLanguageId, id, label, name}) => ({
+				label: getLocalizableLabel(defaultLanguageId, label, name),
+				value: id,
+			})
+		) as LabelValueObject<number>[];
+	}, [objectDefinitions]);
 
 	const getEntityFields = async (objectDefinitionId: number) => {
 		const response = await fetch(
@@ -82,39 +72,16 @@ export function FreeMarkerTemplateEditor({
 	return (
 		<CodeEditorLocalized
 			CustomSidebarContent={
-				<AutoComplete<ObjectDefinition>
-					creationLanguageId={
-						selectedEntity?.defaultLanguageId as Locale
-					}
-					emptyStateMessage={Liferay.Language.get(
-						'no-entities-were-found'
-					)}
-					items={filteredEntities ?? []}
+				<SingleSelect
+					disabled={values.system}
+					items={objectDefinitionItems ?? []}
 					label={Liferay.Language.get('entity')}
-					onChangeQuery={setQuery}
-					onSelectItem={(item) => {
-						setSelectedEntity(item);
-						getEntityFields(item.id);
+					onSelectionChange={(value) => {
+						setSelectedEntityValue(value as number);
+						getEntityFields(value as number);
 					}}
-					query={query}
-					value={getLocalizableLabel(
-						selectedEntity?.defaultLanguageId as Locale,
-						selectedEntity?.label,
-						selectedEntity?.name as string
-					)}
-				>
-					{({label, name}) => (
-						<div className="d-flex justify-content-between">
-							<div>
-								{getLocalizableLabel(
-									selectedEntity?.defaultLanguageId as Locale,
-									label,
-									name
-								)}
-							</div>
-						</div>
-					)}
-				</AutoComplete>
+					selectedKey={selectedEntityValue}
+				/>
 			}
 			mode="freemarker"
 			onSelectedLocaleChange={({label}) => {
@@ -129,8 +96,10 @@ export function FreeMarkerTemplateEditor({
 			placeholder={`<#--${Liferay.Language.get(
 				'add-elements-from-the-sidebar-to-define-your-template'
 			)}-->`}
+			readOnly={values.system}
 			selectedLocale={selectedLocale}
 			sidebarElements={entityFields}
+			sidebarElementsDisabled={values.system}
 			translations={values.body}
 		/>
 	);

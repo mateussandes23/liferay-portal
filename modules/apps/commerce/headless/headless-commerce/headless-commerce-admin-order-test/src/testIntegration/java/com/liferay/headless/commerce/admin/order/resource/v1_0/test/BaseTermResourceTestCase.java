@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.order.resource.v1_0.test;
@@ -263,32 +254,29 @@ public abstract class BaseTermResourceTestCase {
 
 	@Test
 	public void testGetTermsPageWithFilterDoubleEquals() throws Exception {
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.DOUBLE);
+		testGetTermsPageWithFilter("eq", EntityField.Type.DOUBLE);
+	}
 
-		if (entityFields.isEmpty()) {
-			return;
-		}
-
-		Term term1 = testGetTermsPage_addTerm(randomTerm());
-
-		@SuppressWarnings("PMD.UnusedLocalVariable")
-		Term term2 = testGetTermsPage_addTerm(randomTerm());
-
-		for (EntityField entityField : entityFields) {
-			Page<Term> page = termResource.getTermsPage(
-				null, getFilterString(entityField, "eq", term1),
-				Pagination.of(1, 2), null);
-
-			assertEquals(
-				Collections.singletonList(term1), (List<Term>)page.getItems());
-		}
+	@Test
+	public void testGetTermsPageWithFilterStringContains() throws Exception {
+		testGetTermsPageWithFilter("contains", EntityField.Type.STRING);
 	}
 
 	@Test
 	public void testGetTermsPageWithFilterStringEquals() throws Exception {
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.STRING);
+		testGetTermsPageWithFilter("eq", EntityField.Type.STRING);
+	}
+
+	@Test
+	public void testGetTermsPageWithFilterStringStartsWith() throws Exception {
+		testGetTermsPageWithFilter("startswith", EntityField.Type.STRING);
+	}
+
+	protected void testGetTermsPageWithFilter(
+			String operator, EntityField.Type type)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
 
 		if (entityFields.isEmpty()) {
 			return;
@@ -301,7 +289,7 @@ public abstract class BaseTermResourceTestCase {
 
 		for (EntityField entityField : entityFields) {
 			Page<Term> page = termResource.getTermsPage(
-				null, getFilterString(entityField, "eq", term1),
+				null, getFilterString(entityField, operator, term1),
 				Pagination.of(1, 2), null);
 
 			assertEquals(
@@ -311,10 +299,9 @@ public abstract class BaseTermResourceTestCase {
 
 	@Test
 	public void testGetTermsPageWithPagination() throws Exception {
-		Page<Term> totalPage = termResource.getTermsPage(
-			null, null, null, null);
+		Page<Term> termPage = termResource.getTermsPage(null, null, null, null);
 
-		int totalCount = GetterUtil.getInteger(totalPage.getTotalCount());
+		int totalCount = GetterUtil.getInteger(termPage.getTotalCount());
 
 		Term term1 = testGetTermsPage_addTerm(randomTerm());
 
@@ -339,7 +326,7 @@ public abstract class BaseTermResourceTestCase {
 		Assert.assertEquals(terms2.toString(), 1, terms2.size());
 
 		Page<Term> page3 = termResource.getTermsPage(
-			null, null, Pagination.of(1, totalCount + 3), null);
+			null, null, Pagination.of(1, (int)totalCount + 3), null);
 
 		assertContains(term1, (List<Term>)page3.getItems());
 		assertContains(term2, (List<Term>)page3.getItems());
@@ -451,20 +438,22 @@ public abstract class BaseTermResourceTestCase {
 
 		term2 = testGetTermsPage_addTerm(term2);
 
+		Page<Term> page = termResource.getTermsPage(null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<Term> ascPage = termResource.getTermsPage(
-				null, null, Pagination.of(1, 2),
+				null, null, Pagination.of(1, (int)page.getTotalCount() + 1),
 				entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(term1, term2), (List<Term>)ascPage.getItems());
+			assertContains(term1, (List<Term>)ascPage.getItems());
+			assertContains(term2, (List<Term>)ascPage.getItems());
 
 			Page<Term> descPage = termResource.getTermsPage(
-				null, null, Pagination.of(1, 2),
+				null, null, Pagination.of(1, (int)page.getTotalCount() + 1),
 				entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(term2, term1), (List<Term>)descPage.getItems());
+			assertContains(term2, (List<Term>)descPage.getItems());
+			assertContains(term1, (List<Term>)descPage.getItems());
 		}
 	}
 
@@ -1040,14 +1029,19 @@ public abstract class BaseTermResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1498,9 +1492,47 @@ public abstract class BaseTermResourceTestCase {
 		}
 
 		if (entityFieldName.equals("externalReferenceCode")) {
-			sb.append("'");
-			sb.append(String.valueOf(term.getExternalReferenceCode()));
-			sb.append("'");
+			Object object = term.getExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1516,9 +1548,47 @@ public abstract class BaseTermResourceTestCase {
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(term.getName()));
-			sb.append("'");
+			Object object = term.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1540,25 +1610,139 @@ public abstract class BaseTermResourceTestCase {
 		}
 
 		if (entityFieldName.equals("type")) {
-			sb.append("'");
-			sb.append(String.valueOf(term.getType()));
-			sb.append("'");
+			Object object = term.getType();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("typeLocalized")) {
-			sb.append("'");
-			sb.append(String.valueOf(term.getTypeLocalized()));
-			sb.append("'");
+			Object object = term.getTypeLocalized();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("typeSettings")) {
-			sb.append("'");
-			sb.append(String.valueOf(term.getTypeSettings()));
-			sb.append("'");
+			Object object = term.getTypeSettings();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

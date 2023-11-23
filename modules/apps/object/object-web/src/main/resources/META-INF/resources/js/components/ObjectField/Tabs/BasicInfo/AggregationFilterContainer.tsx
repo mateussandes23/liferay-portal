@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import {useModal} from '@clayui/modal';
@@ -19,13 +10,16 @@ import {
 	getLocalizableLabel,
 	invalidateRequired,
 } from '@liferay/object-js-components-web';
-import React, {useCallback, useEffect, useState} from 'react';
+import classNames from 'classnames';
+import React, {ElementType, useCallback, useEffect, useState} from 'react';
 
 import {
 	FilterErrors,
 	FilterValidation,
 	ModalAddFilter,
 } from '../../../ModalAddFilter';
+
+import '../../EditObjectFieldContent.scss';
 
 interface IItem extends LabelValueObject {
 	checked?: boolean;
@@ -48,28 +42,38 @@ interface AggregationFilters {
 
 interface AggregationFilterProps {
 	aggregationFilters: AggregationFilters[];
+	containerWrapper: ElementType;
 	creationLanguageId2?: Liferay.Language.Locale;
 	filterOperators: TFilterOperators;
+	modelBuilder: boolean;
 	objectDefinitionExternalReferenceCode2?: string;
+	onSubmit?: (editedObjectField?: Partial<ObjectField>) => void;
 	setAggregationFilters: (values: AggregationFilters[]) => void;
 	setCreationLanguageId2: (values: Liferay.Language.Locale) => void;
 	setValues: (values: Partial<ObjectField>) => void;
 	values: Partial<ObjectField>;
-	workflowStatusJSONArray: LabelValueObject[];
+	workflowStatuses: LabelValueObject[];
+}
+
+interface CustomWindow extends Window {
+	__isReactDndBackendSetUp?: boolean;
 }
 
 const REQUIRED_MSG = Liferay.Language.get('required');
 
 export function AggregationFilterContainer({
 	aggregationFilters,
+	containerWrapper: ContainerWrapper,
 	creationLanguageId2,
 	filterOperators,
+	modelBuilder,
 	objectDefinitionExternalReferenceCode2,
+	onSubmit,
 	setAggregationFilters,
 	setCreationLanguageId2,
 	setValues,
 	values,
-	workflowStatusJSONArray,
+	workflowStatuses,
 }: AggregationFilterProps) {
 	const [editingFilter, setEditingFilter] = useState(false);
 	const [editingObjectFieldName, setEditingObjectFieldName] = useState<
@@ -108,7 +112,7 @@ export function AggregationFilterContainer({
 	useEffect(() => {
 		if (objectDefinitionExternalReferenceCode2) {
 			const makeFetch = async () => {
-				const items = await API.getObjectFieldsByExternalReferenceCode(
+				const items = await API.getObjectDefinitionByExternalReferenceCodeObjectFields(
 					objectDefinitionExternalReferenceCode2!
 				);
 
@@ -227,7 +231,7 @@ export function AggregationFilterContainer({
 
 						const workflowStatusValueList = statusFilterValues.map(
 							(statusValue) => {
-								const currentStatus = workflowStatusJSONArray.find(
+								const currentStatus = workflowStatuses.find(
 									(workflowStatus) =>
 										Number(workflowStatus.value) ===
 										statusValue
@@ -265,7 +269,7 @@ export function AggregationFilterContainer({
 			checkedItems,
 			items,
 			selectedFilterBy,
-			selectedFilterType,
+			selectedFilterTypeValue,
 			setErrors,
 			value,
 		}: FilterValidation) => {
@@ -276,7 +280,7 @@ export function AggregationFilterContainer({
 				currentErrors.selectedFilterBy = REQUIRED_MSG;
 			}
 
-			if (!selectedFilterType) {
+			if (!selectedFilterTypeValue) {
 				currentErrors.selectedFilterType = REQUIRED_MSG;
 			}
 
@@ -290,7 +294,7 @@ export function AggregationFilterContainer({
 
 			if (
 				selectedFilterBy?.businessType === 'Date' &&
-				selectedFilterType?.value === 'range'
+				selectedFilterTypeValue === 'range'
 			) {
 				const startDate = items.find((date) => date.value === 'ge');
 				const endDate = items.find((date) => date.value === 'le');
@@ -451,15 +455,17 @@ export function AggregationFilterContainer({
 				setValues({
 					objectFieldSettings: newObjectFieldSettings,
 				});
+
+				if (onSubmit) {
+					onSubmit({
+						...values,
+						objectFieldSettings: newObjectFieldSettings,
+					});
+				}
 			}
 		},
-		[
-			aggregationFilters,
-			creationLanguageId2,
-			setAggregationFilters,
-			setValues,
-			values,
-		]
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[aggregationFilters, creationLanguageId2, values]
 	);
 
 	const handleDeleteFilterColumn = useCallback(
@@ -500,7 +506,15 @@ export function AggregationFilterContainer({
 			setValues({
 				objectFieldSettings: newObjectFieldSettings,
 			});
+
+			if (onSubmit) {
+				onSubmit({
+					...values,
+					objectFieldSettings: newObjectFieldSettings,
+				});
+			}
 		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[aggregationFilters, setAggregationFilters, setValues, values]
 	);
 
@@ -527,31 +541,48 @@ export function AggregationFilterContainer({
 		);
 	};
 
+	if ((window as CustomWindow).__isReactDndBackendSetUp) {
+		(window as CustomWindow).__isReactDndBackendSetUp = false;
+	}
+
 	return (
 		<>
-			<BuilderScreen
-				creationLanguageId={
-					creationLanguageId2 as Liferay.Language.Locale
-				}
-				disableEdit
-				emptyState={{
-					buttonText: Liferay.Language.get('new-filter'),
-					description: Liferay.Language.get(
-						'use-conditions-to-specify-which-fields-will-be-considered-in-the-aggregation'
-					),
-					title: Liferay.Language.get('no-filter-was-created-yet'),
-				}}
-				filter
-				firstColumnHeader={Liferay.Language.get('filter-by')}
-				objectColumns={aggregationFilters}
-				onDeleteColumn={handleDeleteFilterColumn}
-				onEditingObjectFieldName={setEditingObjectFieldName}
-				onVisibleEditModal={setVisibleModal}
-				openModal={() => setVisibleModal(true)}
-				secondColumnHeader={Liferay.Language.get('type')}
-				thirdColumnHeader={Liferay.Language.get('value')}
+			<ContainerWrapper
+				displayTitle={Liferay.Language.get('filters')}
+				displayType="unstyled"
 				title={Liferay.Language.get('filters')}
-			/>
+			>
+				<div
+					className={classNames({
+						'lfr-objects__edit-object-field-model-builder-panel': modelBuilder,
+					})}
+				>
+					<BuilderScreen
+						builderScreenItems={aggregationFilters}
+						creationLanguageId={
+							creationLanguageId2 as Liferay.Language.Locale
+						}
+						disableEdit
+						emptyState={{
+							buttonText: Liferay.Language.get('new-filter'),
+							description: Liferay.Language.get(
+								'use-conditions-to-specify-which-fields-will-be-considered-in-the-aggregation'
+							),
+							title: Liferay.Language.get(
+								'no-filter-was-created-yet'
+							),
+						}}
+						filter
+						firstColumnHeader={Liferay.Language.get('filter-by')}
+						onDeleteColumn={handleDeleteFilterColumn}
+						onEditingObjectFieldName={setEditingObjectFieldName}
+						onVisibleEditModal={setVisibleModal}
+						openModal={() => setVisibleModal(true)}
+						secondColumnHeader={Liferay.Language.get('type')}
+						thirdColumnHeader={Liferay.Language.get('value')}
+					/>
+				</div>
+			</ContainerWrapper>
 
 			{visibleModal && (
 				<ModalAddFilter
@@ -574,7 +605,7 @@ export function AggregationFilterContainer({
 					onClose={onClose}
 					onSave={handleSaveFilterColumn}
 					validate={validateFilters}
-					workflowStatusJSONArray={workflowStatusJSONArray}
+					workflowStatuses={workflowStatuses}
 				/>
 			)}
 		</>

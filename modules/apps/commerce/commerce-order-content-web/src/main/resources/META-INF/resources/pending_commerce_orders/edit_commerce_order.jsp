@@ -1,16 +1,7 @@
 <%--
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 --%>
 
@@ -56,13 +47,6 @@ List<CommerceAddress> shippingAddresses = commerceOrderContentDisplayContext.get
 List<CommerceAddress> billingAddresses = commerceOrderContentDisplayContext.getBillingCommerceAddresses(accountEntry.getAccountEntryId());
 
 List<String> errorMessages = (List<String>)request.getAttribute(CommerceWebKeys.COMMERCE_ORDER_ERROR_MESSAGES);
-
-String backURL = ParamUtil.getString(request, "backURL", null);
-
-if (backURL != null) {
-	portletDisplay.setShowBackIcon(true);
-	portletDisplay.setURLBack(backURL);
-}
 %>
 
 <c:if test="<%= (errorMessages != null) && !errorMessages.isEmpty() %>">
@@ -164,7 +148,7 @@ if (backURL != null) {
 		<div class="commerce-panel__content">
 			<div class="align-items-center row">
 				<div class="col-md-3">
-					<div class="commerce-order-title">
+					<div class="autofit-col-expand commerce-order-title">
 						<%= HtmlUtil.escape(accountEntry.getName()) %>
 					</div>
 				</div>
@@ -451,13 +435,8 @@ if (backURL != null) {
 			cssClass="btn btn-fixed btn-primary ml-3"
 		/>
 
-		<c:if test="<%= commerceOrderContentDisplayContext.isRequestQuoteEnabled() %>">
-			<clay:button
-				cssClass="btn-fixed btn-secondary ml-3 request-quote"
-				displayType="secondary"
-				label='<%= LanguageUtil.get(request, "request-a-quote") %>'
-				small="<%= false %>"
-			/>
+		<c:if test="<%= commerceOrderContentDisplayContext.isRequestQuoteButtonEnabled() %>">
+			<aui:button cssClass="btn-fixed btn-secondary ml-3 request-quote" displayType="secondary" id="requestQuote" small="<%= false %>" value='<%= LanguageUtil.get(request, "request-a-quote") %>' />
 		</c:if>
 	</div>
 </aui:form>
@@ -478,6 +457,7 @@ if (backURL != null) {
 			itemsPerPage="<%= 10 %>"
 			nestedItemsKey="orderItemId"
 			nestedItemsReferenceKey="orderItems"
+			propsTransformer="js/PendingOrderItemActionDropdownPropsTransformer"
 			style="stacked"
 		/>
 	</div>
@@ -547,7 +527,13 @@ if (backURL != null) {
 
 <portlet:actionURL name="/commerce_open_order_content/edit_commerce_order" var="editCommerceOrderURL" />
 
+<%@ include file="/pending_commerce_orders/request_quote.jspf" %>
+
 <%@ include file="/pending_commerce_orders/transition.jspf" %>
+
+<liferay-frontend:component
+	module="js/view"
+/>
 
 <aui:script use="aui-base">
 	var orderTransition = A.one('#<portlet:namespace />orderTransition');

@@ -2,10 +2,13 @@ import client from 'shared/apollo/client';
 import Edit from '../Edit';
 import mockStore from 'test/mock-store';
 import React from 'react';
+import {DndProvider} from 'react-dnd';
+import {HTML5Backend} from 'react-dnd-html5-backend';
 import {Provider} from 'react-redux';
-import {render, waitForElementToBeRemoved} from '@testing-library/react';
+import {render} from '@testing-library/react';
 import {SegmentTypes} from 'shared/util/constants';
 import {StaticRouter} from 'react-router';
+import {waitForLoadingToBeRemoved} from 'test/helpers';
 
 jest.mock('shared/apollo/client', () => ({
 	query: jest.fn()
@@ -16,7 +19,9 @@ jest.unmock('react-dom');
 const DefaultComponent = props => (
 	<Provider store={mockStore()}>
 		<StaticRouter>
-			<Edit groupId='23' {...props} />
+			<DndProvider backend={HTML5Backend}>
+				<Edit groupId='23' {...props} />
+			</DndProvider>
 		</StaticRouter>
 	</Provider>
 );
@@ -46,11 +51,11 @@ describe('Edit', () => {
 
 		const {container} = render(<DefaultComponent />);
 
-		await waitForElementToBeRemoved(() =>
-			container.querySelector('.loading-root')
-		).then(() => {
-			expect(container).toMatchSnapshot();
-		});
+		jest.runAllTimers();
+
+		await waitForLoadingToBeRemoved(container);
+
+		expect(container).toMatchSnapshot();
 	});
 
 	it('should render a dynamic segment', async () => {
@@ -75,20 +80,14 @@ describe('Edit', () => {
 			})
 		);
 
-		const {getByText} = render(
+		const {container, getByText} = render(
 			<DefaultComponent type={SegmentTypes.Dynamic} />
 		);
 
 		jest.runAllTimers();
 
-		// TODO: LRAC-8210 Uncomment for release 3.1
-		// await waitForElementToBeRemoved(() =>
-		// 	container.querySelector('.loading-root')
-		// ).then(() => {
-		// 	expect(getByText('Dynamic Segment')).toBeTruthy();
-		// });
+		await waitForLoadingToBeRemoved(container);
 
-		// TODO: LRAC-8210 Remove for release 3.1
 		expect(getByText('Dynamic Segment')).toBeTruthy();
 	});
 

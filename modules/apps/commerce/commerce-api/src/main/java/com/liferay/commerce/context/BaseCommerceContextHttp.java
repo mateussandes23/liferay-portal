@@ -1,23 +1,14 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.commerce.context;
 
 import com.liferay.account.model.AccountEntry;
-import com.liferay.commerce.account.configuration.CommerceAccountGroupServiceConfiguration;
-import com.liferay.commerce.account.constants.CommerceAccountConstants;
-import com.liferay.commerce.account.util.CommerceAccountHelper;
+import com.liferay.account.service.AccountGroupLocalService;
+import com.liferay.commerce.configuration.CommerceAccountGroupServiceConfiguration;
+import com.liferay.commerce.constants.CommerceConstants;
 import com.liferay.commerce.currency.exception.NoSuchCurrencyException;
 import com.liferay.commerce.currency.model.CommerceCurrency;
 import com.liferay.commerce.currency.service.CommerceCurrencyLocalService;
@@ -25,22 +16,26 @@ import com.liferay.commerce.currency.util.comparator.CommerceCurrencyPriorityCom
 import com.liferay.commerce.model.CommerceOrder;
 import com.liferay.commerce.order.CommerceOrderHttpHelper;
 import com.liferay.commerce.product.constants.CommerceChannelAccountEntryRelConstants;
+import com.liferay.commerce.product.constants.CommerceChannelConstants;
 import com.liferay.commerce.product.model.CommerceChannel;
 import com.liferay.commerce.product.model.CommerceChannelAccountEntryRel;
 import com.liferay.commerce.product.service.CommerceChannelAccountEntryRelLocalService;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.util.AccountEntryAllowedTypesUtil;
+import com.liferay.commerce.util.CommerceAccountHelper;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.settings.GroupServiceSettingsLocator;
 import com.liferay.portal.kernel.util.Portal;
 
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * @author Marco Leo
@@ -50,6 +45,7 @@ public class BaseCommerceContextHttp implements CommerceContext {
 
 	public BaseCommerceContextHttp(
 		HttpServletRequest httpServletRequest,
+		AccountGroupLocalService accountGroupLocalService,
 		CommerceAccountHelper commerceAccountHelper,
 		CommerceChannelAccountEntryRelLocalService
 			commerceChannelAccountEntryRelLocalService,
@@ -59,6 +55,7 @@ public class BaseCommerceContextHttp implements CommerceContext {
 		ConfigurationProvider configurationProvider, Portal portal) {
 
 		_httpServletRequest = httpServletRequest;
+		_accountGroupLocalService = accountGroupLocalService;
 		_commerceAccountHelper = commerceAccountHelper;
 		_commerceChannelAccountEntryRelLocalService =
 			commerceChannelAccountEntryRelLocalService;
@@ -76,7 +73,7 @@ public class BaseCommerceContextHttp implements CommerceContext {
 						CommerceAccountGroupServiceConfiguration.class,
 						new GroupServiceSettingsLocator(
 							commerceChannel.getGroupId(),
-							CommerceAccountConstants.SERVICE_NAME));
+							CommerceConstants.SERVICE_NAME_COMMERCE_ACCOUNT));
 			}
 		}
 		catch (PortalException portalException) {
@@ -120,9 +117,8 @@ public class BaseCommerceContextHttp implements CommerceContext {
 			return new long[0];
 		}
 
-		_commerceAccountGroupIds =
-			_commerceAccountHelper.getCommerceAccountGroupIds(
-				accountEntry.getAccountEntryId());
+		_commerceAccountGroupIds = _accountGroupLocalService.getAccountGroupIds(
+			accountEntry.getAccountEntryId());
 
 		return _commerceAccountGroupIds.clone();
 	}
@@ -200,8 +196,39 @@ public class BaseCommerceContextHttp implements CommerceContext {
 	@Override
 	public CommerceOrder getCommerceOrder() {
 		try {
-			_commerceOrder = _commerceOrderHttpHelper.getCurrentCommerceOrder(
-				_httpServletRequest);
+			HttpServletRequest originalHttpServletRequest =
+				_portal.getOriginalServletRequest(_httpServletRequest);
+
+			HttpSession httpSession = originalHttpServletRequest.getSession();
+
+			long groupId = getCommerceChannelGroupId();
+
+			String uuid = (String)httpSession.getAttribute(
+				CommerceOrder.class.getName() + StringPool.POUND + groupId);
+
+			_commerceOrder =
+				_commerceOrderHttpHelper.fetchCommerceOrderByUuidAndGroupId(
+					uuid, groupId);
+
+			if (_commerceOrder == null) {
+				_commerceOrder =
+					_commerceOrderHttpHelper.getCurrentCommerceOrder(
+						_httpServletRequest);
+			}
+
+			if (_commerceOrder != null) {
+				if (_commerceOrder.isGuestOrder()) {
+					httpSession.removeAttribute(
+						CommerceOrder.class.getName() + StringPool.POUND +
+							groupId);
+
+					return _commerceOrder;
+				}
+
+				httpSession.setAttribute(
+					CommerceOrder.class.getName() + StringPool.POUND + groupId,
+					_commerceOrder.getUuid());
+			}
 
 			return _commerceOrder;
 		}
@@ -217,7 +244,7 @@ public class BaseCommerceContextHttp implements CommerceContext {
 	@Override
 	public int getCommerceSiteType() {
 		if (_commerceAccountGroupServiceConfiguration == null) {
-			return CommerceAccountConstants.SITE_TYPE_B2C;
+			return CommerceChannelConstants.SITE_TYPE_B2C;
 		}
 
 		return _commerceAccountGroupServiceConfiguration.commerceSiteType();
@@ -273,6 +300,7 @@ public class BaseCommerceContextHttp implements CommerceContext {
 
 	private AccountEntry _accountEntry;
 	private String[] _accountEntryAllowedTypes;
+	private final AccountGroupLocalService _accountGroupLocalService;
 	private long[] _commerceAccountGroupIds;
 	private CommerceAccountGroupServiceConfiguration
 		_commerceAccountGroupServiceConfiguration;

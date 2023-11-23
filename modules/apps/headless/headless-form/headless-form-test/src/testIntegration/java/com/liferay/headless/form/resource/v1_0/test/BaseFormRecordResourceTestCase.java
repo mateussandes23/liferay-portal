@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.form.resource.v1_0.test;
@@ -42,6 +33,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -284,7 +276,7 @@ public abstract class BaseFormRecordResourceTestCase {
 		Page<FormRecord> page = formRecordResource.getFormFormRecordsPage(
 			formId, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantFormId != null) {
 			FormRecord irrelevantFormRecord =
@@ -292,13 +284,12 @@ public abstract class BaseFormRecordResourceTestCase {
 					irrelevantFormId, randomIrrelevantFormRecord());
 
 			page = formRecordResource.getFormFormRecordsPage(
-				irrelevantFormId, Pagination.of(1, 2));
+				irrelevantFormId, Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantFormRecord),
-				(List<FormRecord>)page.getItems());
+			assertContains(
+				irrelevantFormRecord, (List<FormRecord>)page.getItems());
 			assertValid(
 				page,
 				testGetFormFormRecordsPage_getExpectedActions(
@@ -314,11 +305,10 @@ public abstract class BaseFormRecordResourceTestCase {
 		page = formRecordResource.getFormFormRecordsPage(
 			formId, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(formRecord1, formRecord2),
-			(List<FormRecord>)page.getItems());
+		assertContains(formRecord1, (List<FormRecord>)page.getItems());
+		assertContains(formRecord2, (List<FormRecord>)page.getItems());
 		assertValid(
 			page, testGetFormFormRecordsPage_getExpectedActions(formId));
 	}
@@ -345,6 +335,11 @@ public abstract class BaseFormRecordResourceTestCase {
 	public void testGetFormFormRecordsPageWithPagination() throws Exception {
 		Long formId = testGetFormFormRecordsPage_getFormId();
 
+		Page<FormRecord> formRecordPage =
+			formRecordResource.getFormFormRecordsPage(formId, null);
+
+		int totalCount = GetterUtil.getInteger(formRecordPage.getTotalCount());
+
 		FormRecord formRecord1 = testGetFormFormRecordsPage_addFormRecord(
 			formId, randomFormRecord());
 
@@ -355,27 +350,28 @@ public abstract class BaseFormRecordResourceTestCase {
 			formId, randomFormRecord());
 
 		Page<FormRecord> page1 = formRecordResource.getFormFormRecordsPage(
-			formId, Pagination.of(1, 2));
+			formId, Pagination.of(1, totalCount + 2));
 
 		List<FormRecord> formRecords1 = (List<FormRecord>)page1.getItems();
 
-		Assert.assertEquals(formRecords1.toString(), 2, formRecords1.size());
+		Assert.assertEquals(
+			formRecords1.toString(), totalCount + 2, formRecords1.size());
 
 		Page<FormRecord> page2 = formRecordResource.getFormFormRecordsPage(
-			formId, Pagination.of(2, 2));
+			formId, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<FormRecord> formRecords2 = (List<FormRecord>)page2.getItems();
 
 		Assert.assertEquals(formRecords2.toString(), 1, formRecords2.size());
 
 		Page<FormRecord> page3 = formRecordResource.getFormFormRecordsPage(
-			formId, Pagination.of(1, 3));
+			formId, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(formRecord1, formRecord2, formRecord3),
-			(List<FormRecord>)page3.getItems());
+		assertContains(formRecord1, (List<FormRecord>)page3.getItems());
+		assertContains(formRecord2, (List<FormRecord>)page3.getItems());
+		assertContains(formRecord3, (List<FormRecord>)page3.getItems());
 	}
 
 	protected FormRecord testGetFormFormRecordsPage_addFormRecord(
@@ -667,14 +663,19 @@ public abstract class BaseFormRecordResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));

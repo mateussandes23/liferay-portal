@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.layout.page.template.service.test;
@@ -32,10 +23,13 @@ import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.LayoutPrototype;
 import com.liferay.portal.kernel.model.Repository;
+import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.portletfilerepository.PortletFileRepository;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
 import com.liferay.portal.kernel.service.LayoutPrototypeLocalService;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
@@ -118,11 +112,11 @@ public class LayoutPageTemplateEntryServiceTest {
 
 		LayoutPageTemplateTestUtil.addLayoutPageTemplateEntry(
 			_layoutPageTemplateCollection.getLayoutPageTemplateCollectionId(),
-			name, LayoutPageTemplateEntryTypeConstants.TYPE_BASIC,
+			name, LayoutPageTemplateEntryTypeConstants.BASIC,
 			WorkflowConstants.STATUS_APPROVED);
 		LayoutPageTemplateTestUtil.addLayoutPageTemplateEntry(
 			_layoutPageTemplateCollection.getLayoutPageTemplateCollectionId(),
-			name, LayoutPageTemplateEntryTypeConstants.TYPE_WIDGET_PAGE,
+			name, LayoutPageTemplateEntryTypeConstants.WIDGET_PAGE,
 			WorkflowConstants.STATUS_APPROVED);
 	}
 
@@ -153,12 +147,12 @@ public class LayoutPageTemplateEntryServiceTest {
 			LayoutPageTemplateTestUtil.addLayoutPageTemplateEntry(
 				_layoutPageTemplateCollection.
 					getLayoutPageTemplateCollectionId(),
-				name, LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE,
+				name, LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE,
 				WorkflowConstants.STATUS_DRAFT);
 
 		Assert.assertEquals(name, layoutPageTemplateEntry.getName());
 		Assert.assertEquals(
-			LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE,
+			LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE,
 			layoutPageTemplateEntry.getType());
 		Assert.assertEquals(
 			WorkflowConstants.STATUS_DRAFT,
@@ -181,7 +175,7 @@ public class LayoutPageTemplateEntryServiceTest {
 				_layoutPageTemplateCollection.
 					getLayoutPageTemplateCollectionId(),
 				RandomTestUtil.randomString(),
-				LayoutPageTemplateEntryTypeConstants.TYPE_WIDGET_PAGE,
+				LayoutPageTemplateEntryTypeConstants.WIDGET_PAGE,
 				WorkflowConstants.STATUS_APPROVED);
 
 		LayoutPageTemplateEntry persistedLayoutPageTemplateEntry =
@@ -263,7 +257,58 @@ public class LayoutPageTemplateEntryServiceTest {
 				_group.getGroupId(),
 				_layoutPageTemplateCollection.
 					getLayoutPageTemplateCollectionId(),
-				layoutPageTemplateEntry.getLayoutPageTemplateEntryId(),
+				layoutPageTemplateEntry.getLayoutPageTemplateEntryId(), false,
+				ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
+
+		Assert.assertEquals(
+			layoutPageTemplateEntry.getGroupId(),
+			copiedLayoutPageTemplateEntry.getGroupId());
+		Assert.assertEquals(
+			layoutPageTemplateEntry.getCompanyId(),
+			copiedLayoutPageTemplateEntry.getCompanyId());
+		Assert.assertEquals(
+			layoutPageTemplateEntry.getLayoutPageTemplateCollectionId(),
+			copiedLayoutPageTemplateEntry.getLayoutPageTemplateCollectionId());
+		Assert.assertNotEquals(
+			layoutPageTemplateEntry.getLayoutPageTemplateEntryKey(),
+			copiedLayoutPageTemplateEntry.getLayoutPageTemplateEntryKey());
+		Assert.assertEquals(
+			layoutPageTemplateEntry.getClassNameId(),
+			copiedLayoutPageTemplateEntry.getClassNameId());
+		Assert.assertEquals(
+			layoutPageTemplateEntry.getClassTypeId(),
+			copiedLayoutPageTemplateEntry.getClassTypeId());
+		Assert.assertTrue(
+			StringUtil.startsWith(
+				copiedLayoutPageTemplateEntry.getName(),
+				StringBundler.concat(
+					layoutPageTemplateEntry.getName(), " (",
+					_language.get(LocaleUtil.getSiteDefault(), "copy"), ")")));
+		Assert.assertEquals(
+			layoutPageTemplateEntry.getType(),
+			copiedLayoutPageTemplateEntry.getType());
+		Assert.assertEquals(
+			0, copiedLayoutPageTemplateEntry.getPreviewFileEntryId());
+		Assert.assertNotEquals(
+			layoutPageTemplateEntry.getPlid(),
+			copiedLayoutPageTemplateEntry.getPlid());
+	}
+
+	@Test
+	public void testCopyLayoutPageTemplateEntryWithPermissions()
+		throws Exception {
+
+		LayoutPageTemplateEntry layoutPageTemplateEntry =
+			LayoutPageTemplateTestUtil.addLayoutPageTemplateEntry(
+				_layoutPageTemplateCollection.
+					getLayoutPageTemplateCollectionId());
+
+		LayoutPageTemplateEntry copiedLayoutPageTemplateEntry =
+			_layoutPageTemplateEntryService.copyLayoutPageTemplateEntry(
+				_group.getGroupId(),
+				_layoutPageTemplateCollection.
+					getLayoutPageTemplateCollectionId(),
+				layoutPageTemplateEntry.getLayoutPageTemplateEntryId(), true,
 				ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
 		Assert.assertEquals(
@@ -298,6 +343,27 @@ public class LayoutPageTemplateEntryServiceTest {
 		Assert.assertNotEquals(
 			layoutPageTemplateEntry.getPlid(),
 			copiedLayoutPageTemplateEntry.getPlid());
+
+		List<ResourcePermission> expectedResourcePermissions =
+			_resourcePermissionLocalService.getResourcePermissions(
+				layoutPageTemplateEntry.getCompanyId(),
+				LayoutPageTemplateEntry.class.getName(),
+				ResourceConstants.SCOPE_INDIVIDUAL,
+				String.valueOf(
+					layoutPageTemplateEntry.getLayoutPageTemplateEntryId()));
+
+		int actualResourcePermissionsCount =
+			_resourcePermissionLocalService.getResourcePermissionsCount(
+				copiedLayoutPageTemplateEntry.getCompanyId(),
+				LayoutPageTemplateEntry.class.getName(),
+				ResourceConstants.SCOPE_INDIVIDUAL,
+				String.valueOf(
+					copiedLayoutPageTemplateEntry.
+						getLayoutPageTemplateEntryId()));
+
+		Assert.assertEquals(
+			expectedResourcePermissions.toString(),
+			expectedResourcePermissions.size(), actualResourcePermissionsCount);
 	}
 
 	@Test
@@ -330,7 +396,7 @@ public class LayoutPageTemplateEntryServiceTest {
 				_group.getGroupId(),
 				_layoutPageTemplateCollection.
 					getLayoutPageTemplateCollectionId(),
-				layoutPageTemplateEntry.getLayoutPageTemplateEntryId(),
+				layoutPageTemplateEntry.getLayoutPageTemplateEntryId(), false,
 				ServiceContextTestUtil.getServiceContext(_group.getGroupId()));
 
 		Assert.assertNotEquals(
@@ -404,7 +470,7 @@ public class LayoutPageTemplateEntryServiceTest {
 				_layoutPageTemplateCollection.
 					getLayoutPageTemplateCollectionId(),
 				RandomTestUtil.randomString(),
-				LayoutPageTemplateEntryTypeConstants.TYPE_WIDGET_PAGE,
+				LayoutPageTemplateEntryTypeConstants.WIDGET_PAGE,
 				WorkflowConstants.STATUS_APPROVED);
 
 		_layoutPageTemplateEntryService.deleteLayoutPageTemplateEntry(
@@ -507,5 +573,8 @@ public class LayoutPageTemplateEntryServiceTest {
 
 	@Inject
 	private PortletFileRepository _portletFileRepository;
+
+	@Inject
+	private ResourcePermissionLocalService _resourcePermissionLocalService;
 
 }

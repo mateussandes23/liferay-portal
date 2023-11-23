@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.catalog.resource.v1_0.test;
@@ -43,6 +34,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -381,7 +373,7 @@ public abstract class BaseProductSpecificationResourceTestCase {
 			productSpecificationResource.getProductIdProductSpecificationsPage(
 				id, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantId != null) {
 			ProductSpecification irrelevantProductSpecification =
@@ -391,12 +383,12 @@ public abstract class BaseProductSpecificationResourceTestCase {
 			page =
 				productSpecificationResource.
 					getProductIdProductSpecificationsPage(
-						irrelevantId, Pagination.of(1, 2));
+						irrelevantId, Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantProductSpecification),
+			assertContains(
+				irrelevantProductSpecification,
 				(List<ProductSpecification>)page.getItems());
 			assertValid(
 				page,
@@ -416,11 +408,12 @@ public abstract class BaseProductSpecificationResourceTestCase {
 			productSpecificationResource.getProductIdProductSpecificationsPage(
 				id, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(productSpecification1, productSpecification2),
-			(List<ProductSpecification>)page.getItems());
+		assertContains(
+			productSpecification1, (List<ProductSpecification>)page.getItems());
+		assertContains(
+			productSpecification2, (List<ProductSpecification>)page.getItems());
 		assertValid(
 			page,
 			testGetProductIdProductSpecificationsPage_getExpectedActions(id));
@@ -448,6 +441,13 @@ public abstract class BaseProductSpecificationResourceTestCase {
 
 		Long id = testGetProductIdProductSpecificationsPage_getId();
 
+		Page<ProductSpecification> productSpecificationPage =
+			productSpecificationResource.getProductIdProductSpecificationsPage(
+				id, null);
+
+		int totalCount = GetterUtil.getInteger(
+			productSpecificationPage.getTotalCount());
+
 		ProductSpecification productSpecification1 =
 			testGetProductIdProductSpecificationsPage_addProductSpecification(
 				id, randomProductSpecification());
@@ -462,20 +462,20 @@ public abstract class BaseProductSpecificationResourceTestCase {
 
 		Page<ProductSpecification> page1 =
 			productSpecificationResource.getProductIdProductSpecificationsPage(
-				id, Pagination.of(1, 2));
+				id, Pagination.of(1, totalCount + 2));
 
 		List<ProductSpecification> productSpecifications1 =
 			(List<ProductSpecification>)page1.getItems();
 
 		Assert.assertEquals(
-			productSpecifications1.toString(), 2,
+			productSpecifications1.toString(), totalCount + 2,
 			productSpecifications1.size());
 
 		Page<ProductSpecification> page2 =
 			productSpecificationResource.getProductIdProductSpecificationsPage(
-				id, Pagination.of(2, 2));
+				id, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<ProductSpecification> productSpecifications2 =
 			(List<ProductSpecification>)page2.getItems();
@@ -486,12 +486,16 @@ public abstract class BaseProductSpecificationResourceTestCase {
 
 		Page<ProductSpecification> page3 =
 			productSpecificationResource.getProductIdProductSpecificationsPage(
-				id, Pagination.of(1, 3));
+				id, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				productSpecification1, productSpecification2,
-				productSpecification3),
+		assertContains(
+			productSpecification1,
+			(List<ProductSpecification>)page3.getItems());
+		assertContains(
+			productSpecification2,
+			(List<ProductSpecification>)page3.getItems());
+		assertContains(
+			productSpecification3,
 			(List<ProductSpecification>)page3.getItems());
 	}
 
@@ -729,14 +733,19 @@ public abstract class BaseProductSpecificationResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1037,10 +1046,47 @@ public abstract class BaseProductSpecificationResourceTestCase {
 		}
 
 		if (entityFieldName.equals("specificationKey")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(productSpecification.getSpecificationKey()));
-			sb.append("'");
+			Object object = productSpecification.getSpecificationKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

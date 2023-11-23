@@ -1,16 +1,40 @@
 {
 	"dependencies": {
-		"@clayui/loading-indicator": "3.60.0",
+		"@clayui/alert": "3.106.1",
+		"@clayui/autocomplete": "3.106.1",
+		"@clayui/button": "3.106.1",
+		"@clayui/data-provider": "3.106.1",
+		"@clayui/drop-down": "3.106.1",
+		"@clayui/form": "3.106.1",
+		"@clayui/icon": "3.106.1",
+		"@clayui/label": "3.106.1",
+		"@clayui/layout": "3.106.1",
+		"@clayui/list": "3.106.1",
+		"@clayui/loading-indicator": "3.106.1",
+		"@clayui/modal": "3.106.1",
+		"@clayui/multi-select": "3.106.1",
+		"@clayui/pagination-bar": "3.106.1",
+		"@clayui/panel": "3.106.1",
+		"@clayui/popover": "3.106.1",
+		"@clayui/shared": "3.106.1",
+		"@clayui/sticker": "3.106.1",
+		"@clayui/table": "3.106.1",
+		"@clayui/tooltip": "3.106.1",
 		"@liferay/cookies-banner-web": "*",
 		"@liferay/frontend-data-set-web": "*",
 		"@liferay/frontend-js-react-web": "*",
 		"@liferay/frontend-js-state-web": "*",
+		"classnames": "2.3.1",
 		"frontend-js-web": "*",
-		"react": "16.12.0"
+		"prop-types": "15.7.2",
+		"react": "16.12.0",
+		"react-dom": "16.12.0"
 	},
 	"devDependencies": {
-		"clay-css": "^2.16.2",
-		"faker": "^5.1.0"
+		"faker": "^5.1.0",
+		"fetch-mock": "5.13.1",
+		"html-webpack-plugin": "5.5.0",
+		"webpack": "5.76.0"
 	},
 	"jest": {
 		"collectCoverageFrom": [
@@ -34,8 +58,7 @@
 		"checkFormat": "liferay-npm-scripts check",
 		"coverage": "liferay-npm-scripts test --coverage --silent --verbose",
 		"format": "liferay-npm-scripts format",
-		"test": "liferay-npm-scripts test",
-		"watch": "liferay-npm-scripts webpack --watch"
+		"test": "liferay-npm-scripts test"
 	},
-	"version": "4.0.84"
+	"version": "4.0.103"
 }

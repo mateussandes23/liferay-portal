@@ -1,10 +1,13 @@
 import * as breadcrumbs from 'shared/util/breadcrumbs';
 import BasePage from 'shared/components/base-page';
 import BundleRouter from 'route-middleware/BundleRouter';
+import DownloadPDFReport, {
+	Containers
+} from 'shared/components/download-report/DownloadPDFReport';
 import EmbeddedAlertList from 'shared/components/EmbeddedAlertList';
 import getCN from 'classnames';
 import Label from 'shared/components/Label';
-import Loading from 'shared/pages/Loading';
+import Loading from 'shared/components/Loading';
 import React, {lazy, Suspense} from 'react';
 import RouteNotFound from 'shared/components/RouteNotFound';
 import {AlertTypes} from 'shared/components/Alert';
@@ -196,6 +199,28 @@ export class SegmentProfileRoutes extends React.Component {
 						routeParams={{channelId, groupId, id}}
 					/>
 				</BasePage.Header>
+
+				{getMatchedRoute(NAV_ITEMS) === Routes.CONTACTS_SEGMENT && (
+					<BasePage.SubHeader>
+						<div className='d-flex justify-content-end w-100'>
+							<DownloadPDFReport
+								containers={[
+									Containers.SegmentMembershipCard,
+									Containers.SegmentCompositionCard,
+									segment.segmentType ===
+										SegmentTypes.Dynamic &&
+										Containers.SegmentCriteriaCard,
+									Containers.TopInterestsCard,
+									Containers.DistributionBreakdownCard
+								].filter(Boolean)}
+								disabled={false}
+								showDateRange={false}
+								subtitle={selectedChannel?.name}
+								title={Liferay.Language.get('segments')}
+							/>
+						</div>
+					</BasePage.SubHeader>
+				)}
 
 				<EmbeddedAlertList alerts={this.getAlerts()} />
 

@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.admin.rest.internal.dto.v1_0.converter;
@@ -20,6 +11,7 @@ import com.liferay.object.model.ObjectField;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectFieldLocalService;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
@@ -68,6 +60,8 @@ public class ObjectRelationshipDTOConverter
 				actions = dtoConverterContext.getActions();
 				deletionType = ObjectRelationship.DeletionType.create(
 					serviceBuilderObjectRelationship.getDeletionType());
+				externalReferenceCode =
+					serviceBuilderObjectRelationship.getExternalReferenceCode();
 				id = serviceBuilderObjectRelationship.getObjectRelationshipId();
 				label = LocalizedMapUtil.getLanguageIdMap(
 					serviceBuilderObjectRelationship.getLabelMap());
@@ -80,14 +74,25 @@ public class ObjectRelationshipDTOConverter
 					serviceBuilderObjectRelationship.getObjectDefinitionId1();
 				objectDefinitionId2 =
 					serviceBuilderObjectRelationship.getObjectDefinitionId2();
+				objectDefinitionModifiable2 = objectDefinition2.isModifiable();
 				objectDefinitionName2 = objectDefinition2.getShortName();
+				objectDefinitionSystem2 = objectDefinition2.isSystem();
 				parameterObjectFieldId =
 					serviceBuilderObjectRelationship.
 						getParameterObjectFieldId();
 				reverse = serviceBuilderObjectRelationship.isReverse();
+				system = serviceBuilderObjectRelationship.isSystem();
 				type = ObjectRelationship.Type.create(
 					serviceBuilderObjectRelationship.getType());
 
+				setEdge(
+					() -> {
+						if (!FeatureFlagManagerUtil.isEnabled("LPS-187142")) {
+							return null;
+						}
+
+						return serviceBuilderObjectRelationship.isEdge();
+					});
 				setParameterObjectFieldName(
 					() -> {
 						if (Validator.isNull(

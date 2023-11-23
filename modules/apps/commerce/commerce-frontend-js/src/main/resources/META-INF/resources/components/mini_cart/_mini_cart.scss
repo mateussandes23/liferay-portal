@@ -109,19 +109,6 @@
 			background-color: #fff;
 			flex: 1;
 			overflow: hidden;
-
-			.dataset-display {
-				height: 100%;
-
-				&-content-wrapper,
-				&-wrapper {
-					height: 100%;
-				}
-
-				& > form {
-					height: 100%;
-				}
-			}
 		}
 	}
 
@@ -171,6 +158,7 @@
 		width: 100%;
 	}
 
+	@import 'mini_cart_edit_item';
 	@import 'mini_cart_header';
 	@import 'mini_cart_item';
 	@import 'mini_cart_items_list';

@@ -30,11 +30,11 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		CustomerPortal.customerPortalApisTearDown();
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -117,6 +117,8 @@ definition {
 	@description = "Automation ID: LPS-144416 | Test Summary: Verify if the user can open the drop-down filter and select three statuses"
 	@priority = 3
 	test CanUserSelectThreeStatuses {
+		property portal.acceptance = "true";
+
 		task ("Go to Customer Portal 2.0") {
 			ApplicationsMenu.gotoSite(key_site = ${testSiteName});
 		}

@@ -50,27 +50,23 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
-
-		// It is not possible to delete properties and data source after LRAC-13389. This functionality should return after LRAC-8040
-
-		//ACUtils.tearDownAC();
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		ACUtils.tearDownDXP();
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
 			JSONGroup.deleteGroupByName(groupName = "Site Name");
 		}
+
+		ACUtils.tearDownAC();
 	}
 
 	@description = "Feature ID: Legacy | Automation ID: LRAC-8613 | Test Summary: Assert no interest found in segment"
 	@priority = 3
 	test AssertNoInterestFoundInSegment {
-		property analytics.cloud.upstream = "false";
-
 		task ("Add new user") {
 			JSONUser.addUser(
 				userEmailAddress = "user1@liferay.com",
@@ -203,6 +199,7 @@ definition {
 
 	@description = "Feature ID: Legacy | Automation ID: LRAC-8605 | Test Summary: The top interests list is searchable"
 	@ignore = "true"
+	@priority = 3
 	test CanSearchTopInterestsListSegments {
 
 		// AC Refactor: Test was written in a local to UAT test environment where data took hours to process and will need to be revisited.
@@ -924,7 +921,7 @@ definition {
 		}
 
 		task ("Change pagination") {
-			ACUtils.changePagination(itemsPerPage = 5);
+			ACUtils.changePagination(itemsPerPage = 4);
 		}
 
 		task ("Order list by Name") {
@@ -939,8 +936,6 @@ definition {
 			ACInterests.viewInterestUser(userName = "user3 user3");
 
 			ACInterests.viewInterestUser(userName = "user6 user6");
-
-			ACInterests.viewInterestUser(userName = "user7 user7");
 		}
 
 		task ("Click next page") {
@@ -948,15 +943,13 @@ definition {
 		}
 
 		task ("View individuals on page 2") {
+			ACInterests.viewInterestUser(userName = "user7 user7");
+
 			ACInterests.viewInterestUser(userName = "user8 user8");
 
 			ACInterests.viewInterestUser(userName = "user9 user9");
 
 			ACInterests.viewInterestUser(userName = "usera usera");
-
-			ACInterests.viewInterestUser(userName = "userb userb");
-
-			ACInterests.viewInterestUser(userName = "ac ac");
 		}
 
 		task ("Click previous page") {
@@ -971,8 +964,6 @@ definition {
 			ACInterests.viewInterestUser(userName = "user3 user3");
 
 			ACInterests.viewInterestUser(userName = "user6 user6");
-
-			ACInterests.viewInterestUser(userName = "user7 user7");
 		}
 
 		task ("Navigate to page 2") {
@@ -980,15 +971,13 @@ definition {
 		}
 
 		task ("View individuals on page 2") {
+			ACInterests.viewInterestUser(userName = "user7 user7");
+
 			ACInterests.viewInterestUser(userName = "user8 user8");
 
 			ACInterests.viewInterestUser(userName = "user9 user9");
 
 			ACInterests.viewInterestUser(userName = "usera usera");
-
-			ACInterests.viewInterestUser(userName = "userb userb");
-
-			ACInterests.viewInterestUser(userName = "ac ac");
 		}
 
 		task ("Navigate to page 1") {
@@ -1003,8 +992,6 @@ definition {
 			ACInterests.viewInterestUser(userName = "user3 user3");
 
 			ACInterests.viewInterestUser(userName = "user6 user6");
-
-			ACInterests.viewInterestUser(userName = "user7 user7");
 		}
 
 		task ("Switch to Active Pages tab") {
@@ -1012,7 +999,7 @@ definition {
 		}
 
 		task ("Change pagination") {
-			ACUtils.changePagination(itemsPerPage = 5);
+			ACUtils.changePagination(itemsPerPage = 4);
 		}
 
 		task ("Order list by Page Title") {

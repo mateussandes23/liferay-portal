@@ -25,7 +25,7 @@ exports[`SearchableSelect should render 1`] = `
           role="presentation"
         >
           <use
-            xlink:href="#caret-bottom"
+            href="#caret-bottom"
           />
         </svg>
       </button>
@@ -61,6 +61,7 @@ exports[`SearchableSelect should render 1`] = `
                   class="input-group-inset-item input-group-inset-item-after"
                 >
                   <button
+                    aria-label="Search"
                     class="button-root btn btn-unstyled"
                     type="button"
                   >
@@ -69,7 +70,7 @@ exports[`SearchableSelect should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#search"
+                        href="#search"
                       />
                     </svg>
                   </button>

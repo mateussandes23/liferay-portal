@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.notification.service.impl;
@@ -33,7 +24,6 @@ import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.search.Indexable;
 import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.ResourceLocalService;
-import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.Portal;
 
@@ -61,6 +51,12 @@ public class NotificationQueueEntryLocalServiceImpl
 
 		NotificationQueueEntry notificationQueueEntry =
 			notificationContext.getNotificationQueueEntry();
+
+		NotificationType notificationType =
+			_notificationTypeServiceTracker.getNotificationType(
+				notificationQueueEntry.getType());
+
+		notificationType.validateNotificationQueueEntry(notificationContext);
 
 		notificationQueueEntry.setNotificationQueueEntryId(
 			counterLocalService.increment());
@@ -92,8 +88,9 @@ public class NotificationQueueEntryLocalServiceImpl
 		notificationRecipient.setClassPK(
 			notificationQueueEntry.getNotificationQueueEntryId());
 
-		_notificationRecipientLocalService.updateNotificationRecipient(
-			notificationRecipient);
+		notificationRecipient =
+			_notificationRecipientLocalService.updateNotificationRecipient(
+				notificationRecipient);
 
 		for (NotificationRecipientSetting notificationRecipientSetting :
 				notificationContext.getNotificationRecipientSettings()) {
@@ -191,7 +188,7 @@ public class NotificationQueueEntryLocalServiceImpl
 			throw new NotificationQueueEntryStatusException(
 				"Notification queue entry " +
 					notificationQueueEntry.getNotificationQueueEntryId() +
-						" has already been sent");
+						" was already sent");
 		}
 
 		NotificationType notificationType =
@@ -253,8 +250,5 @@ public class NotificationQueueEntryLocalServiceImpl
 
 	@Reference
 	private ResourceLocalService _resourceLocalService;
-
-	@Reference
-	private UserLocalService _userLocalService;
 
 }

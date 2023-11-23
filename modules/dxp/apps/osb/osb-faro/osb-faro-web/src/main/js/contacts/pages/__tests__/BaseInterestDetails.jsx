@@ -6,6 +6,7 @@ import {Account, Segment} from 'shared/util/records';
 import {ACCOUNTS, Routes, SEGMENTS} from 'shared/util/router';
 import {render} from '@testing-library/react';
 import {StaticRouter} from 'react-router';
+import {waitForLoadingToBeRemoved} from 'test/helpers';
 
 jest.unmock('react-dom');
 
@@ -14,7 +15,7 @@ describe('BaseInterestDetails', () => {
 
 	afterAll(() => jest.restoreMocks());
 
-	it('should render', () => {
+	it('should render', async () => {
 		const {container} = render(
 			<StaticRouter>
 				<BaseInterestDetails
@@ -33,6 +34,8 @@ describe('BaseInterestDetails', () => {
 		);
 
 		jest.runAllTimers();
+
+		await waitForLoadingToBeRemoved(container);
 
 		expect(container).toMatchSnapshot();
 	});
@@ -56,8 +59,12 @@ describe('BaseInterestDetails', () => {
 
 		jest.runAllTimers();
 
+		const individualsGrandparentElement = getByText('Individuals')
+			.parentElement?.parentElement;
+
 		expect(getByText('Individuals')).toBeTruthy();
-		expect(getByText('Individuals').parentElement).toHaveClass('active');
+
+		expect(individualsGrandparentElement).toHaveClass('active');
 	});
 
 	it('should render an active pages list tab', () => {
@@ -80,8 +87,12 @@ describe('BaseInterestDetails', () => {
 
 		jest.runAllTimers();
 
+		const activePagesGrandparentElement = getByText('Active Pages')
+			.parentElement?.parentElement;
+
 		expect(getByText('Active Pages')).toBeTruthy();
-		expect(getByText('Active Pages').parentElement).toHaveClass('active');
+
+		expect(activePagesGrandparentElement).toHaveClass('active');
 	});
 
 	it('should render a pages list tab of inactive pages', () => {
@@ -104,7 +115,11 @@ describe('BaseInterestDetails', () => {
 
 		jest.runAllTimers();
 
+		const InactivePagesGrandparentElement = getByText('Inactive Pages')
+			.parentElement?.parentElement;
+
 		expect(getByText('Inactive Pages')).toBeTruthy();
-		expect(getByText('Inactive Pages').parentElement).toHaveClass('active');
+
+		expect(InactivePagesGrandparentElement).toHaveClass('active');
 	});
 });

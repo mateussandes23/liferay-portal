@@ -14,9 +14,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -249,7 +249,6 @@ definition {
 
 	@priority = 4
 	test DeliverReportToEmail {
-		property portal.upstream = "quarantine";
 		property test.assert.javascript.errors = "false";
 		property test.smtp.server.enabled = "true";
 
@@ -571,7 +570,8 @@ definition {
 	@priority = 4
 	test ViewEmailNotificationDelivery {
 		property test.assert.javascript.errors = "false";
-		property test.name.skip.portal.instance = "CPReportsadmin#ViewEmailNotificationDelivery";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		var portalURL = PropsUtil.get("portal.url");
 		var siteName = TestCase.getSiteName(siteName = ${siteName});
@@ -610,22 +610,9 @@ definition {
 			userEmailAddress = PropsUtil.get("email.address.4"),
 			userPassword = PropsUtil.get("email.password.4"));
 
-		Gmail.gotoHtmlMode();
+		Gmail.gotoMail(gmailMessageTitle = "New Report: Custom Report Name.pdf");
 
-		Gmail.viewMail(
-			emailFromUserName = "Joe Bloggs",
-			gmailAssetType = "New Report: Custom Report Name.pdf",
-			gmailMessageBody = "You have a new report.",
-			gmailMessageTitle = "New Report: Custom Report Name.pdf");
-
-		var key_gmailAssetType = "New Report: Custom Report Name.pdf";
-		var key_pageNameURL = "report";
-
-		AssertClick.assertPartialTextClickAt(
-			locator1 = "Gmail#GMAIL_HTML_MODE_MESSAGE_BODY_LINK",
-			value1 = "report");
-
-		SelectWindow(locator1 = "title=Reports Definition Name - ${siteName}");
+		SelectWindow(value1 = "title=Reports Definition Name - ${siteName}");
 
 		ReportsAdmin.viewReportEntryFields(
 			dataSource = "portal",
@@ -633,8 +620,6 @@ definition {
 			reportsDefinitionName = "Reports Definition Name",
 			reportsFileName = "Custom Report Name.pdf",
 			userName = "Test Test");
-
-		Gmail.gotoHtmlMode();
 
 		Gmail.deleteSpecificMail(gmailMessageTitleList = "New Report: Custom Report Name.pdf,Your New Account,Your New Password");
 
@@ -645,7 +630,8 @@ definition {
 	@priority = 4
 	test ViewEmailRecipientDelivery {
 		property test.assert.javascript.errors = "false";
-		property test.name.skip.portal.instance = "CPReportsadmin#ViewEmailRecipientDelivery";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		var portalURL = PropsUtil.get("portal.url");
 
@@ -682,21 +668,7 @@ definition {
 			userEmailAddress = PropsUtil.get("email.address.4"),
 			userPassword = PropsUtil.get("email.password.4"));
 
-		Gmail.gotoHtmlMode();
-
-		Gmail.viewMail(
-			emailFromUserName = "Joe Bloggs",
-			gmailAssetType = "New Report: reports_admin_template_source_sample_class_name.pdf",
-			gmailMessageAttachment = "reports_admin_template_source_sample_class_name.pdf",
-			gmailMessageBody = "Please review the attached report.",
-			gmailMessageTitle = "New Report: reports_admin_template_source_sample_class_name.pdf");
-
-		var key_gmailAssetType = "New Report: reports_admin_template_source_sample_class_name.pdf";
-		var key_pageNameURL = "report";
-
-		AssertElementNotPresent(locator1 = "Gmail#GMAIL_HTML_MODE_MESSAGE_BODY_LINK");
-
-		Gmail.gotoHtmlMode();
+		Gmail.gotoMail(gmailMessageTitle = "New Report: reports_admin_template_source_sample_class_name.pdf");
 
 		Gmail.deleteSpecificMail(gmailMessageTitleList = "New Report: reports_admin_template_source_sample_class_name.pdf,Your New Account,Your New Password");
 

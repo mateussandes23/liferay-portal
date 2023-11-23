@@ -1,21 +1,13 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.admin.address.internal.resource.v1_0;
 
 import com.liferay.headless.admin.address.dto.v1_0.Country;
 import com.liferay.headless.admin.address.resource.v1_0.CountryResource;
+import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.CountryTable;
 import com.liferay.portal.kernel.search.BaseModelSearchResult;
 import com.liferay.portal.kernel.search.Sort;
@@ -24,6 +16,7 @@ import com.liferay.portal.kernel.service.CountryService;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Localization;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
 import com.liferay.portal.odata.entity.DoubleEntityField;
@@ -34,7 +27,10 @@ import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -127,6 +123,19 @@ public class CountryResourceImpl extends BaseCountryResourceImpl {
 				ServiceContextFactory.getInstance(
 					Country.class.getName(), contextHttpServletRequest));
 
+		if (country.getTitle_i18n() == null) {
+			Map<String, String> titleMap = new HashMap<>();
+
+			for (Locale locale : _language.getAvailableLocales()) {
+				titleMap.put(_language.getLanguageId(locale), null);
+			}
+
+			country.setTitle_i18n(titleMap);
+		}
+
+		_countryLocalService.updateCountryLocalizations(
+			serviceBuilderCountry, country.getTitle_i18n());
+
 		return _toCountry(
 			_countryLocalService.updateGroupFilterEnabled(
 				serviceBuilderCountry.getCountryId(),
@@ -146,6 +155,19 @@ public class CountryResourceImpl extends BaseCountryResourceImpl {
 				GetterUtil.getDouble(country.getPosition()),
 				GetterUtil.getBoolean(country.getShippingAllowed(), true),
 				GetterUtil.getBoolean(country.getSubjectToVAT()));
+
+		if (country.getTitle_i18n() == null) {
+			Map<String, String> titleMap = new HashMap<>();
+
+			for (Locale locale : _language.getAvailableLocales()) {
+				titleMap.put(_language.getLanguageId(locale), null);
+			}
+
+			country.setTitle_i18n(titleMap);
+		}
+
+		_countryLocalService.updateCountryLocalizations(
+			serviceBuilderCountry, country.getTitle_i18n());
 
 		return _toCountry(
 			_countryService.updateGroupFilterEnabled(
@@ -195,5 +217,11 @@ public class CountryResourceImpl extends BaseCountryResourceImpl {
 
 	@Reference
 	private CountryService _countryService;
+
+	@Reference
+	private Language _language;
+
+	@Reference
+	private Localization _localization;
 
 }

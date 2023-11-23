@@ -1,6 +1,7 @@
 definition {
 
-	macro addOneDriveDocument {
+	@summary = "Default summary"
+	macro addOneDriveDocument(dmDocumentTypeName = null) {
 		Navigator.openURL();
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
@@ -29,7 +30,8 @@ definition {
 			value1 = "${dmDocumentTypeName} Title After Upgrade");
 	}
 
-	macro viewAndDeleteGoogleDriveDocuments {
+	@summary = "Default summary"
+	macro viewAndDeleteGoogleDriveDocuments() {
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
 		DMDocument.deletePG(dmDocumentTitle = "Edited Google Document");
@@ -43,20 +45,19 @@ definition {
 		DMDocument.deletePG(dmDocumentTitle = "Edited Google Slide");
 	}
 
-	macro viewAndDeleteOneDriveDocument {
+	@summary = "Default summary"
+	macro viewAndDeleteOneDriveDocument(dmDocumentTypeName = null) {
 		Navigator.openURL();
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		AssertTextEquals(
-			key_dmDocumentTitle = "OneDrive ${dmDocumentTypeName} Title",
-			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
-			value1 = "OneDrive ${dmDocumentTypeName} Title");
+		DMDocument.viewDocumentTitleInListView(dmDocumentTitle = "OneDrive ${dmDocumentTypeName} Title");
 
 		DMDocument.deletePG(dmDocumentTitle = "OneDrive ${dmDocumentTypeName} Title");
 	}
 
-	macro viewAndEditGoogleDriveDocuments {
+	@summary = "Default summary"
+	macro viewAndEditGoogleDriveDocuments() {
 		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "guest");
 
 		var key_dmDocumentTitle = "Untitled (1)";
@@ -76,12 +77,11 @@ definition {
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		AssertTextEquals(
-			key_dmDocumentTitle = "Edited Google Sheet",
-			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
-			value1 = "Edited Google Sheet");
+		DMDocument.viewDocumentTitleInListView(dmDocumentTitle = "Edited Google Sheet");
 
 		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "guest");
+
+		WaitForPageLoad();
 
 		GoogleDoc.gotoEdit(
 			dmDocumentTitle = "Untitled (2)",
@@ -93,12 +93,11 @@ definition {
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		AssertTextEquals(
-			key_dmDocumentTitle = "Edited Google Slide",
-			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
-			value1 = "Edited Google Slide");
+		DMDocument.viewDocumentTitleInListView(dmDocumentTitle = "Edited Google Slide");
 
 		DMNavigator.openDocumentsAndMediaAdmin(siteURLKey = "guest");
+
+		WaitForPageLoad();
 
 		GoogleDoc.gotoEdit(
 			dmDocumentTitle = "Untitled",
@@ -110,10 +109,7 @@ definition {
 
 		Navigator.gotoPage(pageName = "Documents and Media Page");
 
-		AssertTextEquals(
-			key_dmDocumentTitle = "Edited Google Document",
-			locator1 = "DocumentsAndMedia#DESCRIPTIVE_LIST_DOCUMENT_TITLE",
-			value1 = "Edited Google Document");
+		DMDocument.viewDocumentTitleInListView(dmDocumentTitle = "Edited Google Document");
 	}
 
 }

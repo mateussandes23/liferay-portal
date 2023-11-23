@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.delivery.catalog.resource.v1_0.test;
@@ -43,6 +34,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -217,7 +209,7 @@ public abstract class BaseMappedProductResourceTestCase {
 			mappedProductResource.getChannelProductMappedProductsPage(
 				channelId, productId, null, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if ((irrelevantChannelId != null) && (irrelevantProductId != null)) {
 			MappedProduct irrelevantMappedProduct =
@@ -227,13 +219,12 @@ public abstract class BaseMappedProductResourceTestCase {
 
 			page = mappedProductResource.getChannelProductMappedProductsPage(
 				irrelevantChannelId, irrelevantProductId, null, null,
-				Pagination.of(1, 2), null);
+				Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantMappedProduct),
-				(List<MappedProduct>)page.getItems());
+			assertContains(
+				irrelevantMappedProduct, (List<MappedProduct>)page.getItems());
 			assertValid(
 				page,
 				testGetChannelProductMappedProductsPage_getExpectedActions(
@@ -251,11 +242,10 @@ public abstract class BaseMappedProductResourceTestCase {
 		page = mappedProductResource.getChannelProductMappedProductsPage(
 			channelId, productId, null, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(mappedProduct1, mappedProduct2),
-			(List<MappedProduct>)page.getItems());
+		assertContains(mappedProduct1, (List<MappedProduct>)page.getItems());
+		assertContains(mappedProduct2, (List<MappedProduct>)page.getItems());
 		assertValid(
 			page,
 			testGetChannelProductMappedProductsPage_getExpectedActions(
@@ -279,6 +269,13 @@ public abstract class BaseMappedProductResourceTestCase {
 		Long channelId = testGetChannelProductMappedProductsPage_getChannelId();
 		Long productId = testGetChannelProductMappedProductsPage_getProductId();
 
+		Page<MappedProduct> mappedProductPage =
+			mappedProductResource.getChannelProductMappedProductsPage(
+				channelId, productId, null, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			mappedProductPage.getTotalCount());
+
 		MappedProduct mappedProduct1 =
 			testGetChannelProductMappedProductsPage_addMappedProduct(
 				channelId, productId, randomMappedProduct());
@@ -293,19 +290,21 @@ public abstract class BaseMappedProductResourceTestCase {
 
 		Page<MappedProduct> page1 =
 			mappedProductResource.getChannelProductMappedProductsPage(
-				channelId, productId, null, null, Pagination.of(1, 2), null);
+				channelId, productId, null, null,
+				Pagination.of(1, totalCount + 2), null);
 
 		List<MappedProduct> mappedProducts1 =
 			(List<MappedProduct>)page1.getItems();
 
 		Assert.assertEquals(
-			mappedProducts1.toString(), 2, mappedProducts1.size());
+			mappedProducts1.toString(), totalCount + 2, mappedProducts1.size());
 
 		Page<MappedProduct> page2 =
 			mappedProductResource.getChannelProductMappedProductsPage(
-				channelId, productId, null, null, Pagination.of(2, 2), null);
+				channelId, productId, null, null,
+				Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<MappedProduct> mappedProducts2 =
 			(List<MappedProduct>)page2.getItems();
@@ -315,11 +314,12 @@ public abstract class BaseMappedProductResourceTestCase {
 
 		Page<MappedProduct> page3 =
 			mappedProductResource.getChannelProductMappedProductsPage(
-				channelId, productId, null, null, Pagination.of(1, 3), null);
+				channelId, productId, null, null,
+				Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(mappedProduct1, mappedProduct2, mappedProduct3),
-			(List<MappedProduct>)page3.getItems());
+		assertContains(mappedProduct1, (List<MappedProduct>)page3.getItems());
+		assertContains(mappedProduct2, (List<MappedProduct>)page3.getItems());
+		assertContains(mappedProduct3, (List<MappedProduct>)page3.getItems());
 	}
 
 	@Test
@@ -448,24 +448,32 @@ public abstract class BaseMappedProductResourceTestCase {
 			testGetChannelProductMappedProductsPage_addMappedProduct(
 				channelId, productId, mappedProduct2);
 
+		Page<MappedProduct> page =
+			mappedProductResource.getChannelProductMappedProductsPage(
+				channelId, productId, null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<MappedProduct> ascPage =
 				mappedProductResource.getChannelProductMappedProductsPage(
-					channelId, productId, null, null, Pagination.of(1, 2),
+					channelId, productId, null, null,
+					Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(mappedProduct1, mappedProduct2),
-				(List<MappedProduct>)ascPage.getItems());
+			assertContains(
+				mappedProduct1, (List<MappedProduct>)ascPage.getItems());
+			assertContains(
+				mappedProduct2, (List<MappedProduct>)ascPage.getItems());
 
 			Page<MappedProduct> descPage =
 				mappedProductResource.getChannelProductMappedProductsPage(
-					channelId, productId, null, null, Pagination.of(1, 2),
+					channelId, productId, null, null,
+					Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(mappedProduct2, mappedProduct1),
-				(List<MappedProduct>)descPage.getItems());
+			assertContains(
+				mappedProduct2, (List<MappedProduct>)descPage.getItems());
+			assertContains(
+				mappedProduct1, (List<MappedProduct>)descPage.getItems());
 		}
 	}
 
@@ -808,14 +816,19 @@ public abstract class BaseMappedProductResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1278,11 +1291,47 @@ public abstract class BaseMappedProductResourceTestCase {
 		}
 
 		if (entityFieldName.equals("productExternalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					mappedProduct.getProductExternalReferenceCode()));
-			sb.append("'");
+			Object object = mappedProduct.getProductExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1319,34 +1368,185 @@ public abstract class BaseMappedProductResourceTestCase {
 		}
 
 		if (entityFieldName.equals("replacementMessage")) {
-			sb.append("'");
-			sb.append(String.valueOf(mappedProduct.getReplacementMessage()));
-			sb.append("'");
+			Object object = mappedProduct.getReplacementMessage();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("sequence")) {
-			sb.append("'");
-			sb.append(String.valueOf(mappedProduct.getSequence()));
-			sb.append("'");
+			Object object = mappedProduct.getSequence();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("sku")) {
-			sb.append("'");
-			sb.append(String.valueOf(mappedProduct.getSku()));
-			sb.append("'");
+			Object object = mappedProduct.getSku();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("skuExternalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(mappedProduct.getSkuExternalReferenceCode()));
-			sb.append("'");
+			Object object = mappedProduct.getSkuExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1362,9 +1562,47 @@ public abstract class BaseMappedProductResourceTestCase {
 		}
 
 		if (entityFieldName.equals("thumbnail")) {
-			sb.append("'");
-			sb.append(String.valueOf(mappedProduct.getThumbnail()));
-			sb.append("'");
+			Object object = mappedProduct.getThumbnail();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

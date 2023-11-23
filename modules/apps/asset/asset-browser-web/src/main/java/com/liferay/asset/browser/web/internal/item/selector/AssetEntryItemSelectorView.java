@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.asset.browser.web.internal.item.selector;
@@ -17,7 +8,6 @@ package com.liferay.asset.browser.web.internal.item.selector;
 import com.liferay.asset.browser.web.internal.display.context.AssetBrowserDisplayContext;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.asset.util.AssetHelper;
-import com.liferay.depot.service.DepotEntryService;
 import com.liferay.item.selector.ItemSelectorReturnType;
 import com.liferay.item.selector.ItemSelectorView;
 import com.liferay.item.selector.ItemSelectorViewDescriptorRenderer;
@@ -37,7 +27,6 @@ import javax.portlet.PortletURL;
 import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -90,9 +79,8 @@ public class AssetEntryItemSelectorView
 		AssetBrowserDisplayContext assetBrowserDisplayContext =
 			new AssetBrowserDisplayContext(
 				_assetEntryLocalService, _assetHelper,
-				assetEntryItemSelectorCriterion, _depotEntryService,
-				httpServletRequest, _portal, portletURL, renderRequest,
-				renderResponse);
+				assetEntryItemSelectorCriterion, httpServletRequest, _portal,
+				portletURL, renderRequest, renderResponse);
 
 		_itemSelectorViewDescriptorRenderer.renderHTML(
 			httpServletRequest, servletResponse,
@@ -114,9 +102,6 @@ public class AssetEntryItemSelectorView
 	private AssetHelper _assetHelper;
 
 	@Reference
-	private DepotEntryService _depotEntryService;
-
-	@Reference
 	private ItemSelectorViewDescriptorRenderer<AssetEntryItemSelectorCriterion>
 		_itemSelectorViewDescriptorRenderer;
 
@@ -125,8 +110,5 @@ public class AssetEntryItemSelectorView
 
 	@Reference
 	private Portal _portal;
-
-	@Reference(target = "(osgi.web.symbolicname=com.liferay.asset.browser.web)")
-	private ServletContext _servletContext;
 
 }

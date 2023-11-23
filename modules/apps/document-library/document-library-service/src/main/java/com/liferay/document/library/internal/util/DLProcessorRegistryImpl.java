@@ -1,20 +1,11 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.document.library.internal.util;
 
-import com.liferay.document.library.configuration.DLFileEntryConfiguration;
+import com.liferay.document.library.configuration.DLFileEntryConfigurationProvider;
 import com.liferay.document.library.kernel.exception.NoSuchFileEntryException;
 import com.liferay.document.library.kernel.exception.NoSuchFileVersionException;
 import com.liferay.document.library.kernel.util.DLProcessor;
@@ -23,22 +14,14 @@ import com.liferay.document.library.kernel.util.DLProcessorThreadLocal;
 import com.liferay.exportimport.kernel.lar.PortletDataContext;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
-import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.reflect.ReflectionUtil;
-import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.repository.model.FileVersion;
-import com.liferay.portal.kernel.util.InstanceFactory;
 import com.liferay.portal.kernel.util.MapUtil;
-import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
-import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.xml.Element;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,15 +30,12 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Mika Koivisto
  */
-@Component(
-	configurationPid = "com.liferay.document.library.configuration.DLFileEntryConfiguration",
-	immediate = true, service = DLProcessorRegistry.class
-)
+@Component(immediate = true, service = DLProcessorRegistry.class)
 public class DLProcessorRegistryImpl implements DLProcessorRegistry {
 
 	@Override
@@ -114,6 +94,12 @@ public class DLProcessorRegistryImpl implements DLProcessorRegistry {
 	}
 
 	@Override
+	public long getPreviewableProcessorMaxSize(long groupId) {
+		return _dlFileEntryConfigurationProvider.
+			getGroupPreviewableProcessorMaxSize(groupId);
+	}
+
+	@Override
 	public void importGeneratedFiles(
 			PortletDataContext portletDataContext, FileEntry fileEntry,
 			FileEntry importedFileEntry, Element fileEntryElement)
@@ -140,23 +126,18 @@ public class DLProcessorRegistryImpl implements DLProcessorRegistry {
 
 	@Override
 	public boolean isPreviewableSize(FileVersion fileVersion) {
-		long fileEntryPreviewableProcessorMaxSize =
-			_dlFileEntryConfiguration.previewableProcessorMaxSize();
+		long previewableProcessorMaxSize =
+			_dlFileEntryConfigurationProvider.
+				getGroupPreviewableProcessorMaxSize(fileVersion.getGroupId());
 
-		if ((fileEntryPreviewableProcessorMaxSize == 0) ||
-			((fileEntryPreviewableProcessorMaxSize > 0) &&
-			 (fileVersion.getSize() > fileEntryPreviewableProcessorMaxSize))) {
+		if ((previewableProcessorMaxSize == 0) ||
+			((previewableProcessorMaxSize > 0) &&
+			 (fileVersion.getSize() > previewableProcessorMaxSize))) {
 
 			return false;
 		}
 
 		return true;
-	}
-
-	@Modified
-	public void modified(Map<String, Object> properties) {
-		_dlFileEntryConfiguration = ConfigurableUtil.createConfigurable(
-			DLFileEntryConfiguration.class, properties);
 	}
 
 	@Override
@@ -224,43 +205,16 @@ public class DLProcessorRegistryImpl implements DLProcessorRegistry {
 			BundleContext bundleContext, Map<String, Object> properties)
 		throws Exception {
 
-		_dlFileEntryConfiguration = ConfigurableUtil.createConfigurable(
-			DLFileEntryConfiguration.class, properties);
-
 		_bundleContext = bundleContext;
 
 		_dlProcessorServiceTrackerMap =
 			ServiceTrackerMapFactory.openSingleValueMap(
 				bundleContext, DLProcessor.class, "type");
-
-		ClassLoader classLoader = PortalClassLoaderUtil.getClassLoader();
-
-		for (String dlProcessorClassName : _DL_FILE_ENTRY_PROCESSORS) {
-			DLProcessor dlProcessor = (DLProcessor)InstanceFactory.newInstance(
-				classLoader, dlProcessorClassName);
-
-			dlProcessor.afterPropertiesSet();
-
-			register(dlProcessor);
-
-			_dlProcessors.add(dlProcessor);
-		}
 	}
 
 	@Deactivate
 	protected void deactivate() throws Exception {
 		_dlProcessorServiceTrackerMap.close();
-
-		UnsafeConsumer.accept(
-			_dlProcessors,
-			dlProcessor -> {
-				unregister(dlProcessor);
-
-				dlProcessor.destroy();
-			},
-			Exception.class);
-
-		_dlProcessors.clear();
 	}
 
 	private FileVersion _getLatestFileVersion(
@@ -285,16 +239,14 @@ public class DLProcessorRegistryImpl implements DLProcessorRegistry {
 		}
 	}
 
-	private static final String[] _DL_FILE_ENTRY_PROCESSORS =
-		PropsUtil.getArray(PropsKeys.DL_FILE_ENTRY_PROCESSORS);
-
 	private static final Log _log = LogFactoryUtil.getLog(
 		DLProcessorRegistryImpl.class);
 
 	private BundleContext _bundleContext;
-	private volatile DLFileEntryConfiguration _dlFileEntryConfiguration;
-	private final List<DLProcessor> _dlProcessors = new ArrayList<>(
-		_DL_FILE_ENTRY_PROCESSORS.length);
+
+	@Reference
+	private DLFileEntryConfigurationProvider _dlFileEntryConfigurationProvider;
+
 	private ServiceTrackerMap<String, DLProcessor>
 		_dlProcessorServiceTrackerMap;
 	private final Map<DLProcessor, ServiceRegistration<?>>

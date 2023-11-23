@@ -31,6 +31,16 @@
 	<td></td>
 </tr>
 <tr>
+	<td>PRODUCT_DETAILS_PRICE_TABLE_HEADER</td>
+	<td>//th//span[text()='${key_columnName}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PRODUCT_DETAILS_PRICE_TABLE_FIELD_ENTRY</td>
+	<td>//tbody//tr[@class][${key_index}]//td[text()='${key_fieldValue}']</td>
+	<td></td>
+</tr>
+<tr>
 	<td>FS_IMAGE_GALLERY_ARROW_NEXT</td>
 	<td>//div[@class='arrow next']</td>
 	<td></td>
@@ -41,18 +51,13 @@
 	<td></td>
 </tr>
 <tr>
-	<td>FS_IMAGE_GALLERY_MAIN_IMAGE</td>
-	<td>//div[@class='product-gallery']/div/img[contains(@alt, '${key_fsProductImage}')]</td>
-	<td></td>
-</tr>
-<tr>
 	<td>FS_IMAGE_GALLERY_OVERLAY</td>
-	<td>//div[@class='gallery-overlay']//img[contains(@alt, '${key_fsProductImage}')]</td>
+	<td>//div[@class='gallery-overlay']//source[contains(@srcset,'${key_fsProductImage}')]/..//img</td>
 	<td></td>
 </tr>
 <tr>
 	<td>FS_IMAGE_GALLERY_THUMBNAIL</td>
-	<td>//div[@class= 'gallery-thumbnails']//img[contains(@alt,'${key_fsProductImage}')]</td>
+	<td>//div[@class= 'gallery-thumbnails']//source[contains(@srcset,'${key_fsProductImage}')]/..//img</td>
 	<td></td>
 </tr>
 <tr>
@@ -62,7 +67,7 @@
 </tr>
 <tr>
 	<td>FS_PRODUCT_SKU</td>
-	<td>//p/span[(normalize-space(text())='SKU:')]/following::span[text()='${key_productSku}']</td>
+	<td>//p/span[normalize-space(text())='SKU:']/following::span[normalize-space(text())='${key_productSku}']</td>
 	<td></td>
 </tr>
 <tr>
@@ -107,7 +112,32 @@
 </tr>
 <tr>
 	<td>FS_PRODUCT_OPTIONS_SELECT</td>
-	<td>//div/label[text()='${key_optionName}']/..//div[contains (@class,'select-field-trigger')]//a</td>
+	<td>//div/label[text()='${key_optionName}']/..//select</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FS_PRODUCT_UOM_SELECT</td>
+	<td>//select[contains(@class,'unit-of-measure-selector')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FS_PRODUCT_UOM_SELECT_DISABLED</td>
+	<td>//select[(@disabled)][contains(@class,'unit-of-measure-selector')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FS_PRODUCT_UOM_SELECTOR_VALUE</td>
+	<td>//select[contains(@class,'unit-of-measure-selector')]//option[contains(@value,'${uomName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FS_PRODUCT_UOM_SELECTOR_VALUE_BY_INDEX</td>
+	<td>//select[contains(@class,'unit-of-measure-selector')]//option[${index}][contains(@value,'${uomName}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FS_PRODUCT_BOOLEAN_OPTION</td>
+	<td>//div/label[text()='${key_optionName}']/..//input[@type='checkbox']</td>
 	<td></td>
 </tr>
 <tr>
@@ -122,7 +152,17 @@
 </tr>
 <tr>
 	<td>FS_PRODUCT_IMAGE</td>
-	<td>//div[@class='product-gallery']//img[contains(@src, '${key_fsProductImage}') or contains(@alt,'${key_fsProductImage}')]</td>
+	<td>//div[@class='product-gallery']//source[contains(@srcset,'${key_fsProductImage}')]/..//img</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FS_PRODUCT_MAIN_IMAGE</td>
+	<td>//div[@class='card main-image']//source[contains(@srcset,'${key_fsProductImage}')]/..//img</td>
+	<td></td>
+</tr>
+<tr>
+	<td>FS_PRODUCT_THUMBNAIL_IMAGE</td>
+	<td>//div[@class='gallery-thumbnails']//source[contains(@srcset,'${key_fsProductImage}')]/..//img</td>
 	<td></td>
 </tr>
 <tr>
@@ -131,8 +171,28 @@
 	<td></td>
 </tr>
 <tr>
+	<td>MODAL_TITLE</td>
+	<td>//*[@class='modal-title' and normalize-space(text())='${key_title}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>TEXTAREA_FIELD</td>
+	<td>//input[contains(@class,'form-control')and contains(@value,'${key_value}')]/..//textarea</td>
+	<td></td>
+</tr>
+<tr>
 	<td>PRODUCT_DETAILS_ATTACHMENTS_BUTTON</td>
 	<td>//li[contains(@class,'list-group-item')]//h5[text()='${key_entryName}']/ancestor::li//a[contains(text(),'${key_button}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PRODUCT_IMAGE_MINI_CART_WITH_ALT_ATTRIBUTE</td>
+	<td>//div[@class= 'mini-cart-item-thumbnail']//img[contains(@alt,'thumbnail')]/../../../div[@class='mini-cart-item-info ml-3']//p[contains(text(),'${key_productSku}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PRODUCT_IMAGE_CHECKOUT_WITH_ALT_ATTRIBUTE</td>
+	<td>//div[@class='table-responsive']//img[contains(@alt,'thumbnail')]/../../../../..//div[@class='list-group-title' and contains(text(),'${key_productName}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -172,12 +232,12 @@
 </tr>
 <tr>
 	<td>PRODUCT_DETAILS_OPTION_POSITION</td>
-	<td>//div[contains(@class,'ddm-row')][${key_position}]//label[contains(text(),'${key_optionName}')]</td>
+	<td>//div[@class='product-detail-options']/form/div[${key_position}]//label[text()='${key_optionName}']</td>
 	<td></td>
 </tr>
 <tr>
 	<td>PRODUCT_DETAILS_OPTION_VALUE_POSITION</td>
-	<td>//button[contains(@data-testid,'dropdownItem-${key_index}')][contains(text(),'${key_optionValue}')]</td>
+	<td>//div/label[text()='${key_optionName}']/..//select/option[@value][${key_index}][text()='${key_optionValue}']</td>
 	<td></td>
 </tr>
 <tr>
@@ -197,7 +257,7 @@
 </tr>
 <tr>
 	<td>PRODUCT_DETAILS_QUANTITY_OPTION</td>
-	<td>//header//h2[text()='${key_productName}']//..//following-sibling::div[4]//option[@value='${key_optionValue}']</td>
+	<td>//header//h2[text()='${key_productName}']//..//following-sibling::div[5]//option[@value='${key_optionValue}']</td>
 	<td></td>
 </tr>
 <tr>
@@ -293,6 +353,11 @@
 <tr>
 	<td>COLLECTION_DISPLAY_PRODUCT_SPECIFICATION_ENTRY</td>
 	<td>//li[contains(@class,'list-group-item')]//dt[contains(.,'${key_specification}')]/..//dd[contains(.,'${key_value}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>BOOLEAN_CHECKBOX</td>
+	<td>//label[contains(.,'${checkboxName}')]/..//input[@type='checkbox']</td>
 	<td></td>
 </tr>
 

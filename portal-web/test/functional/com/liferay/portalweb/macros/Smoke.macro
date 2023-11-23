@@ -3,8 +3,9 @@ definition {
 	var userFirstName = "Test";
 	var userLastName = "Test";
 
+	@summary = "Default summary"
 	@summary-ignore = "true"
-	macro runSmoke {
+	macro runSmoke(i = null) {
 		task ("Ensure that the super admin can add a Blank Site") {
 			ApplicationsMenu.gotoPortlet(
 				category = "Sites",
@@ -150,17 +151,17 @@ definition {
 		}
 	}
 
-	@summary = "View default welcome content page while signed in as '${userFirstName} ${userLastName}' and check that image is present"
-	macro viewWelcomeContentPage {
+	@summary = "Default summary"
+	macro viewWelcomeContentPage() {
 		ContentPages.viewFragmentText(
-			fragmentName = "heading",
+			fragmentName = "paragraph",
 			id = "element-text",
 			text = "Welcome to Liferay");
 
 		ContentPages.viewFragmentImage(
 			fragmentName = "image",
 			id = "image-square",
-			image = "tree.png");
+			image = "tree-png");
 	}
 
 }

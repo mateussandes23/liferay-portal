@@ -16,9 +16,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -32,8 +32,10 @@ definition {
 
 		JSONPublications.selectPublication(publicationName = "Publication Name");
 
+		HeadlessSite.addSite(siteName = "Site Name");
+
 		JSONKnowledgeBase.addkBArticle(
-			groupName = "Guest",
+			groupName = "Site Name",
 			kbArticleContent = "Knowledge Base Article Content",
 			kbArticleTitle = "Knowledge Base Article Title");
 
@@ -43,16 +45,14 @@ definition {
 
 		PublicationsChanges.viewChanges(
 			changeCategory = "Knowledge Base Article",
-			changeSite = "Guest",
+			changeSite = "Site Name",
 			changeTitle = "Knowledge Base Article Title",
 			changeType = "Added",
 			changeUser = "Test Test");
 
-		JSONPublications.publishPublication(publicationName = "Publication Name");
+		Publications.publishPublication(publicationName = "Publication Name");
 
-		Publications.viewPublicationPublished(publicationName = "Publication Name");
-
-		KBAdmin.openKBAdmin(siteURLKey = "guest");
+		KBAdmin.openKBAdmin(siteURLKey = "site-name");
 
 		KBArticle.viewCP(
 			kbArticleContent = "Knowledge Base Article Content",
@@ -61,8 +61,10 @@ definition {
 
 	@priority = 4
 	test CanDeleteKBArticleWithinPublications {
+		HeadlessSite.addSite(siteName = "Site Name");
+
 		JSONKnowledgeBase.addkBArticle(
-			groupName = "Guest",
+			groupName = "Site Name",
 			kbArticleContent = "Knowledge Base Article Content",
 			kbArticleTitle = "Knowledge Base Article Title");
 
@@ -70,7 +72,7 @@ definition {
 
 		JSONPublications.selectPublication(publicationName = "Publication Name");
 
-		KBAdmin.openKBAdmin(siteURLKey = "guest");
+		KBAdmin.openKBAdmin(siteURLKey = "site-name");
 
 		KBArticle.selectArticleCP(kbArticleTitle = "Knowledge Base Article Title");
 
@@ -80,24 +82,24 @@ definition {
 
 		PublicationsChanges.viewChanges(
 			changeCategory = "Knowledge Base Article",
-			changeSite = "Guest",
+			changeSite = "Site Name",
 			changeTitle = "Knowledge Base Article Title",
 			changeType = "Deleted",
 			changeUser = "Test Test");
 
-		JSONPublications.publishPublication(publicationName = "Publication Name");
+		Publications.publishPublication(publicationName = "Publication Name");
 
-		Publications.viewPublicationPublished(publicationName = "Publication Name");
-
-		KBAdmin.openKBAdmin(siteURLKey = "guest");
+		KBAdmin.openKBAdmin(siteURLKey = "site-name");
 
 		KBArticle.viewDefaultCP();
 	}
 
 	@priority = 4
 	test CanEditKBArticleWithinPublications {
+		HeadlessSite.addSite(siteName = "Site Name");
+
 		JSONKnowledgeBase.addkBArticle(
-			groupName = "Guest",
+			groupName = "Site Name",
 			kbArticleContent = "Knowledge Base Article Content",
 			kbArticleTitle = "Knowledge Base Article Title");
 
@@ -105,7 +107,7 @@ definition {
 
 		JSONPublications.selectPublication(publicationName = "Publication Name");
 
-		KBAdmin.openKBAdmin(siteURLKey = "guest");
+		KBAdmin.openKBAdmin(siteURLKey = "site-name");
 
 		KBArticle.editCP(
 			kbArticleTitle = "Knowledge Base Article Title",
@@ -115,24 +117,21 @@ definition {
 
 		PublicationsChanges.viewChanges(
 			changeCategory = "Knowledge Base Article",
-			changeSite = "Guest",
+			changeSite = "Site Name",
 			changeTitle = "Knowledge Base Article Title",
 			changeType = "Modified",
 			changeUser = "Test Test");
 
 		PublicationsChanges.viewChanges(
 			changeCategory = "Knowledge Base Article",
-			changeOrder = 2,
-			changeSite = "Guest",
+			changeSite = "Site Name",
 			changeTitle = "Knowledge Base Article Title Edit",
 			changeType = "Added",
 			changeUser = "Test Test");
 
-		JSONPublications.publishPublication(publicationName = "Publication Name");
+		Publications.publishPublication(publicationName = "Publication Name");
 
-		Publications.viewPublicationPublished(publicationName = "Publication Name");
-
-		KBAdmin.openKBAdmin(siteURLKey = "guest");
+		KBAdmin.openKBAdmin(siteURLKey = "site-name");
 
 		KBArticle.viewCP(
 			kbArticleContent = "Knowledge Base Article Content",

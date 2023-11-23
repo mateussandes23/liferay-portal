@@ -14,9 +14,9 @@ definition {
 	tearDown {
 		ObjectAdmin.deleteAllCustomObjectsViaAPI();
 
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 	}
@@ -97,7 +97,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.goToLayoutTabOnLayouts();
 
@@ -134,7 +134,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -222,7 +222,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -265,7 +265,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -308,7 +308,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -345,7 +345,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -385,7 +385,8 @@ definition {
 		CreateObject.saveObject();
 
 		AssertElementPresent(
-			locator1 = "CreateObject#TITLE_FIELD",
+			key_labelName = "Entry Title Field",
+			locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
 			value1 = "Custom Field");
 	}
 
@@ -508,7 +509,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -603,7 +604,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -712,17 +713,13 @@ definition {
 			locator1 = "ObjectAdmin#LABEL_OBJECT_RELATIONSHIP",
 			value1 = "Custom Relationship");
 
-		Click(locator1 = "ObjectAdmin#RELATIONSHIPS_TYPE_FORM");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Type",
+			optionName = "One to Many");
 
-		Click(
-			key_type = "One to Many",
-			locator1 = "ObjectAdmin#SELECT_RELATIONSHIPS_TYPE_OPTION");
-
-		Click(locator1 = "ObjectCustomViews#SELECT_AUTO_COMPLETE");
-
-		Click(
-			key_columnOption = "Custom Object 13",
-			locator1 = "ObjectCustomViews#SELECT_AUTO_COMPLETE_OPTION");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Many Records Of",
+			optionName = "Custom Object 13");
 
 		Button.clickCancel();
 
@@ -757,7 +754,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -783,37 +780,6 @@ definition {
 			key_name = "Layout",
 			locator1 = "ObjectAdmin#TABLE_LIST_TITLE",
 			value1 = "Layout Updated");
-	}
-
-	@description = "LPS-135551 - Verify it is possible to change the Panel Category Key after publishing the Object"
-	@priority = 4
-	test CanChangePanelCategoryKeyAfterPublished {
-		ObjectAdmin.addObjectViaAPI(
-			labelName = "Custom Object 15",
-			objectName = "CustomObject15",
-			pluralLabelName = "Custom Objects 15");
-
-		ObjectAdmin.addObjectFieldViaAPI(
-			fieldBusinessType = "Text",
-			fieldLabelName = "Custom Field",
-			fieldName = "customObjectField",
-			fieldType = "String",
-			isRequired = "false",
-			objectName = "CustomObject15");
-
-		ObjectAdmin.publishObjectViaAPI(objectName = "CustomObject15");
-
-		ObjectAdmin.openObjectAdmin();
-
-		ObjectPortlet.selectCustomObject(label = "Custom Object 15");
-
-		CreateObject.selectPanelCategoryKey(panelCategoryKey = "Control Panel > Users");
-
-		CreateObject.saveObject();
-
-		Navigator.openURL();
-
-		ObjectPortlet.assertObjectIsDisplayedOnControlPanel();
 	}
 
 	@description = "LPS-135397 - Verify it is possible to collapse and expand a block of fields"
@@ -842,7 +808,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -1269,7 +1235,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -1286,6 +1252,50 @@ definition {
 		AssertElementNotPresent(
 			key_fieldLabelName = "Custom Field",
 			locator1 = "CreateObject#FIELD_ADDED_ON_BLOCK");
+	}
+
+	@description = "LPS-184370 - Verify the user can delete an inactive custom object"
+	@priority = 3
+	test CanDeleteInactiveCustomObject {
+		task ("Given a custom object with a text field and an object entry") {
+			ObjectAdmin.addObjectViaAPI(
+				labelName = "Custom Object 184370",
+				objectName = "CustomObject184370",
+				pluralLabelName = "Custom Objects 184370");
+
+			ObjectAdmin.addObjectFieldViaAPI(
+				fieldBusinessType = "Text",
+				fieldLabelName = "Text Field",
+				fieldName = "customObjectField",
+				fieldType = "String",
+				isRequired = "false",
+				objectName = "CustomObject184370");
+
+			ObjectAdmin.publishObjectViaAPI(objectName = "CustomObject184370");
+
+			ObjectAdmin.addObjectSingleFieldEntryViaAPI(
+				fieldName = "customObjectField",
+				objectName = "CustomObject184370",
+				value = "Entry Test");
+		}
+
+		task ("When the custom object is deactivated") {
+			ObjectAdmin.openObjectAdmin();
+
+			CreateObject.inactiveCustomObject(objectLabel = "Custom Object 184370");
+		}
+
+		task ("Then the inactive object can be deleted") {
+			Navigator.gotoBack();
+
+			ObjectAdmin.deleteCustomObjectViaUI(
+				labelName = "Custom Object 184370",
+				objectName = "CustomObject184370");
+
+			AssertElementNotPresent(
+				key_labelName = "Custom Object 184370",
+				locator1 = "CreateObject#OBJECT_NAME");
+		}
 	}
 
 	@description = "LPS-135397 - Verify if it's possible to delete a Layout for an Object"
@@ -1407,7 +1417,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -1610,7 +1620,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.goToLayoutTabOnLayouts();
 
@@ -1645,7 +1655,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.goToLayoutTabOnLayouts();
 
@@ -1783,64 +1793,6 @@ definition {
 		ObjectAdmin.openObjectAdmin();
 
 		ObjectPortlet.assertDeleteEntryButtonNotPresent(entry = "Custom Object 42");
-	}
-
-	@description = "LPS-151877 - Verify that after the entry of an object definition with account restriction is saved, the account field can not be edited"
-	@priority = 4
-	test CannotEditEntryWithAccountRestriction {
-		task ("Given: An account, a Custom Object and Relationship Account to Custom Object are created (Via API)") {
-			JSONAccountEntry.addAccountEntry(
-				accountEntryName = "Account Test Name",
-				accountEntryType = "Business");
-
-			ObjectAdmin.addObjectViaAPI(
-				labelName = "Custom Object 176837",
-				objectName = "CustomObject176837",
-				pluralLabelName = "Custom Objects 176837");
-
-			ObjectAdmin.addObjectRelationshipViaAPI(
-				objectName_1 = "AccountEntry",
-				objectName_2 = "CustomObject176837",
-				relationshipLabel = "RelationshipAccount",
-				relationshipName = "relationshipAccount",
-				relationshipType = "oneToMany");
-		}
-
-		task ("And given: A layout is created and Account Restriction is enabled") {
-			ObjectAdmin.addObjectLayoutViaAPI(
-				layoutName = "Layout Name",
-				objectName = "CustomObject176837");
-
-			ObjectAdmin.openObjectAdmin();
-
-			ObjectPortlet.selectCustomObject(label = "Custom Object 176837");
-
-			CreateObject.activeToogleAccountRestriction();
-
-			CreateObject.selectAccountRestrictedField(accountRestrictedField = "RelationshipAccount");
-
-			Button.clickPublish();
-		}
-
-		task ("When: An entry is added") {
-			ObjectAdmin.goToCustomObject(objectName = "CustomObject176837");
-
-			LexiconEntry.gotoAdd();
-
-			ObjectPortlet.chooseEntryOnRelationshipField(entryOption = "Account Test Name");
-
-			Button.clickSave();
-		}
-
-		task ("Then: The entry is read-only and cannot be edited") {
-			ObjectAdmin.goToCustomObject(objectName = "CustomObject176837");
-
-			ObjectPortlet.viewEntryDetails(entry = "Account Test Name");
-
-			AssertVisible(
-				key_entry = "Account Test Name",
-				locator1 = "ObjectPortlet#RELATIONSHIP_ENTRY_READ_ONLY");
-		}
 	}
 
 	@description = "LPS-135549 - Verify it is not possible to leave the Field Name field blank"
@@ -2003,7 +1955,7 @@ definition {
 			type = "One to Many");
 
 		AssertElementPresent(
-			key_fieldLabel = "Object",
+			key_fieldLabel = "Many Records Of",
 			locator1 = "FieldBase#ERROR_MESSAGE_REQUIRED_FIELD");
 	}
 
@@ -2021,9 +1973,7 @@ definition {
 
 		ObjectAdmin.gotoRelationshipsTab();
 
-		ObjectAdmin.addObjectRelationshipViaUI(
-			label = "Relationship",
-			object = "Custom Object 51");
+		ObjectAdmin.addObjectRelationshipViaUI(label = "Relationship");
 
 		AssertElementPresent(
 			key_fieldLabel = "Type",
@@ -2056,7 +2006,8 @@ definition {
 	@description = "LPS-135390 - Verify it is not possible to publish an Object without the Publish Object Definition permission"
 	@priority = 4
 	test CannotPublishObjectWithouPublishPermission {
-		property test.name.skip.portal.instance = "CreateObject#CannotPublishObjectWithouPublishPermission";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 53",
@@ -2226,7 +2177,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -2269,21 +2220,27 @@ definition {
 
 		ObjectAdmin.publishObjectViaAPI(objectName = "CustomObject59");
 
-		PopulateObjectFormsConfiguration.openForm();
-
-		FormsAdminNavigator.gotoAddForm();
+		FormsAdmin.addForm();
 
 		Form.editName(formName = "Form 1");
 
 		PopulateObjectFormsConfiguration.openFormSettings();
 
-		PopulateObjectFormsConfiguration.selectObject(label = "Object");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Select a Storage Type",
+			optionName = "Object");
 
-		PopulateObjectFormsConfiguration.selectCustomObject(label = "Custom Object 59");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Select Object",
+			optionName = "Custom Object 59");
+
+		Click(locator1 = "PopulateObjectFormsConfiguration#BUTTON_SETTINGS_FORM");
 
 		Form.gotoAddField(fieldType = "Text");
 
 		PopulateObjectFormsConfiguration.mapFormField(fieldLabelName = "Custom Field");
+
+		Form.save();
 
 		Form.publishForm();
 
@@ -2686,6 +2643,16 @@ definition {
 				labelName = "Custom Object",
 				objectName = "CustomObject",
 				pluralLabelName = "Custom Objects");
+
+			// Workaround for LPS-193897
+
+			ObjectAdmin.addObjectFieldViaAPI(
+				fieldBusinessType = "Text",
+				fieldLabelName = "Custom Field",
+				fieldName = "customObjectField",
+				fieldType = "String",
+				isRequired = "false",
+				objectName = "CustomObject");
 		}
 
 		task ("Add Relationship Account to Custom Object (via API)") {
@@ -2695,16 +2662,6 @@ definition {
 				relationshipLabel = "RelationshipAccount",
 				relationshipName = "relationshipAccount",
 				relationshipType = "oneToMany");
-		}
-
-		task ("Go to Account and change title field") {
-			ObjectAdmin.openObjectAdmin();
-
-			ObjectPortlet.selectSystemObject(label = "Account");
-
-			CreateObject.selectTitleField(fieldLabel = "Name");
-
-			CreateObject.saveObject();
 		}
 
 		task ("Go to Custom Object and active Account Restriction") {
@@ -2834,9 +2791,10 @@ definition {
 
 		ObjectAdmin.openObjectAdmin();
 
-		ObjectAdmin.assertObjectStatus(
-			label = "Custom Object 72",
-			status = "Draft");
+		AssertTextEquals(
+			key_label = "Custom Object 72",
+			locator1 = "ObjectAdmin#OBJECT_STATUS",
+			value1 = "Draft");
 
 		ObjectPortlet.selectCustomObject(label = "Custom Object 72");
 
@@ -2844,9 +2802,10 @@ definition {
 
 		ObjectAdmin.openObjectAdmin();
 
-		ObjectAdmin.assertObjectStatus(
-			label = "Custom Object 72",
-			status = "Approved");
+		AssertTextEquals(
+			key_label = "Custom Object 72",
+			locator1 = "ObjectAdmin#OBJECT_STATUS",
+			value1 = "Approved");
 	}
 
 	@description = "LPS-135390 - Verify it is possible to publish an Object with the Publish Object Definition permission"
@@ -2917,134 +2876,142 @@ definition {
 
 		ObjectAdmin.openObjectAdmin();
 
-		ObjectAdmin.assertObjectStatus(
-			label = "Custom Object 73",
-			status = "Approved");
+		AssertTextEquals(
+			key_label = "Custom Object 73",
+			locator1 = "ObjectAdmin#OBJECT_STATUS",
+			value1 = "Approved");
 	}
 
 	@description = "LPS-135401 - Verify that it is possible to relate to many other entries on both objects"
 	@priority = 5
 	test CanRelateManyOtherEntriesBothObjects {
-		property test.name.skip.portal.instance = "CreateObject#CanRelateManyOtherEntriesBothObjects";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
-		for (var nameObject : list "A,B") {
-			ObjectAdmin.addObjectViaAPI(
-				labelName = "Custom Object ${nameObject} 74",
-				objectName = "CustomObject${nameObject}74",
-				pluralLabelName = "Custom Objects ${nameObject} 74");
+		task ("Given two custom objects, A and B, each with a text field and a layout") {
+			for (var nameObject : list "A,B") {
+				ObjectAdmin.addObjectViaAPI(
+					labelName = "Custom Object ${nameObject} 74",
+					objectName = "CustomObject${nameObject}74",
+					pluralLabelName = "Custom Objects ${nameObject} 74");
+			}
+
+			for (var nameField : list "A,B") {
+				ObjectAdmin.addObjectFieldViaAPI(
+					fieldBusinessType = "Text",
+					fieldLabelName = "Custom Field ${nameField}",
+					fieldName = "customObjectField${nameField}",
+					fieldType = "String",
+					isRequired = "false",
+					objectName = "CustomObject${nameField}74");
+			}
+
+			for (var letter : list "A,B") {
+				ObjectAdmin.addObjectLayoutViaAPI(
+					layoutName = "Layout ${letter}",
+					objectName = "CustomObject${letter}74");
+			}
 		}
 
-		for (var nameField : list "A,B") {
-			ObjectAdmin.addObjectFieldViaAPI(
-				fieldBusinessType = "Text",
-				fieldLabelName = "Custom Field ${nameField}",
-				fieldName = "customObjectField${nameField}",
-				fieldType = "String",
-				isRequired = "false",
-				objectName = "CustomObject${nameField}74");
+		task ("And given a M:M relationship between Object A and Object B") {
+			ObjectAdmin.addObjectRelationshipViaAPI(
+				objectName_1 = "CustomObjectA74",
+				objectName_2 = "CustomObjectB74",
+				relationshipLabel = "Relationship",
+				relationshipName = "relationship",
+				relationshipType = "manyToMany");
 		}
 
-		for (var letter : list "A,B") {
-			ObjectAdmin.addObjectLayoutViaAPI(
-				layoutName = "Layout ${letter}",
-				objectName = "CustomObject${letter}74");
+		task ("And given a relationship tab in the layouts") {
+			for (var letter : list "A,B") {
+				ObjectAdmin.openObjectAdmin();
+
+				ObjectPortlet.selectCustomObject(label = "Custom Object ${letter} 74");
+
+				ObjectAdmin.goToLayoutsTab();
+
+				ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
+
+				SelectFrame(locator1 = "IFrame#IFRAME");
+
+				Click.clickAtNotVisible(locator1 = "ObjectAdmin#ENTRY_BOOLEAN_CHECKBOX");
+
+				ObjectAdmin.goToLayoutTabOnLayouts();
+
+				ObjectAdmin.addTabFieldsOnLayout(
+					blockName = "Block 1",
+					columnsNumber = 2,
+					fieldLabelName = "Custom Field ${letter}",
+					tabName = "Field Tab");
+
+				ObjectAdmin.addTabRelationshipsOnLayout(
+					relationshipsLabelName = "Relationship",
+					tabName = "Relationship Tab");
+
+				PortletEntry.save();
+			}
 		}
 
-		ObjectAdmin.addObjectRelationshipViaAPI(
-			objectName_1 = "CustomObjectA74",
-			objectName_2 = "CustomObjectB74",
-			relationshipLabel = "Relationship",
-			relationshipName = "relationship",
-			relationshipType = "manyToMany");
+		task ("And given the text field set as the title field") {
+			for (var letter : list "A,B") {
+				ObjectAdmin.openObjectAdmin();
 
-		for (var letter : list "A,B") {
-			ObjectAdmin.openObjectAdmin();
+				ObjectPortlet.selectCustomObject(label = "Custom Object ${letter} 74");
 
-			ObjectPortlet.selectCustomObject(label = "Custom Object ${letter} 74");
+				CreateObject.selectTitleField(fieldLabel = "Custom Field ${letter}");
 
-			CreateObject.selectTitleField(fieldLabel = "Custom Field ${letter}");
-
-			PortletEntry.publish();
-
-			ObjectAdmin.goToLayoutsTab();
-
-			WaitForElementPresent(locator1 = "ObjectAdmin#KEBAB_MENU");
-
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
-
-			SelectFrame(locator1 = "IFrame#IFRAME");
-
-			Click.clickAtNotVisible(locator1 = "ObjectAdmin#ENTRY_BOOLEAN_CHECKBOX");
-
-			ObjectAdmin.goToLayoutTabOnLayouts();
-
-			ObjectAdmin.addTabFieldsOnLayout(
-				blockName = "Block 1",
-				columnsNumber = 2,
-				fieldLabelName = "Custom Field ${letter}",
-				tabName = "Field Tab");
-
-			ObjectAdmin.addTabRelationshipsOnLayout(
-				relationshipsLabelName = "Relationship",
-				tabName = "Relationship Tab");
-
-			PortletEntry.save();
-
-			Navigator.openURL();
+				PortletEntry.publish();
+			}
 		}
 
-		ObjectAdmin.publishObjectViaAPI(objectName = "CustomObjectA74");
+		task ("When multiple entries are created for the custom objects") {
+			for (var letter : list "A,B,C") {
+				ObjectAdmin.addObjectSingleFieldEntryViaAPI(
+					fieldName = "customObjectFieldA",
+					objectName = "CustomObjectA74",
+					value = "Entry ${letter}");
+			}
 
-		ObjectAdmin.publishObjectViaAPI(objectName = "CustomObjectB74");
+			for (var letter : list "D,E,F") {
+				ObjectAdmin.addObjectSingleFieldEntryViaAPI(
+					fieldName = "customObjectFieldB",
+					objectName = "CustomObjectB74",
+					value = "Entry ${letter}");
+			}
+		}
 
-		for (var letter : list "A,B,C") {
+		task ("Then many entries from Object A can be related to many entries from Object B") {
 			ObjectAdmin.goToCustomObject(objectName = "CustomObjectA74");
 
-			ObjectAdmin.addObjectStringFieldEntryViaUI(entryValue = "Entry ${letter}");
-		}
+			ObjectPortlet.viewEntryDetails(entry = "Entry A");
 
-		Navigator.openURL();
+			ObjectAdmin.gotoRelationshipsTab();
 
-		for (var letter : list "D,E,F") {
+			for (var letter : list "D,E") {
+				CreateObject.addRelationshipAndSelectEntry(titleFieldName = "Entry ${letter}");
+
+				Refresh();
+
+				WaitForPageLoad();
+
+				ObjectPortlet.viewEntry(entry = "Entry ${letter}");
+			}
+
 			ObjectAdmin.goToCustomObject(objectName = "CustomObjectB74");
 
-			ObjectAdmin.addObjectStringFieldEntryViaUI(entryValue = "Entry ${letter}");
-		}
+			ObjectPortlet.viewEntryDetails(entry = "Entry F");
 
-		Navigator.openURL();
+			ObjectAdmin.gotoRelationshipsTab();
 
-		ObjectAdmin.goToCustomObject(objectName = "CustomObjectA74");
+			for (var letter : list "B,C") {
+				CreateObject.addRelationshipAndSelectEntry(titleFieldName = "Entry ${letter}");
 
-		ObjectPortlet.viewEntryDetails(entry = "Entry A");
+				Refresh();
 
-		ObjectAdmin.gotoRelationshipsTab();
+				WaitForPageLoad();
 
-		for (var letter : list "D,E") {
-			CreateObject.addRelationshipAndSelectEntry(titleFieldName = "Entry ${letter}");
-
-			Refresh();
-
-			WaitForPageLoad();
-
-			ObjectPortlet.viewEntry(entry = "Entry ${letter}");
-		}
-
-		Navigator.openURL();
-
-		ObjectAdmin.goToCustomObject(objectName = "CustomObjectB74");
-
-		ObjectPortlet.viewEntryDetails(entry = "Entry F");
-
-		ObjectAdmin.gotoRelationshipsTab();
-
-		for (var letter : list "B,C") {
-			CreateObject.addRelationshipAndSelectEntry(titleFieldName = "Entry ${letter}");
-
-			Refresh();
-
-			WaitForPageLoad();
-
-			ObjectPortlet.viewEntry(entry = "Entry ${letter}");
+				ObjectPortlet.viewEntry(entry = "Entry ${letter}");
+			}
 		}
 	}
 
@@ -3317,7 +3284,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.goToLayoutTabOnLayouts();
 
@@ -3325,9 +3292,9 @@ definition {
 
 		ObjectAdmin.addLayoutBlockViaUI(blockName = "Block Name");
 
-		CreateObject.checkToggleCollapsible();
+		Check.checkToggleSwitch(locator1 = "ObjectCustomValidation#ACTIVE_VALIDATION_TOGGLE");
 
-		AssertChecked.assertCheckedNotVisible(locator1 = "CreateObject#TOGGLE_COLLAPSIBLE");
+		AssertChecked.assertCheckedNotVisible(locator1 = "ObjectCustomValidation#ACTIVE_VALIDATION_TOGGLE");
 	}
 
 	@description = "LPS-135389 - Verify it is possible to set a different language value for a Field Label"
@@ -3488,17 +3455,21 @@ definition {
 
 		ObjectAdmin.publishObjectViaAPI(objectName = "CustomObject85");
 
-		PopulateObjectFormsConfiguration.openForm();
-
-		FormsAdminNavigator.gotoAddForm();
+		FormsAdmin.addForm();
 
 		Form.editName(formName = "Form 1");
 
 		PopulateObjectFormsConfiguration.openFormSettings();
 
-		PopulateObjectFormsConfiguration.selectObject(label = "Object");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Select a Storage Type",
+			optionName = "Object");
 
-		PopulateObjectFormsConfiguration.selectCustomObject(label = "Custom Object 85");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Select Object",
+			optionName = "Custom Object 85");
+
+		Click(locator1 = "PopulateObjectFormsConfiguration#BUTTON_SETTINGS_FORM");
 
 		Form.gotoAddField(fieldType = "Text");
 
@@ -3576,7 +3547,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -3778,9 +3749,10 @@ definition {
 
 		ObjectAdmin.goToFieldsDetails(label = "Text");
 
-		AssertElementPresent(
-			locator1 = "ObjectField#SEARCHABLE_LANGUAGE_SELECT",
-			selected = "English (United States)");
+		AssertTextEquals(
+			key_labelName = "Language",
+			locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
+			value1 = "English (United States)");
 	}
 
 	@description = "LPS-135635 - Verify it is possible to update the Type of a Field before the Object is published"
@@ -3807,14 +3779,17 @@ definition {
 
 		ObjectAdmin.goToFieldsDetails(label = "Text");
 
-		ObjectField.selectType(fieldType = "Date");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Type",
+			optionName = "Date");
 
 		ObjectField.save();
 
 		ObjectAdmin.goToFieldsDetails(label = "Text");
 
-		AssertElementPresent(
-			locator1 = "ObjectField#TYPE_FIELD",
+		AssertTextEquals(
+			key_labelName = "Type",
+			locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
 			value1 = "Date");
 	}
 
@@ -3917,7 +3892,9 @@ definition {
 
 		ObjectPortlet.selectCustomObject(label = "Custom Object 96");
 
-		CreateObject.selectPanelCategoryKey(panelCategoryKey = "Control Panel > Users");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Panel Link",
+			optionName = "Users");
 
 		CreateObject.saveObject();
 
@@ -3925,9 +3902,9 @@ definition {
 
 		ObjectPortlet.selectCustomObject(label = "Custom Object 96");
 
-		AssertTextEquals(
-			locator1 = "CreateObject#PANEL_CATEGORY_KEY",
-			value1 = "Control Panel > Users");
+		CreateObject.assertValuesOnScope(
+			valuePanelCategory = "Users",
+			valueScope = "Company");
 	}
 
 	@description = "LPS-135635 - Verify it is possible to update the Object panel category key after it is published"
@@ -3946,7 +3923,9 @@ definition {
 
 		ObjectPortlet.selectCustomObject(label = "Custom Object 97");
 
-		CreateObject.selectPanelCategoryKey(panelCategoryKey = "Control Panel > Users");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Panel Link",
+			optionName = "Users");
 
 		CreateObject.saveObject();
 
@@ -3954,9 +3933,9 @@ definition {
 
 		ObjectPortlet.selectCustomObject(label = "Custom Object 97");
 
-		AssertTextEquals(
-			locator1 = "CreateObject#PANEL_CATEGORY_KEY",
-			value1 = "Control Panel > Users");
+		CreateObject.assertValuesOnScope(
+			valuePanelCategory = "Users",
+			valueScope = "Company");
 	}
 
 	@description = "LPS-135635 - Verify it is possible to update the Object plural label after it is published"
@@ -4033,7 +4012,7 @@ definition {
 
 		ObjectPortlet.selectCustomObject(label = "Custom Object 100");
 
-		ObjectAdmin.selectObjectScope(fieldOption = "Site");
+		ObjectAdmin.selectObjectScope(optionName = "Site");
 
 		CreateObject.saveObject();
 
@@ -4108,7 +4087,9 @@ definition {
 
 		ObjectAdmin.selectObjectScope(fieldOption = "Company");
 
-		CreateObject.selectPanelCategoryKey(panelCategoryKey = "Control Panel > Object");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Panel Link",
+			optionName = "Object");
 
 		CreateObject.saveObject();
 
@@ -4125,16 +4106,13 @@ definition {
 			value1 = "Objects Edit 101");
 
 		AssertElementPresent(
-			locator1 = "CreateObject#TITLE_FIELD",
+			key_labelName = "Entry Title Field",
+			locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
 			value1 = "Custom Field");
 
-		AssertTextEquals(
-			locator1 = "ObjectAdmin#SELECT_OBJECT_SCOPE",
-			value1 = "Company");
-
-		AssertTextEquals(
-			locator1 = "CreateObject#PANEL_CATEGORY_KEY",
-			value1 = "Control Panel > Object");
+		CreateObject.assertValuesOnScope(
+			valuePanelCategory = "Object",
+			valueScope = "Company");
 	}
 
 	@description = "LPS-135400 - Verify it is possible to update a Relationship"
@@ -4160,7 +4138,7 @@ definition {
 
 		ObjectAdmin.gotoRelationshipsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -4241,9 +4219,11 @@ definition {
 			fieldName = "ObjectEdit103",
 			pluralLabelName = "Objects Edit 103");
 
-		ObjectAdmin.selectObjectScope(fieldOption = "Company");
+		ObjectAdmin.selectObjectScope(optionName = "Site");
 
-		CreateObject.selectPanelCategoryKey(panelCategoryKey = "Control Panel > Object");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Panel Link",
+			optionName = "Navigation");
 
 		CreateObject.saveObject();
 
@@ -4252,8 +4232,8 @@ definition {
 		}
 
 		CreateObject.assertValuesOnScope(
-			valuePanelCategory = "Control Panel > Object",
-			valueScope = "Company");
+			valuePanelCategory = "Navigation",
+			valueScope = "Site");
 	}
 
 	@description = "LPS-135397 - Verify if it's possible to view Entries with Custom Layout Created"
@@ -4282,7 +4262,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -4356,7 +4336,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -4409,7 +4389,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -4479,7 +4459,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -4516,33 +4496,6 @@ definition {
 			locator1 = "ObjectAdmin#FIELD_COLUMN_POSITION_ON_ENTRY_PAGE");
 	}
 
-	@description = "LPS-135400 - There is an explanation about each Relationship type"
-	@priority = 3
-	test CanViewExplanationRelationshipTypes {
-		ObjectAdmin.addObjectViaAPI(
-			labelName = "Custom Object 108",
-			objectName = "CustomObject108",
-			pluralLabelName = "Custom Objects 108");
-
-		ObjectAdmin.openObjectAdmin();
-
-		ObjectPortlet.selectCustomObject(label = "Custom Object 108");
-
-		ObjectAdmin.gotoRelationshipsTab();
-
-		LexiconEntry.gotoAdd();
-
-		Click(locator1 = "ObjectAdmin#RELATIONSHIPS_TYPE_FORM");
-
-		ObjectAdmin.assertRelationshipsTypeDescription(
-			description = "One object's entry interacts with many others object's entries.",
-			type = "One to Many");
-
-		ObjectAdmin.assertRelationshipsTypeDescription(
-			description = "Multiple object's entries can interact with many others object's entries.",
-			type = "Many to Many");
-	}
-
 	@description = "LPS-135549 - Verify it is possible to view the Details of a Field by clicking on the eye icon"
 	@priority = 4
 	test CanViewFieldsDetailsByClickingEyeIcon {
@@ -4567,7 +4520,7 @@ definition {
 
 		ObjectAdmin.goToFieldsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.viewDetails();
 	}
@@ -4687,6 +4640,8 @@ definition {
 	@description = "LPS-139803 - Verify it the Object Entry Title of a Date type is displayed on the Relationship field when adding an entry"
 	@priority = 4
 	test CanViewObjectEntryTitleDateOnRelationshipField {
+		property custom.properties = "feature.flag.LPS-183882=true";
+
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 113",
 			objectName = "CustomObject113",
@@ -4724,7 +4679,7 @@ definition {
 
 		ObjectAdmin.goToCustomObject(objectName = "CustomObject113");
 
-		CreateObject.assertAddedEntryRelationshipIsDisplayed(entry = "2021-01-01");
+		CreateObject.assertAddedEntryRelationshipIsDisplayed(entry = "Jan 1, 2021");
 	}
 
 	@description = "LPS-139803 - Verify it the Object Entry Title of a Double type is displayed on the Relationship field when adding an entry"
@@ -4913,7 +4868,7 @@ definition {
 
 		VisualizeObjectCollectionDisplay.viewMappedFragment(fieldLabel = "Custom Field");
 
-		PageEditor.selectItemToPreviewWithObject(objectLabel = "Custom Object 116");
+		PageEditor.selectItemToPreviewWithObject(entryValue = "Test Entry");
 
 		AssertElementPresent(
 			key_entry = "Test Entry",
@@ -4957,7 +4912,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -5109,7 +5064,9 @@ definition {
 		task ("Add picklist entry") {
 			ObjectAdmin.goToCustomObject(objectName = "CustomObject141617");
 
-			ObjectAdmin.addObjectPicklistFieldEntryViaUI(picklistOption = "Picklist Item");
+			ObjectAdmin.addObjectPicklistFieldEntryViaUI(
+				labelName = "Field Picklist",
+				picklistOption = "Picklist Item");
 		}
 
 		task ("Assert that it's possible to see Picklist Item") {
@@ -5332,7 +5289,7 @@ definition {
 
 		ObjectAdmin.gotoRelationshipsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.viewDetails();
 	}
@@ -5372,7 +5329,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		SelectFrame(locator1 = "IFrame#IFRAME");
 
@@ -5460,7 +5417,7 @@ definition {
 
 		WaitForElementPresent(locator1 = "ObjectAdmin#KEBAB_MENU");
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -5562,7 +5519,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -5748,7 +5705,7 @@ definition {
 
 			ObjectAdmin.goToLayoutsTab();
 
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+			ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 			ObjectAdmin.markLayoutAsDefault();
 
@@ -5834,7 +5791,7 @@ definition {
 
 		ObjectAdmin.goToFieldsTab();
 
-		AssertElementPresent(locator1 = "ObjectAdmin#FIELDS_LABEL_COLUMN");
+		AssertElementPresent(locator1 = "ObjectAdmin#GENERIC_LABEL_COLUMN");
 
 		AssertElementPresent(locator1 = "ObjectAdmin#FIELDS_TYPE_COLUMN");
 	}
@@ -5940,7 +5897,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -6050,7 +6007,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -6205,7 +6162,7 @@ definition {
 
 		AssertTextEquals(
 			locator1 = "Message#EMPTY_STATE_INFO",
-			value1 = "No Results Found");
+			value1 = "No Objects Created Yet");
 	}
 
 	@description = "LPS-135547 - Verify the empty state when searching for an Object field returns nothing"
@@ -6296,7 +6253,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.goToLayoutTabOnLayouts();
 
@@ -6392,7 +6349,9 @@ definition {
 
 		ObjectAdmin.goToFieldsDetails(label = "Custom Field");
 
-		ObjectField.selectType(fieldType = "Text");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Type",
+			optionName = "Text");
 
 		AssertElementPresent(
 			key_radioOption = "Keyword",
@@ -6427,7 +6386,9 @@ definition {
 
 		ObjectAdmin.goToFieldsDetails(label = "Custom Field");
 
-		ObjectField.selectType(fieldType = "Integer");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Type",
+			optionName = "Integer");
 
 		ObjectAdmin.assertKeywordAndTextNotPresent();
 	}
@@ -6489,9 +6450,10 @@ definition {
 
 		ObjectAdmin.clickFieldsSearchableSectionRadioOption(radioOption = "Text");
 
-		AssertElementPresent(
-			locator1 = "ObjectField#SEARCHABLE_LANGUAGE_SELECT",
-			selected = "English (United States)");
+		AssertTextEquals(
+			key_labelName = "Language",
+			locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
+			value1 = "English (United States)");
 	}
 
 	@description = "LPS-137741 - Verify that Objects created on a Virtual Instance are not displayed on the Object Admin of the Main Instance and vice versa"
@@ -6546,19 +6508,17 @@ definition {
 
 		CreateObject.saveObject();
 
-		PopulateObjectFormsConfiguration.openForm();
-
-		FormsAdminNavigator.gotoAddForm();
+		FormsAdmin.addForm();
 
 		PopulateObjectFormsConfiguration.openFormSettings();
 
-		PopulateObjectFormsConfiguration.selectObject(label = "Object");
-
-		Click(locator1 = "PopulateObjectFormsConfiguration#DEFAULT_SELECT_OBJECT");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Select a Storage Type",
+			optionName = "Object");
 
 		AssertElementNotPresent(
-			key_label = "Custom Object 140",
-			locator1 = "PopulateObjectFormsConfiguration#DISPLAY_SELECT_OBJECT");
+			key_optionName = "Custom Object 140",
+			locator1 = "ObjectAdmin#CLAY_GENERIC_DROPDOWN_ITEM");
 	}
 
 	@description = "LPS-139005 - Verify that the Object is no longer displayed on the Page Item Selector when inactivated"
@@ -6633,7 +6593,8 @@ definition {
 	@description = "LPS-139005 - Verify that the Object is no longer displayed on the Workflow Process Builder page when inactivated"
 	@priority = 4
 	test ObjectDisappearsProcessBuilderWhenInactivated {
-		property test.name.skip.portal.instance = "CreateObject#ObjectDisappearsProcessBuilderWhenInactivated";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 143",
@@ -6662,7 +6623,8 @@ definition {
 	@description = "LPS-139005 - Verify that the Object is no longer displayed on the Workflow Site Menu page when inactivated"
 	@priority = 4
 	test ObjectDisappearsWorkflowSiteMenuWhenInactivated {
-		property test.name.skip.portal.instance = "CreateObject#ObjectDisappearsWorkflowSiteMenuWhenInactivated";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 144",
@@ -7505,55 +7467,6 @@ definition {
 			locator1 = "VisualizeObjectCollectionDisplay#VIEW_OBJECT_COLLECTION_DISPLAY");
 	}
 
-	@description = "LPS-139005 - Verify that the Object is displayed again on the Form's storage type when reactivated"
-	@priority = 4
-	test ObjectReappearsFormStorageTypeWhenReactivated {
-		ObjectAdmin.addObjectViaAPI(
-			labelName = "Custom Object 156",
-			objectName = "CustomObject156",
-			pluralLabelName = "Custom Objects 156");
-
-		ObjectAdmin.addObjectFieldViaAPI(
-			fieldBusinessType = "Text",
-			fieldLabelName = "Field",
-			fieldName = "customObjectField",
-			fieldType = "String",
-			isRequired = "false",
-			objectName = "CustomObject156");
-
-		ObjectAdmin.publishObjectViaAPI(objectName = "CustomObject156");
-
-		ObjectAdmin.openObjectAdmin();
-
-		ObjectPortlet.selectCustomObject(label = "Custom Object 156");
-
-		CreateObject.checkToggleInactive();
-
-		CreateObject.saveObject();
-
-		ObjectAdmin.openObjectAdmin();
-
-		ObjectPortlet.selectCustomObject(label = "Custom Object 156");
-
-		CreateObject.checkToggleActive();
-
-		CreateObject.saveObject();
-
-		PopulateObjectFormsConfiguration.openForm();
-
-		FormsAdminNavigator.gotoAddForm();
-
-		PopulateObjectFormsConfiguration.openFormSettings();
-
-		PopulateObjectFormsConfiguration.selectObject(label = "Object");
-
-		Click(locator1 = "PopulateObjectFormsConfiguration#DEFAULT_SELECT_OBJECT");
-
-		AssertElementPresent(
-			key_label = "Custom Object 156",
-			locator1 = "PopulateObjectFormsConfiguration#DISPLAY_SELECT_OBJECT");
-	}
-
 	@description = "LPS-139005 - Verify that the Object is displayed again on the Page Item Selector when reactivated"
 	@priority = 4
 	test ObjectReappearsPageItemSelectorWhenReactivated {
@@ -7741,7 +7654,7 @@ definition {
 	@priority = 4
 	test ObjectScopedBySiteEntries {
 		for (var sites : list "A,B") {
-			JSONGroup.addGroup(groupName = "Site ${sites}");
+			HeadlessSite.addSite(siteName = "Site ${sites}");
 		}
 
 		ObjectAdmin.addObjectViaAPI(
@@ -7812,7 +7725,10 @@ definition {
 
 		ObjectAdmin.goToRelationshipsDetails(fieldName = "Relationship");
 
-		CreateObject.assertSelectedValueInDeletionType(deletionType = "Prevent");
+		AssertTextEquals(
+			key_labelName = "Deletion Type",
+			locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
+			value1 = "Prevent");
 	}
 
 	@description = "LPS-135401 - Verify if Prevent deletion type of Relationship Many to Many won't allow the user to delete an entry with relation"
@@ -7850,13 +7766,13 @@ definition {
 
 		ObjectPortlet.selectCustomObject(label = "Custom Object A 163");
 
-		CreateObject.selectTitleField(fieldLabel = "Custom Field A");
+		CreateObject.selectTitleField(fieldLabel = "Custom Field");
 
 		PortletEntry.publish();
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -7878,7 +7794,7 @@ definition {
 
 		ObjectPortlet.selectCustomObject(label = "Custom Object B 163");
 
-		CreateObject.selectTitleField(fieldLabel = "Custom Field B");
+		CreateObject.selectTitleField(fieldLabel = "Custom Field");
 
 		PortletEntry.publish();
 
@@ -7957,7 +7873,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -8281,6 +8197,10 @@ definition {
 		AssertElementNotPresent(
 			key_entryName = "Entry A",
 			locator1 = "ObjectAdmin#VIEW_ENTRY_NAME_ON_PAGE");
+
+		AssertElementPresent(
+			key_entryName = "Entry B",
+			locator1 = "ObjectAdmin#VIEW_ENTRY_NAME_ON_PAGE");
 	}
 
 	@description = "LPS-139005 - Verify that the Relationship field will not be displayed to be selected for a Page fragment when the parent object is inactivated"
@@ -8494,6 +8414,8 @@ definition {
 
 		PortletEntry.save();
 
+		Refresh();
+
 		ApplicationsMenu.gotoPortlet(
 			category = "Object",
 			panel = "Control Panel",
@@ -8558,7 +8480,7 @@ definition {
 
 			ObjectAdmin.goToLayoutsTab();
 
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+			ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 			ObjectAdmin.markLayoutAsDefault();
 
@@ -8670,7 +8592,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -8750,7 +8672,7 @@ definition {
 
 			ObjectAdmin.goToLayoutsTab();
 
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+			ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 			ObjectAdmin.markLayoutAsDefault();
 
@@ -8854,7 +8776,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -8953,9 +8875,11 @@ definition {
 			fieldName = "ObjectEdit141685",
 			pluralLabelName = "Objects Edit 141685");
 
-		ObjectAdmin.selectObjectScope(fieldOption = "Site");
+		ObjectAdmin.selectObjectScope(optionName = "Site");
 
-		CreateObject.selectPanelCategoryKey(panelCategoryKey = "Site Administration > Site Builder");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Panel Link",
+			optionName = "Site Builder");
 
 		PortletEntry.publish();
 
@@ -8970,7 +8894,7 @@ definition {
 		}
 
 		CreateObject.assertValuesOnScope(
-			valuePanelCategory = "Site Administration > Site Builder",
+			valuePanelCategory = "Site Builder",
 			valueScope = "Site");
 	}
 
@@ -8995,16 +8919,6 @@ definition {
 			JSONAccountEntry.addAccountEntry(
 				accountEntryName = "Account Name",
 				accountEntryType = "Business");
-		}
-
-		task ("Go to System Object Account and choose title field") {
-			ObjectAdmin.openObjectAdmin();
-
-			ObjectPortlet.selectSystemObject(label = "Account");
-
-			CreateObject.selectTitleField(fieldLabel = "Name");
-
-			PortletEntry.save();
 		}
 
 		task ("Go to Custom Object, active account restriction, and select relationship related to Account") {
@@ -9128,21 +9042,27 @@ definition {
 
 		Navigator.openURL();
 
-		PopulateObjectFormsConfiguration.openForm();
-
-		FormsAdminNavigator.gotoAddForm();
+		FormsAdmin.addForm();
 
 		Form.editName(formName = "Form Object");
 
 		PopulateObjectFormsConfiguration.openFormSettings();
 
-		PopulateObjectFormsConfiguration.selectObject(label = "Object");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Select a Storage Type",
+			optionName = "Object");
 
-		PopulateObjectFormsConfiguration.selectCustomObject(label = "Custom Object 178");
+		ObjectAdmin.selectDropdownItem(
+			labelName = "Select Object",
+			optionName = "Custom Object 178");
+
+		Click(locator1 = "PopulateObjectFormsConfiguration#BUTTON_SETTINGS_FORM");
 
 		Form.gotoAddField(fieldType = "Text");
 
 		PopulateObjectFormsConfiguration.mapFormField(fieldLabelName = "Custom Field");
+
+		Form.save();
 
 		Form.publishForm();
 

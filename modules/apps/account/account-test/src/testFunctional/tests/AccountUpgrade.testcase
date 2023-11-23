@@ -4,6 +4,8 @@ definition {
 	property database.types = "db2,mariadb,mysql,oracle,postgresql,sqlserver,sybase";
 	property portal.release = "true";
 	property portal.upstream = "true";
+	property test.liferay.virtual.instance = "false";
+	property test.run.type = "single";
 	property testray.component.names = "Account";
 	property testray.main.component.name = "Upgrades User and System Management";
 
@@ -432,6 +434,77 @@ definition {
 			ValidateUsersUpgrade.addAndViewAccountGroup(
 				accountGroupDescription = "Adding Account Group after upgrade",
 				accountGroupName = "Account Group");
+		}
+	}
+
+	@description = "This is a use case for LPS-189070. TC6: Verify that invite user permission is separated from the manage user permission after upgrading from the previous version."
+	@priority = 5
+	test ViewAccountRolesPermissionAfterUpgrade7413u63 {
+		property data.archive.type = "data-archive-account-permission";
+		property database.types = "db2,mariadb,mysql,oracle,postgresql,sybase";
+		property portal.version = "7.4.13.u63";
+
+		task ("View the invite user permission is unchecked in Account Administrator role") {
+			ValidateUsersUpgrade.viewAccountUserRoleNoPermissions(
+				accountRoleTitle = "Account Administrator",
+				permissionDefinitionValue = "Invite User",
+				permissionNavigationValue = "Accounts > Account Entry");
+		}
+
+		task ("View the invite user permission is unchecked in Account Member role") {
+			ValidateUsersUpgrade.viewAccountUserRoleNoPermissions(
+				accountRoleTitle = "Account Member",
+				permissionDefinitionValue = "Invite User",
+				permissionNavigationValue = "Accounts > Account Entry");
+		}
+	}
+
+	@description = "This is a use case for LPS-179688. TC-2 and TC-3: Verify login.create.account.allow.custom.password parameter is completely ignored from now on."
+	@priority = 5
+	test ViewCreatePasswordParameterIsIgnoredAfterUpgrade71103 {
+		property custom.properties = "login.create.account.allow.custom.password=false";
+		property data.archive.type = "data-archive-create-account-disable-password";
+		property database.types = "db2,mysql,oracle,postgresql,sqlserver,sybase";
+		property portal.version = "7.1.10.3";
+
+		task ("Verify there is no password input section") {
+			User.viewNoPasswordSection();
+		}
+
+		task ("Verify login.create.account.allow.custom.password parameter is completely ignored") {
+			User.firstLoginPG();
+
+			User.configureCustomPasswordField(enableCustomPassword = "true");
+
+			Portlet.shutdownServer();
+
+			Portlet.startServer(deleteLiferayHome = "false");
+
+			User.viewPasswordSection();
+		}
+	}
+
+	@description = "This is a use case for LPS-179688. TC-2 and TC-3: Verify login.create.account.allow.custom.password parameter is completely ignored from now on."
+	@priority = 5
+	test ViewCreatePasswordParameterIsIgnoredAfterUpgrade73101 {
+		property custom.properties = "login.create.account.allow.custom.password=false";
+		property data.archive.type = "data-archive-create-account-disable-password";
+		property portal.version = "7.3.10.1";
+
+		task ("Verify there is no password input section") {
+			User.viewNoPasswordSection();
+		}
+
+		task ("Verify login.create.account.allow.custom.password parameter is completely ignored") {
+			User.firstLoginPG();
+
+			User.configureCustomPasswordField(enableCustomPassword = "true");
+
+			Portlet.shutdownServer();
+
+			Portlet.startServer(deleteLiferayHome = "false");
+
+			User.viewPasswordSection();
 		}
 	}
 

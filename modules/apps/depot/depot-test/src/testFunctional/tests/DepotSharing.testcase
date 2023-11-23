@@ -29,9 +29,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -48,7 +48,7 @@ definition {
 	}
 
 	@description = "This test ensures that sharing can be disabled in a depot."
-	@priority = 5
+	@priority = 4
 	@refactordone
 	test CanDisableDepotSharing {
 		JSONDocument.addFile(
@@ -86,7 +86,8 @@ definition {
 	@priority = 4
 	@refactordone
 	test CanDisableDepotSharingAtInstanceScope {
-		property test.name.skip.portal.instance = "DepotSharing#CanDisableDepotSharingAtInstanceScope";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		DepotNavigator.openToConfigSharingInInstanceSettings();
 
@@ -103,7 +104,8 @@ definition {
 	@priority = 4
 	@refactordone
 	test CanDisableDepotSharingAtSystemScope {
-		property test.name.skip.portal.instance = "DepotSharing#CanDisableDepotSharingAtSystemScope";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		DepotNavigator.openToConfigSharingInSystemSettings();
 
@@ -381,7 +383,7 @@ definition {
 	}
 
 	@description = "This test asserts that users get the proper notification based on depot sharing permissions granted to him."
-	@priority = 5
+	@priority = 4
 	@refactordone
 	test CanViewSharingNotifications {
 		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");

@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.search.internal.permission;
@@ -59,6 +50,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+
+import org.apache.commons.lang.time.StopWatch;
 
 /**
  * @author Tina Tian
@@ -122,8 +115,8 @@ public class DefaultSearchResultPermissionFilter
 			return _getHits(searchContext);
 		}
 
-		SlidingWindowSearcher slidingWindowSearcher =
-			new SlidingWindowSearcher();
+		SlidingWindowSearcher slidingWindowSearcher = new SlidingWindowSearcher(
+			_log);
 
 		return slidingWindowSearcher.search(start, end, searchContext);
 	}
@@ -352,6 +345,10 @@ public class DefaultSearchResultPermissionFilter
 
 	private class SlidingWindowSearcher {
 
+		public SlidingWindowSearcher(Log log) {
+			_log = log;
+		}
+
 		public Hits search(int start, int end, SearchContext searchContext) {
 			int amplifiedCount =
 				_permissionFilteredSearchResultAccurateCountThreshold;
@@ -360,9 +357,22 @@ public class DefaultSearchResultPermissionFilter
 			int filteredDocsCount = 0;
 			int hitsSize = 0;
 			int offset = 0;
+			int searchCount = 0;
 			long startTime = 0;
 
+			StopWatch hitFilteringStopWatch = new StopWatch();
+
+			StopWatch slidingWindowStopWatch = new StopWatch();
+
+			slidingWindowStopWatch.start();
+
+			if (_log.isDebugEnabled()) {
+				_log.debug("Starting sliding window searches");
+			}
+
 			while (true) {
+				searchCount++;
+
 				int count = end - filteredDocsCount;
 
 				if ((offset > 0) || (amplifiedCount < count)) {
@@ -374,6 +384,19 @@ public class DefaultSearchResultPermissionFilter
 					(_searchQueryResultWindowLimit > 0)) {
 
 					amplifiedCount = _searchQueryResultWindowLimit;
+				}
+
+				if (_log.isDebugEnabled()) {
+					StringBundler sb = new StringBundler(6);
+
+					sb.append("Amplified count: ");
+					sb.append(amplifiedCount);
+					sb.append(" amplification factor: ");
+					sb.append(amplificationFactor);
+					sb.append(", count: ");
+					sb.append(count);
+
+					_log.debug(sb.toString());
 				}
 
 				int amplifiedEnd = offset + amplifiedCount;
@@ -393,7 +416,16 @@ public class DefaultSearchResultPermissionFilter
 
 				Document[] oldDocs = hits.getDocs();
 
+				if (searchCount == 1) {
+					hitFilteringStopWatch.start();
+				}
+				else {
+					hitFilteringStopWatch.resume();
+				}
+
 				_filterHits(hits, searchContext);
+
+				hitFilteringStopWatch.suspend();
 
 				Document[] newDocs = hits.getDocs();
 
@@ -411,6 +443,21 @@ public class DefaultSearchResultPermissionFilter
 
 					updateHits(hits, hitsSize - excludedDocsSize, startTime);
 
+					slidingWindowStopWatch.stop();
+
+					if (_log.isDebugEnabled()) {
+						StringBundler sb = new StringBundler(6);
+
+						sb.append(searchCount);
+						sb.append(" sliding window searches took ");
+						sb.append(slidingWindowStopWatch.getTime());
+						sb.append(" ms and hit filtering took ");
+						sb.append(hitFilteringStopWatch.getTime());
+						sb.append(" ms");
+
+						_log.debug(sb.toString());
+					}
+
 					return hits;
 				}
 
@@ -423,6 +470,10 @@ public class DefaultSearchResultPermissionFilter
 
 		protected void collectHits(
 			Hits hits, int accumulatedCount, int start, int end) {
+
+			if (accumulatedCount <= start) {
+				return;
+			}
 
 			int delta = end - start;
 
@@ -532,6 +583,8 @@ public class DefaultSearchResultPermissionFilter
 			searchRequestBuilder.size(
 				searchContext.getEnd() - searchContext.getStart());
 		}
+
+		private final Log _log;
 
 	}
 

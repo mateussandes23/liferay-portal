@@ -1,25 +1,16 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import ClayForm, {ClayToggle} from '@clayui/form';
+import {Option, Text} from '@clayui/core';
+import ClayForm from '@clayui/form';
 import {
 	API,
-	AutoComplete,
 	FormError,
 	Input,
 	SingleSelect,
-	stringIncludesQuery,
+	Toggle,
 } from '@liferay/object-js-components-web';
 import React, {
 	ChangeEventHandler,
@@ -38,6 +29,8 @@ import {removeFieldSettings} from '../../utils/fieldSettings';
 import {toCamelCase} from '../../utils/string';
 import {AggregationFormBase} from './AggregationFormBase';
 import {AttachmentFormBase} from './AttachmentFormBase';
+import {AutoIncrementFormBase} from './AutoIncrementFormBase';
+import {TimeStorage} from './TimeStorage';
 import {UniqueValues} from './UniqueValues';
 import {FORMULA_OUTPUT_OPTIONS, FormulaOutput} from './formulaFieldUtil';
 
@@ -47,24 +40,26 @@ interface ObjectFieldFormBaseProps {
 	children?: ReactNode;
 	creationLanguageId2?: Liferay.Language.Locale;
 	disabled?: boolean;
-	editingField?: boolean;
+	editingObjectField?: boolean;
 	errors: ObjectFieldErrors;
 	handleChange: ChangeEventHandler<HTMLInputElement>;
-	objectDefinition?: ObjectDefinition;
+	objectDefinition?: Partial<ObjectDefinition>;
 	objectDefinitionExternalReferenceCode: string;
+	objectDefinitionName: string;
 	objectField: Partial<ObjectField>;
 	objectFieldTypes: ObjectFieldType[];
-	objectName: string;
 	objectRelationshipId?: number;
 	onAggregationFilterChange?: (aggregationFilterArray: []) => void;
-	onRelationshipChange?: (
+	onObjectRelationshipChange?: (
 		objectDefinitionExternalReferenceCode2: string
 	) => void;
+	onSubmit?: (values?: Partial<ObjectField>) => void;
 	setValues: (values: Partial<ObjectField>) => void;
 }
 
 type TObjectRelationship = {
 	deletionType: string;
+	edge: boolean;
 	id: number;
 	label: LocalizedValue<string>;
 	name: string;
@@ -108,21 +103,30 @@ const fieldSettingsMap = new Map<string, ObjectFieldSetting[]>([
 			},
 		],
 	],
+	[
+		'DateTime',
+		[
+			{
+				name: 'timeStorage',
+				value: 'convertToUTC',
+			},
+		],
+	],
 ]);
 
-async function getFieldSettingsByBusinessType(
+async function getObjectFieldSettingsByBusinessType(
 	objectRelationshipId: number,
-	setOneToManyRelationship: (value: TObjectRelationship) => void,
-	setPickLists: (value: PickList[]) => void,
-	setSelectedOutput: (value: string) => void,
+	setListTypeDefinitions: (value: ListTypeDefinition[]) => void,
+	setOneToManyObjectRelationship: (value: TObjectRelationship) => void,
+	setSelectedOutputValue: (value: string) => void,
 	values: Partial<ObjectField>
 ) {
 	const {businessType, objectFieldSettings} = values;
 
 	if (businessType === 'Picklist' || businessType === 'MultiselectPicklist') {
-		const picklistData = await API.getPickLists();
+		const listTypeDefinitions = await API.getListTypeDefinitions();
 
-		setPickLists(picklistData);
+		setListTypeDefinitions(listTypeDefinitions);
 	}
 
 	if (businessType === 'Formula') {
@@ -131,21 +135,21 @@ async function getFieldSettingsByBusinessType(
 		);
 
 		if (output) {
-			setSelectedOutput(
+			setSelectedOutputValue(
 				FORMULA_OUTPUT_OPTIONS.find(
 					(formulaOption) => formulaOption.value === output?.value
-				)?.label as string
+				)?.value as string
 			);
 		}
 	}
 
-	if (businessType === 'Relationship' && objectRelationshipId) {
-		const relationshipData = await API.getRelationship<TObjectRelationship>(
-			objectRelationshipId!
-		);
+	if (businessType === 'Relationship' && objectRelationshipId !== 0) {
+		const relationshipData = await API.getObjectRelationship<
+			TObjectRelationship
+		>(objectRelationshipId!);
 
 		if (relationshipData.id) {
-			setOneToManyRelationship(relationshipData);
+			setOneToManyObjectRelationship(relationshipData);
 		}
 	}
 }
@@ -154,72 +158,77 @@ export default function ObjectFieldFormBase({
 	children,
 	creationLanguageId2,
 	disabled,
-	editingField,
+	editingObjectField = false,
 	errors,
 	handleChange,
 	objectDefinition,
 	objectDefinitionExternalReferenceCode,
+	objectDefinitionName,
 	objectField: values,
 	objectFieldTypes,
-	objectName,
 	objectRelationshipId,
 	onAggregationFilterChange,
-	onRelationshipChange,
+	onObjectRelationshipChange,
+	onSubmit,
 	setValues,
 }: ObjectFieldFormBaseProps) {
-	const businessTypeMap = useMemo(() => {
-		const businessTypeMap = new Map<string, ObjectFieldType>();
+	const [listTypeDefinitions, setListTypeDefinitions] = useState<
+		Partial<ListTypeDefinition>[]
+	>([]);
 
-		objectFieldTypes.forEach((type) => {
-			businessTypeMap.set(type.businessType, type);
-		});
-
-		return businessTypeMap;
-	}, [objectFieldTypes]);
-
-	const [pickLists, setPickLists] = useState<Partial<PickList>[]>([]);
-	const [picklistQuery, setPicklistQuery] = useState<string>('');
-
-	const [oneToManyRelationship, setOneToManyRelationship] = useState<
-		TObjectRelationship
-	>();
-	const [selectedOutput, setSelectedOutput] = useState<string>('');
+	const [
+		oneToManyObjectRelationship,
+		setOneToManyObjectRelationship,
+	] = useState<TObjectRelationship>();
+	const [selectedOutputValue, setSelectedOutputValue] = useState<string>('');
 
 	const validListTypeDefinitionId =
 		values.listTypeDefinitionId !== undefined &&
 		values.listTypeDefinitionId !== 0;
 
-	const filteredPicklist = useMemo(() => {
-		return pickLists.filter(({name}) => {
-			return stringIncludesQuery(name as string, picklistQuery);
-		});
-	}, [picklistQuery, pickLists]);
+	const listTypeDefinitionsItems = useMemo(() => {
+		return listTypeDefinitions.map(({externalReferenceCode, name}) => ({
+			label: name,
+			value: externalReferenceCode,
+		})) as LabelValueObject[];
+	}, [listTypeDefinitions]);
 
-	const selectedPicklist = useMemo(() => {
-		return pickLists.find(({id}) => values.listTypeDefinitionId === id);
-	}, [pickLists, values.listTypeDefinitionId]);
+	const selectedListTypeDefinitionExternalReferenceCode = useMemo(() => {
+		return listTypeDefinitions.find(
+			({externalReferenceCode}) =>
+				values.listTypeDefinitionExternalReferenceCode ===
+				externalReferenceCode
+		)?.externalReferenceCode;
+	}, [listTypeDefinitions, values.listTypeDefinitionExternalReferenceCode]);
 
-	const handleTypeChange = async (option: ObjectFieldType) => {
+	const handleTypeChange = async (selectedBusinessType: string) => {
+		const selectedObjectFieldType = objectFieldTypes.find(
+			(objectFieldType) =>
+				objectFieldType.businessType === selectedBusinessType
+		);
+
 		const objectFieldSettings: ObjectFieldSetting[] =
-			fieldSettingsMap.get(option.businessType) || [];
+			fieldSettingsMap.get(selectedBusinessType) || [];
 
-		const indexed = option.businessType !== 'Encrypted';
+		const indexed = selectedBusinessType !== 'Encrypted';
 
 		const isSearchableByText =
-			option.businessType === 'Attachment' ||
-			option.dbType === 'Clob' ||
-			option.dbType === 'String';
+			selectedBusinessType === 'Attachment' ||
+			selectedObjectFieldType?.dbType === 'Clob' ||
+			selectedObjectFieldType?.dbType === 'String';
 
 		const indexedAsKeyword = isSearchableByText && values.indexedAsKeyword;
 
 		const indexedLanguageId =
 			isSearchableByText && !values.indexedAsKeyword
 				? values.indexedLanguageId ?? defaultLanguageId
-				: null;
+				: '';
+
+		setSelectedOutputValue('');
 
 		setValues({
-			DBType: option.dbType,
-			businessType: option.businessType,
+			DBType: selectedObjectFieldType?.dbType,
+			businessType: selectedObjectFieldType?.businessType,
 			indexed,
 			indexedAsKeyword,
 			indexedLanguageId,
@@ -228,6 +237,21 @@ export default function ObjectFieldFormBase({
 			objectFieldSettings,
 			state: false,
 		});
+
+		if (onSubmit) {
+			onSubmit({
+				...values,
+				DBType: selectedObjectFieldType?.dbType,
+				businessType: selectedObjectFieldType?.businessType,
+				indexed,
+				indexedAsKeyword,
+				indexedLanguageId,
+				listTypeDefinitionExternalReferenceCode: '',
+				listTypeDefinitionId: 0,
+				objectFieldSettings,
+				state: false,
+			});
+		}
 	};
 
 	const getMandatoryToggleDisabledState = () => {
@@ -239,61 +263,59 @@ export default function ObjectFieldFormBase({
 			return true;
 		}
 
-		if (
-			oneToManyRelationship &&
-			oneToManyRelationship.deletionType !== 'disassociate'
-		) {
-			return false;
-		}
-
-		const readOnlySetting = values.objectFieldSettings?.find(
-			(fieldSetting) => fieldSetting.name === 'readOnly'
-		);
-
-		if (
-			readOnlySetting?.value === 'true' ||
-			readOnlySetting?.value === 'conditional'
-		) {
+		if (values.readOnly === 'true' || values.readOnly === 'conditional') {
 			return true;
 		}
 
-		return disabled || values.state;
+		if (
+			oneToManyObjectRelationship &&
+			oneToManyObjectRelationship.deletionType !== 'disassociate'
+		) {
+			return Liferay.FeatureFlags['LPS-187142']
+				? oneToManyObjectRelationship.edge
+				: false;
+		}
+
+		return disabled || values.localized || values.state;
 	};
 
-	useEffect(() => {
-		const makeFetch = async () => {
-			await getFieldSettingsByBusinessType(
-				objectRelationshipId as number,
-				setOneToManyRelationship,
-				setPickLists,
-				setSelectedOutput,
+	const handleStateToggleChange = (toggled: boolean) => {
+		let defaultValue;
+		let defaultValueType;
+
+		if (values.id) {
+			const currentDefaultValueSettings = getDefaultValueFieldSettings(
 				values
 			);
-		};
+			defaultValue = currentDefaultValueSettings.defaultValue;
+			defaultValueType = currentDefaultValueSettings.defaultValueType;
+		}
 
-		makeFetch();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [values.businessType]);
+		if (toggled) {
+			if (defaultValueType && defaultValue) {
+				setValues({required: toggled, state: toggled});
 
-	const handleStateToggleChange = (toggled: boolean) => {
-		if (Liferay.FeatureFlags['LPS-163716']) {
-			let defaultValue;
-			let defaultValueType;
-
-			if (values.id) {
-				const currentDefaultValueSettings = getDefaultValueFieldSettings(
-					values
-				);
-				defaultValue = currentDefaultValueSettings.defaultValue;
-				defaultValueType = currentDefaultValueSettings.defaultValueType;
-			}
-
-			if (toggled) {
-				if (defaultValueType && defaultValue) {
-					setValues({required: toggled, state: toggled});
+				if (onSubmit) {
+					onSubmit({
+						...values,
+						required: toggled,
+						state: toggled,
+					});
 				}
-				else if (!defaultValueType || !defaultValue) {
-					setValues({
+			}
+			else if (!defaultValueType || !defaultValue) {
+				setValues({
+					objectFieldSettings: getUpdatedDefaultValueType(
+						values,
+						'inputAsValue'
+					),
+					required: toggled,
+					state: toggled,
+				});
+
+				if (onSubmit) {
+					onSubmit({
+						...values,
 						objectFieldSettings: getUpdatedDefaultValueType(
 							values,
 							'inputAsValue'
@@ -303,33 +325,43 @@ export default function ObjectFieldFormBase({
 					});
 				}
 			}
-			else {
-				setValues({
-					required: toggled,
-					state: toggled,
-				});
-			}
 		}
 		else {
-			if (toggled) {
-				setValues({
-					required: toggled,
-					state: toggled,
-				});
-			}
-			else {
-				setValues({
-					defaultValue: undefined,
-					objectFieldSettings: removeFieldSettings(
-						['stateFlow'],
-						values
-					),
+			setValues({
+				required: toggled,
+				state: toggled,
+			});
+
+			if (onSubmit) {
+				onSubmit({
+					...values,
 					required: toggled,
 					state: toggled,
 				});
 			}
 		}
 	};
+
+	const applyFeatureFlag = () => {
+		return objectFieldTypes.filter((objectFieldType) => {
+			return objectFieldType.businessType !== 'Formula';
+		});
+	};
+
+	useEffect(() => {
+		const makeFetch = async () => {
+			await getObjectFieldSettingsByBusinessType(
+				objectRelationshipId as number,
+				setListTypeDefinitions,
+				setOneToManyObjectRelationship,
+				setSelectedOutputValue,
+				values
+			);
+		};
+
+		makeFetch();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [objectRelationshipId, values.businessType]);
 
 	return (
 		<>
@@ -338,6 +370,13 @@ export default function ObjectFieldFormBase({
 				error={errors.name}
 				label={Liferay.Language.get('field-name')}
 				name="name"
+				onBlur={(event) => {
+					event.stopPropagation();
+
+					if (onSubmit) {
+						onSubmit();
+					}
+				}}
 				onChange={handleChange}
 				required
 				value={
@@ -349,31 +388,68 @@ export default function ObjectFieldFormBase({
 			<SingleSelect<ObjectFieldType>
 				disabled={disabled}
 				error={errors.businessType}
+				items={
+					!Liferay.FeatureFlags['LPS-164948']
+						? applyFeatureFlag()
+						: objectFieldTypes
+				}
 				label={Liferay.Language.get('type')}
-				onChange={handleTypeChange}
-				options={objectFieldTypes}
+				onSelectionChange={(value) => {
+					handleTypeChange(value as string);
+				}}
 				required
-				value={businessTypeMap.get(values.businessType ?? '')?.label}
-			/>
+				selectedKey={values.businessType}
+			>
+				{(item) => (
+					<Option
+						key={item.businessType}
+						textValue={item.businessType}
+					>
+						<div className="lfr-objects__object-field-form-base-object-field-type-option">
+							<Text size={3} weight="semi-bold">
+								{item.label}
+							</Text>
+
+							<Text aria-hidden color="secondary" size={2}>
+								{item.description}
+							</Text>
+						</div>
+					</Option>
+				)}
+			</SingleSelect>
 
 			{values.businessType === 'Attachment' && (
 				<AttachmentFormBase
 					disabled={disabled}
 					error={errors.fileSource}
+					objectDefinitionName={objectDefinitionName}
 					objectFieldSettings={
 						values.objectFieldSettings as ObjectFieldSetting[]
 					}
-					objectName={objectName}
+					onSubmit={onSubmit}
 					setValues={setValues}
+					values={values}
 				/>
 			)}
+
+			{Liferay.FeatureFlags['LPS-196724'] &&
+				values.businessType === 'AutoIncrement' &&
+				!editingObjectField && (
+					<AutoIncrementFormBase
+						disabled={disabled as boolean}
+						errors={errors}
+						onSubmit={onSubmit}
+						setValues={setValues}
+						values={values}
+					/>
+				)}
 
 			{values.businessType === 'Aggregation' && (
 				<AggregationFormBase
 					creationLanguageId2={
 						creationLanguageId2 as Liferay.Language.Locale
 					}
-					editingField={editingField}
+					editingObjectField={editingObjectField}
 					errors={errors}
 					objectDefinitionExternalReferenceCode={
 						objectDefinitionExternalReferenceCode
@@ -382,16 +458,19 @@ export default function ObjectFieldFormBase({
 						values.objectFieldSettings as ObjectFieldSetting[]
 					}
 					onAggregationFilterChange={onAggregationFilterChange}
-					onRelationshipChange={onRelationshipChange}
+					onObjectRelationshipChange={onObjectRelationshipChange}
+					onSubmit={onSubmit}
 					setValues={setValues}
+					values={values}
 				/>
 			)}
 
 			{values.businessType === 'Formula' && (
 				<SingleSelect<FormulaOutput>
 					error={errors.output}
+					items={FORMULA_OUTPUT_OPTIONS}
 					label={Liferay.Language.get('output')}
-					onChange={({label, value}) => {
+					onSelectionChange={(value) => {
 						let newObjectFieldSettings: ObjectFieldSetting[] = [];
 
 						if (values.objectFieldSettings) {
@@ -411,73 +490,109 @@ export default function ObjectFieldFormBase({
 							],
 						});
 
-						setSelectedOutput(label);
+						if (onSubmit) {
+							onSubmit({
+								...values,
+								objectFieldSettings: [
+									...newObjectFieldSettings,
+									{
+										name: 'output',
+										value,
+									},
+								],
+							});
+						}
+
+						setSelectedOutputValue(
+							FORMULA_OUTPUT_OPTIONS.find(
+								(formulaFieldOption) =>
+									formulaFieldOption.value === value
+							)?.value as string
+						);
 					}}
-					options={FORMULA_OUTPUT_OPTIONS.filter(
-						(formulaOutput) =>
-							formulaOutput.value === 'Decimal' ||
-							formulaOutput.value === 'Integer'
-					)}
 					required
-					value={selectedOutput}
+					selectedKey={selectedOutputValue}
 				/>
 			)}
 
 			{(values.businessType === 'Picklist' ||
 				values.businessType === 'MultiselectPicklist') && (
-				<AutoComplete<Partial<PickList>>
-					creationLanguageId={
-						creationLanguageId2 as Liferay.Language.Locale
-					}
+				<SingleSelect
 					disabled={disabled}
-					emptyStateMessage={Liferay.Language.get('option-not-found')}
 					error={errors.listTypeDefinitionId}
-					items={filteredPicklist}
+					id="objectFieldFormBase"
+					items={listTypeDefinitionsItems}
 					label={Liferay.Language.get('picklist')}
-					onChangeQuery={setPicklistQuery}
-					onSelectItem={(item) => {
-						Liferay.FeatureFlags['LPS-163716']
-							? setValues({
+					onSelectionChange={(value) => {
+						const selectedListTypeDefinition = listTypeDefinitions.find(
+							({externalReferenceCode}) =>
+								externalReferenceCode === value
+						);
+						if (selectedListTypeDefinition) {
+							setValues({
+								listTypeDefinitionExternalReferenceCode:
+									selectedListTypeDefinition.externalReferenceCode,
+								listTypeDefinitionId:
+									selectedListTypeDefinition.id,
+								objectFieldSettings: removeFieldSettings(
+									['defaultValue', 'stateFlow'],
+									values
+								),
+							});
+
+							if (onSubmit) {
+								onSubmit({
+									...values,
 									listTypeDefinitionExternalReferenceCode:
-										item.externalReferenceCode,
-									listTypeDefinitionId: item.id,
+										selectedListTypeDefinition.externalReferenceCode,
+									listTypeDefinitionId:
+										selectedListTypeDefinition.id,
 									objectFieldSettings: removeFieldSettings(
 										['defaultValue', 'stateFlow'],
 										values
 									),
-							  })
-							: setValues({
-									defaultValue: undefined,
-									listTypeDefinitionExternalReferenceCode:
-										item.externalReferenceCode,
-									listTypeDefinitionId: item.id,
-									objectFieldSettings: removeFieldSettings(
-										['stateFlow'],
-										values
-									),
-							  });
+								});
+							}
+						}
 					}}
-					query={picklistQuery}
-					value={selectedPicklist?.name}
-				>
-					{({name}) => (
-						<div className="d-flex justify-content-between">
-							<div>{name}</div>
-						</div>
-					)}
-				</AutoComplete>
+					selectedKey={
+						selectedListTypeDefinitionExternalReferenceCode
+					}
+				/>
+			)}
+
+			{values.businessType === 'DateTime' && (
+				<TimeStorage
+					disabled={disabled}
+					objectFieldSettings={
+						values.objectFieldSettings as ObjectFieldSetting[]
+					}
+					onSubmit={onSubmit}
+					setValues={setValues}
+					values={values}
+				/>
 			)}
 
 			{children}
 
 			<ClayForm.Group>
 				{values.businessType !== 'Aggregation' &&
+					values.businessType !== 'AutoIncrement' &&
 					values.businessType !== 'Formula' && (
-						<ClayToggle
+						<Toggle
 							disabled={getMandatoryToggleDisabledState()}
 							label={Liferay.Language.get('mandatory')}
 							name="required"
-							onToggle={(required) => setValues({required})}
+							onToggle={(required) => {
+								setValues({required});
+
+								if (onSubmit) {
+									onSubmit({
+										...values,
+										required,
+									});
+								}
+							}}
 							toggled={values.required || values.state}
 						/>
 					)}
@@ -485,16 +600,11 @@ export default function ObjectFieldFormBase({
 
 			{values.businessType === 'Picklist' && validListTypeDefinitionId && (
 				<ClayForm.Group>
-					<ClayToggle
-						disabled={
-							disabled ||
-							(Liferay.FeatureFlags['LPS-167253']
-								? !objectDefinition?.modifiable
-								: objectDefinition?.system)
-						}
+					<Toggle
+						disabled={disabled || !objectDefinition?.modifiable}
 						label={Liferay.Language.get('mark-as-state')}
 						name="state"
-						onToggle={async (state) => {
+						onToggle={(state) => {
 							handleStateToggleChange(state);
 						}}
 						toggled={values.state}
@@ -507,6 +617,7 @@ export default function ObjectFieldFormBase({
 				<UniqueValues
 					disabled={disabled}
 					objectField={values}
+					onSubmit={onSubmit}
 					setValues={setValues}
 				/>
 			)}

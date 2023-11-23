@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.commerce.product.internal.search;
@@ -38,7 +29,7 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.search.filter.BooleanFilter;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.Html;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Localization;
 import com.liferay.portal.kernel.util.Portal;
@@ -167,7 +158,7 @@ public class CPDisplayLayoutIndexer extends BaseIndexer<CPDisplayLayout> {
 				document.addText(
 					_localization.getLocalizedName(
 						Field.DESCRIPTION, availableLanguageId),
-					_html.stripHtml(
+					HtmlUtil.stripHtml(
 						assetCategory.getDescription(availableLanguageId)));
 			}
 
@@ -176,7 +167,7 @@ public class CPDisplayLayoutIndexer extends BaseIndexer<CPDisplayLayout> {
 
 			document.addText(
 				Field.DESCRIPTION,
-				_html.stripHtml(
+				HtmlUtil.stripHtml(
 					assetCategory.getDescription(siteDefaultLocale)));
 
 			document.addText(Field.NAME, assetCategory.getName());
@@ -201,7 +192,9 @@ public class CPDisplayLayoutIndexer extends BaseIndexer<CPDisplayLayout> {
 		}
 
 		if (_log.isDebugEnabled()) {
-			_log.debug("Document " + cpDisplayLayout + " indexed successfully");
+			_log.debug(
+				"Commerce product display layout " + cpDisplayLayout +
+					" indexed successfully");
 		}
 
 		return document;
@@ -253,7 +246,7 @@ public class CPDisplayLayoutIndexer extends BaseIndexer<CPDisplayLayout> {
 					if (_log.isWarnEnabled()) {
 						_log.warn(
 							"Unable to index commerce product display layout " +
-								cpDisplayLayout.getCPDisplayLayoutId(),
+								cpDisplayLayout,
 							portalException);
 					}
 				}
@@ -273,9 +266,6 @@ public class CPDisplayLayoutIndexer extends BaseIndexer<CPDisplayLayout> {
 
 	@Reference
 	private CPDisplayLayoutLocalService _cpDisplayLayoutLocalService;
-
-	@Reference
-	private Html _html;
 
 	@Reference
 	private IndexWriterHelper _indexWriterHelper;

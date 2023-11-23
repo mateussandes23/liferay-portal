@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.client.extension.service.impl;
@@ -344,19 +335,10 @@ public class ClientExtensionEntryLocalServiceImpl
 			clientExtensionEntryPersistence.findByPrimaryKey(
 				clientExtensionEntryId);
 
-		if (status == clientExtensionEntry.getStatus()) {
+		int oldStatus = clientExtensionEntry.getStatus();
+
+		if (status == oldStatus) {
 			return clientExtensionEntry;
-		}
-
-		if (status == WorkflowConstants.STATUS_APPROVED) {
-			clientExtensionEntryLocalService.deployClientExtensionEntry(
-				clientExtensionEntry);
-		}
-		else if (clientExtensionEntry.getStatus() ==
-					WorkflowConstants.STATUS_APPROVED) {
-
-			clientExtensionEntryLocalService.undeployClientExtensionEntry(
-				clientExtensionEntry);
 		}
 
 		User user = _userLocalService.getUser(userId);
@@ -366,7 +348,19 @@ public class ClientExtensionEntryLocalServiceImpl
 		clientExtensionEntry.setStatusByUserName(user.getFullName());
 		clientExtensionEntry.setStatusDate(new Date());
 
-		return clientExtensionEntryPersistence.update(clientExtensionEntry);
+		clientExtensionEntry = clientExtensionEntryPersistence.update(
+			clientExtensionEntry);
+
+		if (status == WorkflowConstants.STATUS_APPROVED) {
+			clientExtensionEntryLocalService.deployClientExtensionEntry(
+				clientExtensionEntry);
+		}
+		else if (oldStatus == WorkflowConstants.STATUS_APPROVED) {
+			clientExtensionEntryLocalService.undeployClientExtensionEntry(
+				clientExtensionEntry);
+		}
+
+		return clientExtensionEntry;
 	}
 
 	private void _addResources(ClientExtensionEntry clientExtensionEntry)

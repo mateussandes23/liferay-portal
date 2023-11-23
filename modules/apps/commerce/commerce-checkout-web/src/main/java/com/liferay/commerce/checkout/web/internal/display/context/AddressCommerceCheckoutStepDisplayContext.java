@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.commerce.checkout.web.internal.display.context;
@@ -76,12 +67,8 @@ public class AddressCommerceCheckoutStepDisplayContext {
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
 			WebKeys.THEME_DISPLAY);
 
-		String commerceOrderUuid = ParamUtil.getString(
-			actionRequest, "commerceOrderUuid");
-
-		CommerceOrder commerceOrder =
-			_commerceOrderService.getCommerceOrderByUuidAndGroupId(
-				commerceOrderUuid, commerceContext.getCommerceChannelGroupId());
+		CommerceOrder commerceOrder = _getCommerceOrder(
+			actionRequest, commerceContext.getCommerceChannelGroupId());
 
 		boolean newAddress = ParamUtil.getBoolean(actionRequest, "newAddress");
 
@@ -117,62 +104,48 @@ public class AddressCommerceCheckoutStepDisplayContext {
 
 		if (Objects.equals(
 				CommerceCheckoutWebKeys.SHIPPING_ADDRESS_PARAM_NAME,
-				paramName) &&
-			useAsBilling) {
+				paramName)) {
 
 			if (commerceAddressId < 1) {
 				throw new CommerceOrderShippingAddressException();
 			}
 
-			_commerceAddressService.updateCommerceAddress(
-				commerceAddressId, commerceAddress.getName(),
-				commerceAddress.getDescription(), commerceAddress.getStreet1(),
-				commerceAddress.getStreet2(), commerceAddress.getStreet3(),
-				commerceAddress.getCity(), commerceAddress.getZip(),
-				commerceAddress.getRegionId(), commerceAddress.getCountryId(),
-				commerceAddress.getPhoneNumber(), _commerceAddressType, null);
+			if (useAsBilling) {
+				_commerceAddressService.updateCommerceAddress(
+					commerceAddressId, commerceAddress.getName(),
+					commerceAddress.getDescription(),
+					commerceAddress.getStreet1(), commerceAddress.getStreet2(),
+					commerceAddress.getStreet3(), commerceAddress.getCity(),
+					commerceAddress.getZip(), commerceAddress.getRegionId(),
+					commerceAddress.getCountryId(),
+					commerceAddress.getPhoneNumber(), _commerceAddressType,
+					null);
 
-			commerceOrder.setBillingAddressId(commerceAddressId);
+				commerceOrder.setBillingAddressId(commerceAddressId);
+
+				commerceOrder = updateCommerceOrderAddress(
+					commerceOrder, commerceAddressId, commerceAddressId,
+					commerceContext);
+			}
+			else {
+				if (Objects.equals(
+						commerceOrder.getShippingAddressId(),
+						commerceOrder.getBillingAddressId())) {
+
+					commerceOrder = updateCommerceOrderAddress(
+						commerceOrder, 0, commerceAddressId, commerceContext);
+				}
+				else {
+					commerceOrder = updateCommerceOrderAddress(
+						commerceOrder, commerceOrder.getBillingAddressId(),
+						commerceAddressId, commerceContext);
+				}
+			}
 
 			actionRequest.setAttribute(
 				CommerceCheckoutWebKeys.COMMERCE_ORDER, commerceOrder);
 
-			return updateCommerceOrderAddress(
-				commerceOrder, commerceAddressId, commerceAddressId,
-				commerceContext);
-		}
-
-		if (Objects.equals(
-				CommerceCheckoutWebKeys.SHIPPING_ADDRESS_PARAM_NAME,
-				paramName) &&
-			Objects.equals(
-				commerceOrder.getShippingAddressId(),
-				commerceOrder.getBillingAddressId()) &&
-			!useAsBilling) {
-
-			if (commerceAddressId < 1) {
-				throw new CommerceOrderShippingAddressException();
-			}
-
-			return updateCommerceOrderAddress(
-				commerceOrder, 0, commerceAddressId, commerceContext);
-		}
-
-		if (Objects.equals(
-				CommerceCheckoutWebKeys.SHIPPING_ADDRESS_PARAM_NAME,
-				paramName) &&
-			!Objects.equals(
-				commerceOrder.getShippingAddressId(),
-				commerceOrder.getBillingAddressId()) &&
-			!useAsBilling) {
-
-			if (commerceAddressId < 1) {
-				throw new CommerceOrderShippingAddressException();
-			}
-
-			return updateCommerceOrderAddress(
-				commerceOrder, commerceOrder.getBillingAddressId(),
-				commerceAddressId, commerceContext);
+			return commerceOrder;
 		}
 
 		if (Objects.equals(
@@ -265,6 +238,26 @@ public class AddressCommerceCheckoutStepDisplayContext {
 			AccountEntry.class.getName(), commerceOrder.getCommerceAccountId(),
 			name, description, street1, street2, street3, city, zip, regionId,
 			countryId, phoneNumber, _commerceAddressType, serviceContext);
+	}
+
+	private CommerceOrder _getCommerceOrder(
+			ActionRequest actionRequest, long groupId)
+		throws Exception {
+
+		CommerceOrder commerceOrder = (CommerceOrder)actionRequest.getAttribute(
+			CommerceCheckoutWebKeys.COMMERCE_ORDER);
+
+		if (commerceOrder != null) {
+			return commerceOrder;
+		}
+
+		commerceOrder = _commerceOrderService.getCommerceOrderByUuidAndGroupId(
+			ParamUtil.getString(actionRequest, "commerceOrderUuid"), groupId);
+
+		actionRequest.setAttribute(
+			CommerceCheckoutWebKeys.COMMERCE_ORDER, commerceOrder);
+
+		return commerceOrder;
 	}
 
 	private final AccountEntryLocalService _accountEntryLocalService;

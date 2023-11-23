@@ -72,7 +72,7 @@ exports[`SegmentDistribution should render 1`] = `
                           role="presentation"
                         >
                           <use
-                            xlink:href="#caret-bottom"
+                            href="#caret-bottom"
                           />
                         </svg>
                       </div>
@@ -82,13 +82,10 @@ exports[`SegmentDistribution should render 1`] = `
               </div>
             </div>
           </form>
-          <div
-            class="spinner-root spinner-spacer"
-          >
-            <span
-              class="loading-animation loading-animation-dotted"
-            />
-          </div>
+          <span
+            aria-hidden="true"
+            class="loading-root center loading-animation"
+          />
         </div>
       </div>
     </span>

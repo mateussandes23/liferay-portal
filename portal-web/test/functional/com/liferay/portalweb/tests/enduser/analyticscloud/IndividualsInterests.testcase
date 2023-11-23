@@ -27,20 +27,18 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
-
-		// It is not possible to delete properties and data source after LRAC-13389. This functionality should return after LRAC-8040
-
-		//ACUtils.tearDownAC();
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		ACUtils.tearDownDXP();
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
 			JSONGroup.deleteGroupByName(groupName = "Site Name");
 		}
+
+		ACUtils.tearDownAC();
 	}
 
 	@description = "Feature ID: Legacy | Automation ID: LRAC-8979 | Test Summary: All interests in the workspace appear in a list"
@@ -116,7 +114,7 @@ definition {
 		}
 
 		task ("View All Interests list in workspace") {
-			ACCards.viewCards(cardTitle = "Top Interests as of Today");
+			ACCards.viewCards(cardTitle = "Top Interests as of Yesterday");
 
 			Click(locator1 = "ACInterests#VIEW_ALL_INTERESTS_BUTTON");
 
@@ -391,7 +389,7 @@ definition {
 		}
 
 		task ("Change pagination") {
-			ACUtils.changePagination(itemsPerPage = 5);
+			ACUtils.changePagination(itemsPerPage = 4);
 		}
 
 		task ("Click next page") {

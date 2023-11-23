@@ -1,37 +1,38 @@
 definition {
 
-	macro addAccountEntry {
+	@summary = "Default summary"
+	macro addAccountEntry(accountName = null) {
 		Variables.assertDefined(parameterList = ${accountName});
 
 		var portalURL = JSONCompany.getPortalURL();
 
 		if (${accountName} == "Company Name 1") {
-			var externalReferenceCode = "0017i00001MQSGdAAP";
+			var externalReferenceCode = "0010100001994ivAAA";
 		}
 
 		if (${accountName} == "Company Name 2") {
-			var externalReferenceCode = "0017i00001MQSAyAAP";
+			var externalReferenceCode = "0010100001994iwAAA";
+		}
+
+		if (!(isSet(password))) {
+			var password = "test";
 		}
 
 		var curl = '''
 			${portalURL}/o/headless-admin-user/v1.0/accounts \
-				-u test@liferay.com:test \
+				-u test@liferay.com:${password} \
 				-H 'accept: application/json' \
 				-H 'Content-Type: application/json' \
 				-d '{
 					"name": "${accountName}",
 					"externalReferenceCode": "${externalReferenceCode}",
-					"country": "global",
-					"claimPercent": 0.5,
+					"partnerCountry": "US",
 					"currency": "BRL",
-					"partnerLevel": "gold",
 					"marketingPlan": true,
 					"solutionDeliveryCertification": true,
-					"renewalARR": 0,
 					"newProjectExistingBusiness": 1,
-					"aRRAmount": 85000,
 					"marketingPerformance": 3,
-					"growthARR": 0
+					"r_prtLvlToAcc_c_partnerLevelERC": "GOLD-PRTLVL"
 				}'
 		''';
 
@@ -40,14 +41,24 @@ definition {
 		echo(${response});
 	}
 
-	macro addActivity {
+	@summary = "Default summary"
+	macro addActivity(endDate = null,activityName = null,totalMDFRequestAmount = null,mdfExternalReferenceCode = null,activityExternalReferenceCode = null,budgetValue = null,requestId = null,activityDescription = null,startDate = null,expenseOption = null) {
 		Variables.assertDefined(parameterList = ${requestId});
 
 		if (!(isSet(accountEntryName))) {
 			var accountEntryName = "Company Name 1";
 		}
 
-		var accoundId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountEntryName});
+		if (!(isSet(emailAddress))) {
+			var emailAddress = "pmu@partner.com";
+		}
+
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
+		var accountExternalReferenceCode = JSONPRMAPI.getAccountExternalReferenceCode(accountEntryName = ${accountEntryName});
+		var accountId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountEntryName});
 		var portalURL = JSONCompany.getPortalURL();
 		var expenseKey = StringUtil.lowerCaseFirstLetter(${expenseOption});
 
@@ -55,7 +66,7 @@ definition {
 
 		var curl = '''
 			${portalURL}/o/c/activities \
-				-u test@liferay.com:test \
+				-u ${emailAddress}:${password} \
 				-H 'accept: application/json' \
 				-H 'Content-Type: application/json' \
 				-d '{
@@ -117,10 +128,12 @@ definition {
 							}
 						}
 					],
+					"claimPercent":0.5,
 					"endDate":"${endDate}",
 					"mdfRequestAmount":${totalMDFRequestAmount},
 					"name":"${activityName}",
 					"startDate":"${startDate}",
+					"submitted":true,
 					"tactic":{
 						"key":"prmtact002prmtct006prmtact003prmtct009prmtact004prmtct008",
 						"name":"Other"
@@ -131,9 +144,10 @@ definition {
 						"name":"Miscellaneous Marketing"
 					},
 					"externalReferenceCode":"${activityExternalReferenceCode}",
-					"externalReferenceCodeSF":"${activityExternalReferenceCode}",
 					"mdfRequestExternalReferenceCode":"${mdfExternalReferenceCode}",
-					"r_accToActs_accountEntryId":${accoundId},
+					"r_accToActs_accountEntryERC":"${accountExternalReferenceCode}",
+					"r_accToActs_accountEntryId":${accountId},
+					"r_mdfReqToActs_c_mdfRequestERC":"${mdfExternalReferenceCode}",
 					"r_mdfReqToActs_c_mdfRequestId":${requestId}
 				}'
 		''';
@@ -145,14 +159,24 @@ definition {
 		return ${activityId};
 	}
 
-	macro addActivitySf {
+	@summary = "Default summary"
+	macro addActivitySf(endDate = null,activityName = null,totalMDFRequestAmount = null,mdfExternalReferenceCode = null,budgetValue = null,requestId = null,activityDescription = null,startDate = null,expenseOption = null) {
 		Variables.assertDefined(parameterList = ${requestId});
 
 		if (!(isSet(accountEntryName))) {
 			var accountEntryName = "Company Name 1";
 		}
 
-		var accoundId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountEntryName});
+		if (!(isSet(emailAddress))) {
+			var emailAddress = "pmu@partner.com";
+		}
+
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
+		var accountExternalReferenceCode = JSONPRMAPI.getAccountExternalReferenceCode(accountEntryName = ${accountEntryName});
+		var accountId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountEntryName});
 		var portalURL = JSONCompany.getPortalURL();
 		var expenseKey = StringUtil.lowerCaseFirstLetter(${expenseOption});
 
@@ -160,7 +184,7 @@ definition {
 
 		var curl = '''
 			${portalURL}/o/c/activitysfs \
-				-u test@liferay.com:test \
+				-u ${emailAddress}:${password} \
 				-H 'accept: application/json' \
 				-H 'Content-Type: application/json' \
 				-d '{
@@ -222,10 +246,12 @@ definition {
 							}
 						}
 					],
+					"claimPercent":0.5,
 					"endDate":"${endDate}",
 					"mdfRequestAmount":${totalMDFRequestAmount},
 					"name":"${activityName}",
 					"startDate":"${startDate}",
+					"submitted":false,
 					"tactic":{
 						"key":"prmtact002prmtct006prmtact003prmtct009prmtact004prmtct008",
 						"name":"Other"
@@ -236,7 +262,9 @@ definition {
 						"name":"Miscellaneous Marketing"
 					},
 					"mdfRequestExternalReferenceCode":"${mdfExternalReferenceCode}",
-					"r_accToActs_accountEntryId":${accoundId},
+					"r_accToActs_accountEntryERC":"${accountExternalReferenceCode}",
+					"r_accToActs_accountEntryId":${accountId},
+					"r_mdfReqToActs_c_mdfRequestERC":"${mdfExternalReferenceCode}",
 					"r_mdfReqToActs_c_mdfRequestId":${requestId}
 				}'
 		''';
@@ -248,14 +276,30 @@ definition {
 		return ${activityExternalReferenceCode};
 	}
 
-	macro addBudget {
+	@summary = "Default summary"
+	macro addBudget(activityId = null,activityExternalReferenceCode = null,budgetValue = null) {
 		Variables.assertDefined(parameterList = ${activityId});
 
 		var portalURL = JSONCompany.getPortalURL();
 
+		if (!(isSet(accountEntryName))) {
+			var accountEntryName = "Company Name 1";
+		}
+
+		if (!(isSet(emailAddress))) {
+			var emailAddress = "pmu@partner.com";
+		}
+
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
+		var accountExternalReferenceCode = JSONPRMAPI.getAccountExternalReferenceCode(accountEntryName = ${accountEntryName});
+		var accountId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountEntryName});
+
 		var curl = '''
 			${portalURL}/o/c/budgets \
-				-u test@liferay.com:test \
+				-u ${emailAddress}:${password} \
 				-H 'accept: application/json' \
 				-H 'Content-Type: application/json' \
 				-d '{
@@ -264,6 +308,9 @@ definition {
 						"key":"contentCreation",
 						"name":"Content Creation"
 					},
+					"r_accToBgts_accountEntryERC":"${accountExternalReferenceCode}",
+					"r_accToBgts_accountEntryId":${accountId},
+					"r_actToBgts_c_activityERC":"${activityExternalReferenceCode}",
 					"r_actToBgts_c_activityId":${activityId}
 				}'
 		''';
@@ -273,44 +320,46 @@ definition {
 		echo(${response});
 	}
 
-	macro addMDF {
+	@summary = "Default summary"
+	macro addMDF(goalsOptions = null,mdfRequestStatusKey = null,endDate = null,mdfExternalReferenceCode = null,totalMDFRequestAmount = null,targetRolesOptions = null,totalCostOfExpense = null,campaignDescription = null,targetMarketOptions = null,campaignName = null,startDate = null,mdfRequestStatus = null) {
 		Variables.assertDefined(parameterList = ${campaignName});
 
-		if (!(isSet(userEmailAddress))) {
-			var userEmailAddress = "test@liferay.com";
+		if (!(isSet(emailAddress))) {
+			var emailAddress = "pmu@partner.com";
 		}
 
 		if (!(isSet(accountEntryName))) {
 			var accountEntryName = "Company Name 1";
 		}
 
-		var userId = JSONUserAPI._getUserIdByEmailAddress(userEmailAddress = ${userEmailAddress});
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
+		var userId = JSONUserAPI._getUserIdByEmailAddress(userEmailAddress = ${emailAddress});
 		var accountId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountEntryName});
 		var accountExternalReferenceCode = JSONPRMAPI.getAccountExternalReferenceCode(accountEntryName = ${accountEntryName});
 		var portalURL = JSONCompany.getPortalURL();
 
 		var curl = '''
 			${portalURL}/o/c/mdfrequests \
-				-u test@liferay.com:test \
+				-u ${emailAddress}:${password} \
 				-H 'accept: application/json' \
 				-H 'Content-Type: application/json' \
 				-d '{
 					"accountExternalReferenceCode":"${accountExternalReferenceCode}",
 					"additionalOption":{
 					},
+					"claimPercent":0.5,
 					"companyName":"${accountEntryName}",
-					"country":{
-						"key":"global",
-						"name":"Global"
-					},
 					"currency":{
 						"key":"BRL",
 						"name":"Brazilian Real"
 					},
-					"emailAddress":"${userEmailAddress}",
+					"emailAddress":"${emailAddress}",
 					"externalReferenceCode":"${mdfExternalReferenceCode}",
-					"externalReferenceCodeSF":"${mdfExternalReferenceCode}",
 					"liferayBusinessSalesGoals":"${goalsOptions}",
+					"liferayBusinessSalesGoalsOther":"",
 					"liferaysUserIdSF":${userId},
 					"maxDateActivity":"${endDate}",
 					"mdfRequestStatus":{
@@ -320,8 +369,14 @@ definition {
 					"minDateActivity":"${startDate}",
 					"overallCampaignDescription":"${campaignDescription}",
 					"overallCampaignName":"${campaignName}",
+					"partnerCountry":{
+						"key":"US",
+						"name":"United States"
+					},
+					"r_accToMDFReqs_accountEntryERC":"${accountExternalReferenceCode}",
 					"r_accToMDFReqs_accountEntryId":${accountId},
 					"r_usrToMDFReqs_userId":${userId},
+					"submitted":true,
 					"targetAudienceRoles":"${targetRolesOptions}",
 					"targetMarkets":"${targetMarketOptions}",
 					"totalCostOfExpense":${totalCostOfExpense},
@@ -338,41 +393,48 @@ definition {
 		return ${response};
 	}
 
-	macro addMDFSf {
+	@summary = "Default summary"
+	macro addMDFSf(goalsOptions = null,mdfRequestStatusKey = null,endDate = null,totalMDFRequestAmount = null,targetRolesOptions = null,totalCostOfExpense = null,campaignDescription = null,targetMarketOptions = null,campaignName = null,startDate = null) {
 		Variables.assertDefined(parameterList = ${campaignName});
 
-		if (!(isSet(userEmailAddress))) {
-			var userEmailAddress = "test@liferay.com";
+		if (!(isSet(emailAddress))) {
+			var emailAddress = "pmu@partner.com";
 		}
 
 		if (!(isSet(accountEntryName))) {
 			var accountEntryName = "Company Name 1";
 		}
 
-		var userId = JSONUserAPI._getUserIdByEmailAddress(userEmailAddress = ${userEmailAddress});
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
+		var userId = JSONUserAPI._getUserIdByEmailAddress(userEmailAddress = ${emailAddress});
 		var accountId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountEntryName});
 		var accountExternalReferenceCode = JSONPRMAPI.getAccountExternalReferenceCode(accountEntryName = ${accountEntryName});
 		var portalURL = JSONCompany.getPortalURL();
+		var mdfRequestStatus = StringUtil.lowerCaseFirstLetter(${mdfRequestStatus});
+
+		var mdfRequestStatus = StringUtil.replace(${mdfRequestStatus}, " ", "");
 
 		var curl = '''
 			${portalURL}/o/c/mdfrequestsfs \
-				-u test@liferay.com:test \
+				-u ${emailAddress}:${password} \
 				-H 'accept: application/json' \
 				-H 'Content-Type: application/json' \
 				-d '{
-					"claimPercent":"",
 					"accountExternalReferenceCode":"${accountExternalReferenceCode}",
-					"companyName":"${accountEntryName}",
-					"country":{
-						"key":"global",
-						"name":"Global"
+					"additionalOption":{
 					},
+					"claimPercent":0.5,
+					"companyName":"${accountEntryName}",
 					"currency":{
 						"key":"BRL",
 						"name":"Brazilian Real"
 					},
-					"emailAddress":"${userEmailAddress}",
+					"emailAddress":"${emailAddress}",
 					"liferayBusinessSalesGoals":"${goalsOptions}",
+					"liferayBusinessSalesGoalsOther":"",
 					"liferaysUserIdSF":${userId},
 					"maxDateActivity":"${endDate}",
 					"mdfRequestStatus":{
@@ -382,8 +444,14 @@ definition {
 					"minDateActivity":"${startDate}",
 					"overallCampaignDescription":"${campaignDescription}",
 					"overallCampaignName":"${campaignName}",
-					"r_accToMDFReqs_accountEntryId":${accountId},
+					"partnerCountry":{
+						"key":"US",
+						"name":"United States"
+					},
+					"r_accToMDFReqs_accountEntryERC":"${accountExternalReferenceCode}",
+					"r_accToMDFReqs_accountEntryId":"${accountId}",
 					"r_usrToMDFReqs_userId":${userId},
+					"submitted":false,
 					"targetAudienceRoles":"${targetRolesOptions}",
 					"targetMarkets":"${targetMarketOptions}",
 					"totalCostOfExpense":${totalCostOfExpense},
@@ -398,22 +466,54 @@ definition {
 		return ${mdfExternalReferenceCode};
 	}
 
-	macro changeClaimStatus {
+	@summary = "Default summary"
+	macro approveActivity(activityId = null) {
+		Variables.assertDefined(parameterList = ${activityId});
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		if (!(isSet(emailAddress))) {
+			var emailAddress = "cmm@liferaytest.com";
+		}
+
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
+		var curl = '''
+			${portalURL}/o/c/activities/${activityId} \
+				-u test@liferay.com:${password} \
+				-H 'accept: application/json' \
+				-H 'Content-Type: application/json' \
+				-d '{
+					"activityStatus": "approved"
+				}'
+		''';
+
+		var response = JSONCurlUtil.patch(${curl});
+	}
+
+	@summary = "Default summary"
+	macro changeClaimStatus(statusKey = null,claimId = null) {
 		Variables.assertDefined(parameterList = ${claimId});
 
 		var portalURL = JSONCompany.getPortalURL();
 
+		if (!(isSet(emailAddress))) {
+			var emailAddress = "cmm@liferaytest.com";
+		}
+
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
 		var curl = '''
 			${portalURL}/o/c/mdfclaims/${claimId} \
-				-u test@liferay.com:test \
+				-u ${emailAddress}:${password} \
 				-H 'accept: application/json' \
 				-H 'Content-Type: application/json' \
 				-d '{
-					"id" : ${claimId},
-					"mdfClaimStatus" : {
-						"key" : "${statusKey}",
-						"name" : "${claimStatus}"
-					}
+					"mdfClaimStatus": "${statusKey}"
 				}'
 		''';
 
@@ -422,23 +522,29 @@ definition {
 		echo(${response});
 	}
 
-	macro changeMDFStatus {
+	@summary = "Default summary"
+	macro changeMDFStatus(requestId = null,statusKey = null) {
 		Variables.assertDefined(parameterList = ${requestId});
 
 		var portalURL = JSONCompany.getPortalURL();
 
+		if (!(isSet(emailAddress))) {
+			var emailAddress = "cmm@liferaytest.com";
+		}
+
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
 		var curl = '''
 			${portalURL}/o/c/mdfrequests/${requestId} \
-				-u test@liferay.com:test \
+				-u ${emailAddress}:${password} \
 				-H 'accept: application/json' \
 				-H 'Content-Type: application/json' \
 				-d '{
-					"id" : ${requestId},
-					"mdfRequestStatus" : {
-						"key" : "${statusKey}",
-						"name" : "${mdfStatus}"
-					}
-				}'
+					"mdfRequestStatus": "${statusKey}"
+				}
+			}'
 		''';
 
 		var response = JSONCurlUtil.patch(${curl});
@@ -446,24 +552,24 @@ definition {
 		echo(${response});
 	}
 
-	@summary = "Get the 'externalReferenceCode' from '${accountEntryName}'"
-	macro getAccountExternalReferenceCode {
+	@summary = "Default summary"
+	macro getAccountExternalReferenceCode(accountEntryName = null,externalReferenceCode = null) {
 		Variables.assertDefined(parameterList = ${accountEntryName});
 
-		if (!(isSet(creatorEmailAddress))) {
-			var creatorEmailAddress = "test@liferay.com";
+		if (!(isSet(emailAddress))) {
+			var emailAddress = "test@liferay.com";
 		}
 
-		if (!(isSet(creatorPassword))) {
-			var creatorPassword = "test";
+		if (!(isSet(password))) {
+			var password = "test";
 		}
 
 		var companyId = JSONCompany.getCompanyId();
 		var portalURL = JSONCompany.getPortalURL();
-		var userId = JSONUserSetter.setUserId(userEmailAddress = ${creatorEmailAddress});
+		var userId = JSONUserSetter.setUserId(userEmailAddress = ${emailAddress});
 		var curl = '''
 			${portalURL}/api/jsonws/account.accountentry/get-account-entries \
-				-u ${creatorEmailAddress}:${creatorPassword} \
+				-u ${emailAddress}:${password} \
 				-d companyId=${companyId} \
 				-d status=0 \
 				-d <CURL_DATA[start=-1]CURL_DATA> \
@@ -481,6 +587,76 @@ definition {
 		else {
 			return ${accountExternalReferenceCode};
 		}
+	}
+
+	@summary = "Default summary"
+	macro getMDFRequestActivityId(requestId = null) {
+		Variables.assertDefined(parameterList = ${requestId});
+
+		var portalURL = JSONCompany.getPortalURL();
+
+		if (!(isSet(emailAddress))) {
+			var emailAddress = "cmm@liferaytest.com";
+		}
+
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
+		var curl = '''
+			${portalURL}/o/c/mdfrequests/${requestId}/mdfReqToActs?restrictFields=creator \
+				-u ${emailAddress}:${password} \
+				-H 'accept: application/json' \
+				-H 'Content-Type: application/json' \
+		''';
+
+		var activityListId = JSONCurlUtil.get(${curl}, "$..['id']");
+
+		echo(${activityListId});
+
+		return ${activityListId};
+	}
+
+	@summary = "Default summary"
+	macro updateAccount(accountName = null) {
+		Variables.assertDefined(parameterList = ${accountName});
+
+		var portalURL = JSONCompany.getPortalURL();
+		var accountId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountName});
+
+		if (${accountName} == "Company Name 1") {
+			var externalReferenceCode = "0010100001994ivAAA";
+		}
+
+		if (${accountName} == "Company Name 2") {
+			var externalReferenceCode = "0010100001994iwAAA";
+		}
+
+		if (!(isSet(password))) {
+			var password = "test";
+		}
+
+		var curl = '''
+			${portalURL}/o/headless-admin-user/v1.0/accounts/${accountId} \
+				-u test@liferay.com:${password} \
+				-H 'accept: application/json' \
+				-H 'Content-Type: application/json' \
+				-d '{
+					"name": "${accountName}",
+					"externalReferenceCode": "${externalReferenceCode}",
+					"partnerCountry": "US",
+					"currency": "BRL",
+					"marketingPlan": true,
+					"solutionDeliveryCertification": true,
+					"newProjectExistingBusiness": 1,
+					"marketingPerformance": 3,
+					"r_prtLvlToAcc_c_partnerLevelERC": "GOLD-PRTLVL"
+				}'
+		''';
+
+		var response = JSONCurlUtil.patch(${curl});
+
+		echo(${response});
 	}
 
 }

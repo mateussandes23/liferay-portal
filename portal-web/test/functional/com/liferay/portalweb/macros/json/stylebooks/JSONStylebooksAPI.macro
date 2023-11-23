@@ -1,7 +1,7 @@
 definition {
 
-	@summary = "Directly calls the JSON WS API to add a style book entry"
-	macro _addStylebookEntry {
+	@summary = "Default summary"
+	macro _addStylebookEntry(groupId = null, styleBookEntryName = null) {
 		Variables.assertDefined(parameterList = "${groupId},${styleBookEntryName}");
 
 		var portalURL = JSONCompany.getPortalURL();

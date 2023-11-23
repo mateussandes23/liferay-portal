@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
- *
- *
- *
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.workflow.metrics.rest.resource.v1_0.test;
@@ -37,6 +28,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -210,7 +202,7 @@ public abstract class BaseInstanceResourceTestCase {
 			RandomTestUtil.nextDate(), null, null, null, Pagination.of(1, 10),
 			null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantProcessId != null) {
 			Instance irrelevantInstance =
@@ -219,13 +211,11 @@ public abstract class BaseInstanceResourceTestCase {
 
 			page = instanceResource.getProcessInstancesPage(
 				irrelevantProcessId, null, null, null, null, null, null, null,
-				Pagination.of(1, 2), null);
+				Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantInstance),
-				(List<Instance>)page.getItems());
+			assertContains(irrelevantInstance, (List<Instance>)page.getItems());
 			assertValid(
 				page,
 				testGetProcessInstancesPage_getExpectedActions(
@@ -242,11 +232,10 @@ public abstract class BaseInstanceResourceTestCase {
 			processId, null, null, null, null, null, null, null,
 			Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(instance1, instance2),
-			(List<Instance>)page.getItems());
+		assertContains(instance1, (List<Instance>)page.getItems());
+		assertContains(instance2, (List<Instance>)page.getItems());
 		assertValid(
 			page, testGetProcessInstancesPage_getExpectedActions(processId));
 	}
@@ -273,6 +262,11 @@ public abstract class BaseInstanceResourceTestCase {
 	public void testGetProcessInstancesPageWithPagination() throws Exception {
 		Long processId = testGetProcessInstancesPage_getProcessId();
 
+		Page<Instance> instancePage = instanceResource.getProcessInstancesPage(
+			processId, null, null, null, null, null, null, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(instancePage.getTotalCount());
+
 		Instance instance1 = testGetProcessInstancesPage_addInstance(
 			processId, randomInstance());
 
@@ -284,17 +278,18 @@ public abstract class BaseInstanceResourceTestCase {
 
 		Page<Instance> page1 = instanceResource.getProcessInstancesPage(
 			processId, null, null, null, null, null, null, null,
-			Pagination.of(1, 2), null);
+			Pagination.of(1, totalCount + 2), null);
 
 		List<Instance> instances1 = (List<Instance>)page1.getItems();
 
-		Assert.assertEquals(instances1.toString(), 2, instances1.size());
+		Assert.assertEquals(
+			instances1.toString(), totalCount + 2, instances1.size());
 
 		Page<Instance> page2 = instanceResource.getProcessInstancesPage(
 			processId, null, null, null, null, null, null, null,
-			Pagination.of(2, 2), null);
+			Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<Instance> instances2 = (List<Instance>)page2.getItems();
 
@@ -302,11 +297,11 @@ public abstract class BaseInstanceResourceTestCase {
 
 		Page<Instance> page3 = instanceResource.getProcessInstancesPage(
 			processId, null, null, null, null, null, null, null,
-			Pagination.of(1, 3), null);
+			Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(instance1, instance2, instance3),
-			(List<Instance>)page3.getItems());
+		assertContains(instance1, (List<Instance>)page3.getItems());
+		assertContains(instance2, (List<Instance>)page3.getItems());
+		assertContains(instance3, (List<Instance>)page3.getItems());
 	}
 
 	@Test
@@ -418,22 +413,25 @@ public abstract class BaseInstanceResourceTestCase {
 		instance2 = testGetProcessInstancesPage_addInstance(
 			processId, instance2);
 
+		Page<Instance> page = instanceResource.getProcessInstancesPage(
+			processId, null, null, null, null, null, null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<Instance> ascPage = instanceResource.getProcessInstancesPage(
 				processId, null, null, null, null, null, null, null,
-				Pagination.of(1, 2), entityField.getName() + ":asc");
+				Pagination.of(1, (int)page.getTotalCount() + 1),
+				entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(instance1, instance2),
-				(List<Instance>)ascPage.getItems());
+			assertContains(instance1, (List<Instance>)ascPage.getItems());
+			assertContains(instance2, (List<Instance>)ascPage.getItems());
 
 			Page<Instance> descPage = instanceResource.getProcessInstancesPage(
 				processId, null, null, null, null, null, null, null,
-				Pagination.of(1, 2), entityField.getName() + ":desc");
+				Pagination.of(1, (int)page.getTotalCount() + 1),
+				entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(instance2, instance1),
-				(List<Instance>)descPage.getItems());
+			assertContains(instance2, (List<Instance>)descPage.getItems());
+			assertContains(instance1, (List<Instance>)descPage.getItems());
 		}
 	}
 
@@ -896,14 +894,19 @@ public abstract class BaseInstanceResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1301,9 +1304,47 @@ public abstract class BaseInstanceResourceTestCase {
 		}
 
 		if (entityFieldName.equals("assetTitle")) {
-			sb.append("'");
-			sb.append(String.valueOf(instance.getAssetTitle()));
-			sb.append("'");
+			Object object = instance.getAssetTitle();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1314,9 +1355,47 @@ public abstract class BaseInstanceResourceTestCase {
 		}
 
 		if (entityFieldName.equals("assetType")) {
-			sb.append("'");
-			sb.append(String.valueOf(instance.getAssetType()));
-			sb.append("'");
+			Object object = instance.getAssetType();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1332,9 +1411,47 @@ public abstract class BaseInstanceResourceTestCase {
 		}
 
 		if (entityFieldName.equals("className")) {
-			sb.append("'");
-			sb.append(String.valueOf(instance.getClassName()));
-			sb.append("'");
+			Object object = instance.getClassName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1464,9 +1581,47 @@ public abstract class BaseInstanceResourceTestCase {
 		}
 
 		if (entityFieldName.equals("processVersion")) {
-			sb.append("'");
-			sb.append(String.valueOf(instance.getProcessVersion()));
-			sb.append("'");
+			Object object = instance.getProcessVersion();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

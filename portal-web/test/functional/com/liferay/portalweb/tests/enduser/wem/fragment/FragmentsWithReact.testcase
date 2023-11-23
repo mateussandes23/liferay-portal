@@ -1,6 +1,7 @@
 @component-name = "portal-wcm"
 definition {
 
+	property ci.retries.disabled = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Fragments";
@@ -18,9 +19,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -109,7 +110,19 @@ definition {
 		}
 
 		task ("Import the fragment collection into the new site") {
-			FragmentsAdmin.importCollectionFromTempFolder();
+			FragmentsAdminNavigator.gotoImportCollection();
+
+			WaitForPageLoad();
+
+			var collectionsZipFileName = TestCase.getDownloadedTempFileName(fileNamePattern = "collections-*.zip");
+
+			UploadTempFile.uploadTempFileHiddenNoMouseOver(
+				locator1 = "TextInput#FILE",
+				value1 = ${collectionsZipFileName});
+
+			Button.clickImport();
+
+			Alert.viewInfoMessageSpecific(infoMessage = "No new items were imported.");
 		}
 
 		task ("Navigate to the fragment collection in the new site") {

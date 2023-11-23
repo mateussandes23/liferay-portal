@@ -1,33 +1,27 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayButton from '@clayui/button';
 import ClayForm, {ClayInput} from '@clayui/form';
 import ClayLayout from '@clayui/layout';
 import classnames from 'classnames';
-import {fetch, navigate, openToast} from 'frontend-js-web';
+import {fetch, navigate} from 'frontend-js-web';
 import React, {useRef, useState} from 'react';
 
 import {API_URL} from '../Constants';
-import {FDSViewSectionInterface} from '../FDSView';
+import {IFDSViewSectionProps} from '../FDSView';
 import RequiredMark from '../components/RequiredMark';
+import openDefaultFailureToast from '../utils/openDefaultFailureToast';
+import openDefaultSuccessToast from '../utils/openDefaultSuccessToast';
 
 function Pagination({
 	fdsView,
 	fdsViewsURL,
 	namespace,
-}: FDSViewSectionInterface) {
+	onFDSViewUpdate,
+}: IFDSViewSectionProps) {
 	const [listOfItemsPerPage, setListOfItemsPerPage] = useState(
 		fdsView.listOfItemsPerPage
 	);
@@ -122,24 +116,21 @@ function Pagination({
 			}
 		);
 
+		if (!response.ok) {
+			openDefaultFailureToast();
+
+			return;
+		}
+
 		const responseJSON = await response.json();
 
-		if (response.ok && responseJSON?.id) {
-			openToast({
-				message: Liferay.Language.get(
-					'your-request-completed-successfully'
-				),
-				type: 'success',
-			});
-			setListOfItemsPerPage(itemsPerPage);
+		if (responseJSON?.id) {
+			openDefaultSuccessToast();
+
+			onFDSViewUpdate(responseJSON);
 		}
 		else {
-			openToast({
-				message: Liferay.Language.get(
-					'your-request-failed-to-complete'
-				),
-				type: 'danger',
-			});
+			openDefaultFailureToast();
 		}
 	};
 
@@ -161,7 +152,7 @@ function Pagination({
 
 				<div className="sheet-text">
 					{Liferay.Language.get(
-						'dataset-view-pagination-description'
+						'data-set-view-pagination-description'
 					)}
 				</div>
 			</ClayLayout.SheetHeader>

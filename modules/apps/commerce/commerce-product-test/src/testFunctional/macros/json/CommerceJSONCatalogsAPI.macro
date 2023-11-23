@@ -1,9 +1,14 @@
 definition {
 
-	macro _addCatalog {
+	@summary = "Default summary"
+	macro _addCatalog(catalogName = null) {
 		Variables.assertDefined(parameterList = ${catalogName});
 
 		var portalURL = JSONCompany.getPortalURL();
+
+		if (!(isSet(accountEntryId))) {
+			var accountEntryId = 0;
+		}
 
 		if (!(isSet(catalogCurrency))) {
 			var catalogCurrency = "USD";
@@ -19,6 +24,7 @@ definition {
 			${portalURL}/api/jsonws/commerce.commercecatalog/add-commerce-catalog \
 				-u ${userLoginInfo} \
 				-d externalReferenceCode='' \
+				-d accountEntryId=${accountEntryId} \
 				-d name=${catalogName} \
 				-d commerceCurrencyCode=${catalogCurrency} \
 				-d catalogDefaultLanguageId=${catalogLanguage}
@@ -27,11 +33,12 @@ definition {
 		JSONCurlUtil.post(${curl});
 	}
 
-	macro _deleteAllNoSystemCommerceCatalogs {
+	@summary = "Default summary"
+	macro _deleteAllNoSystemCommerceCatalogs() {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		var catalogIds = CommerceJSONCatalogsAPI._getCommerceNoSystemCatalogIds();
@@ -54,14 +61,37 @@ definition {
 		}
 	}
 
-	macro _getCommerceCatalogIdByName {
+	@summary = "Default summary"
+	macro _getCommerceAccountIdByCatalogId(catalogName = null) {
+		var baseURL = ${baseURL};
+
+		if (!(isSet(baseURL))) {
+			var baseURL = JSONCompany.getPortalURL();
+		}
+
+		var catalogId = CommerceJSONCatalogsAPI._getCommerceCatalogIdByName(catalogName = ${catalogName});
+		var userLoginInfo = JSONUtil2.formatJSONUser();
+
+		var curl = '''
+			${baseURL}/o/headless-commerce-admin-catalog/v1.0/catalog/${catalogId} \
+				-u ${userLoginInfo} \
+				-H 'accept: application/json' \
+		''';
+
+		var accountId = JSONCurlUtil.get(${curl}, "$..['accountId']");
+
+		return ${accountId};
+	}
+
+	@summary = "Default summary"
+	macro _getCommerceCatalogIdByName(catalogName = null, catalogCount = null) {
 		Variables.assertDefined(parameterList = ${catalogName});
 
 		var baseURL = ${baseURL};
 		var masterCatalogName = "Master";
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (!(isSet(userEmailAddress))) {
@@ -92,12 +122,13 @@ definition {
 		return ${catalogIds};
 	}
 
-	macro _getCommerceNoSystemCatalogIds {
+	@summary = "Default summary"
+	macro _getCommerceNoSystemCatalogIds(catalogCount = null) {
 		var baseURL = ${baseURL};
 		var masterCatalogName = "Master";
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (isSet(catalogCount)) {
@@ -118,6 +149,69 @@ definition {
 		var catalogIds = JSONCurlUtil.get(${curl}, "$.items[?(@['system'] == false)].['id']");
 
 		return ${catalogIds};
+	}
+
+	@summary = "Default summary"
+	macro _patchCommerceCatalog(accountIdByName = null, catalogName = null, newCatalogName = null) {
+		Variables.assertDefined(parameterList = ${catalogName});
+
+		var baseURL = ${baseURL};
+		var fieldsList = ListUtil.newList();
+		var catalogId = CommerceJSONCatalogsAPI._getCommerceCatalogIdByName(catalogName = ${catalogName});
+
+		if (!(isSet(baseURL))) {
+			var baseURL = JSONCompany.getPortalURL();
+		}
+
+		if (isSet(accountId)) {
+			var accountId = '''"accountId": ${accountId}''';
+
+			ListUtil.add(${fieldsList}, ${accountId});
+		}
+		else {
+			if (isSet(accountIdByName)) {
+				var accountId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountIdByName});
+
+				var accountId = '''"accountId": ${accountId}''';
+
+				echo("accountId for catalog: ${accountId}");
+
+				ListUtil.add(${fieldsList}, ${accountId});
+			}
+		}
+
+		if (isSet(currencyCode)) {
+			var currencyCode = '''"currencyCode": "${currencyCode}"''';
+
+			ListUtil.add(${fieldsList}, ${currencyCode});
+		}
+
+		if (isSet(defaultLanguageId)) {
+			var defaultLanguageId = '''"defaultLanguageId": "${defaultLanguageId}"''';
+
+			ListUtil.add(${fieldsList}, ${defaultLanguageId});
+		}
+
+		if (isSet(newCatalogName)) {
+			var name = '''"name": "${newCatalogName}"''';
+
+			ListUtil.add(${fieldsList}, ${name});
+		}
+
+		var fieldsList = ListUtil.toString(${fieldsList});
+
+		var payload = CommerceUtilities.getPayloadFromFieldsList(fieldsList = ${fieldsList});
+		var userLoginInfo = JSONUtil2.formatJSONUser();
+
+		var curl = '''
+			${baseURL}/o/headless-commerce-admin-catalog/v1.0/catalog/${catalogId} \
+				-u ${userLoginInfo} \
+				-H 'accept: application/json' \
+				-H 'Content-Type: application/json' \
+				-d '{${payload}}'
+		''';
+
+		JSONCurlUtil.patch(${curl});
 	}
 
 }

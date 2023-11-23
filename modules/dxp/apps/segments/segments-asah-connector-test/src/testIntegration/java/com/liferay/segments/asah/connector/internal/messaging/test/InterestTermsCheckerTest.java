@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
- *
- *
- *
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.segments.asah.connector.internal.messaging.test;
@@ -20,14 +11,16 @@ import com.liferay.petra.concurrent.DCLSingleton;
 import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
 import com.liferay.portal.configuration.test.util.ConfigurationTemporarySwapper;
 import com.liferay.portal.kernel.json.JSONUtil;
+import com.liferay.portal.kernel.messaging.Message;
+import com.liferay.portal.kernel.messaging.MessageListener;
 import com.liferay.portal.kernel.model.User;
-import com.liferay.portal.kernel.settings.SettingsFactoryUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.MockHttp;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
+import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 
@@ -39,10 +32,6 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import org.osgi.framework.Bundle;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * @author Mikel Lorza
@@ -60,22 +49,6 @@ public class InterestTermsCheckerTest {
 	@Before
 	public void setUp() throws Exception {
 		_user = TestPropsValues.getUser();
-
-		Bundle bundle = FrameworkUtil.getBundle(InterestTermsCheckerTest.class);
-
-		_interestTermsChecker = _getService(
-			bundle,
-			"(component.name=com.liferay.segments.asah.connector.internal." +
-				"messaging.InterestTermsChecker)");
-
-		Assert.assertNotNull(_interestTermsChecker);
-
-		_asahInterestTermProvider = _getService(
-			bundle,
-			"(component.name=com.liferay.segments.asah.connector.internal." +
-				"provider.AsahInterestTermProvider)");
-
-		Assert.assertNotNull(_asahInterestTermProvider);
 	}
 
 	@Test
@@ -95,8 +68,7 @@ public class InterestTermsCheckerTest {
 						).put(
 							"liferayAnalyticsFaroBackendURL",
 							"http://localhost:8080"
-						).build(),
-						SettingsFactoryUtil.getSettingsFactory());
+						).build());
 			ConfigurationTemporarySwapper configurationTemporarySwapper =
 				new ConfigurationTemporarySwapper(
 					"com.liferay.segments.asah.connector.internal." +
@@ -107,13 +79,13 @@ public class InterestTermsCheckerTest {
 
 			DCLSingleton<?> asahFaroBackendClientDCLSingleton =
 				ReflectionTestUtil.getFieldValue(
-					_interestTermsChecker,
+					_interestTermsMessageListener,
 					"_asahFaroBackendClientDCLSingleton");
 
 			asahFaroBackendClientDCLSingleton.destroy(null);
 
 			ReflectionTestUtil.setFieldValue(
-				_interestTermsChecker, "_http",
+				_interestTermsMessageListener, "_http",
 				new MockHttp(
 					Collections.singletonMap(
 						"/api/1.0/interests/terms/" + _user.getUserId(),
@@ -141,10 +113,12 @@ public class InterestTermsCheckerTest {
 							"total", 0
 						).toString())));
 
-			ReflectionTestUtil.invoke(
-				_interestTermsChecker, "checkInterestTerms",
-				new Class<?>[] {long.class, String.class}, _user.getCompanyId(),
-				String.valueOf(_user.getUserId()));
+			Message message = new Message();
+
+			message.put("companyId", _user.getCompanyId());
+			message.put("userId", _user.getUserId());
+
+			_interestTermsMessageListener.receive(message);
 
 			String[] interestTerms = ReflectionTestUtil.invoke(
 				_asahInterestTermProvider, "getInterestTerms",
@@ -155,24 +129,17 @@ public class InterestTermsCheckerTest {
 		}
 	}
 
-	private Object _getService(Bundle bundle, String filterString)
-		throws Exception {
-
-		ServiceTracker<Object, Object> serviceTracker = new ServiceTracker<>(
-			bundle.getBundleContext(), FrameworkUtil.createFilter(filterString),
-			null);
-
-		serviceTracker.open();
-
-		Object service = serviceTracker.getService();
-
-		serviceTracker.close();
-
-		return service;
-	}
-
+	@Inject(
+		filter = "component.name=com.liferay.segments.asah.connector.internal.provider.AsahInterestTermProvider",
+		type = Inject.NoType.class
+	)
 	private Object _asahInterestTermProvider;
-	private Object _interestTermsChecker;
+
+	@Inject(
+		filter = "component.name=com.liferay.segments.asah.connector.internal.messaging.InterestTermsMessageListener"
+	)
+	private MessageListener _interestTermsMessageListener;
+
 	private User _user;
 
 }

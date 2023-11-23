@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.dynamic.data.mapping.form.web.internal.portlet.action.util;
@@ -21,6 +12,7 @@ import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluatorEvaluateR
 import com.liferay.dynamic.data.mapping.form.evaluator.DDMFormEvaluatorFieldContextKey;
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldType;
 import com.liferay.dynamic.data.mapping.form.field.type.DDMFormFieldTypeServicesRegistry;
+import com.liferay.dynamic.data.mapping.form.field.type.constants.DDMFormFieldTypeConstants;
 import com.liferay.dynamic.data.mapping.form.web.internal.FormInstanceFieldSettingsException;
 import com.liferay.dynamic.data.mapping.model.DDMForm;
 import com.liferay.dynamic.data.mapping.model.DDMFormField;
@@ -150,6 +142,43 @@ public class DDMFormInstanceFieldSettingsValidator {
 						return getLocalizedValue(
 							jsonObject.getString("localizedValue"),
 							availableLocales, defaultLocale);
+					}
+					else if (StringUtil.equals(
+								jsonObject.getString("type"),
+								DDMFormFieldTypeConstants.OPTIONS)) {
+
+						try {
+							JSONObject optionsJSONObject =
+								_jsonFactory.createJSONObject(
+									jsonObject.getString("value"));
+
+							JSONArray defaultJSONArray =
+								optionsJSONObject.getJSONArray(
+									LocaleUtil.toLanguageId(defaultLocale));
+
+							for (Locale availableLocale : availableLocales) {
+								JSONArray jsonArray =
+									optionsJSONObject.getJSONArray(
+										LocaleUtil.toLanguageId(
+											availableLocale));
+
+								if (jsonArray != null) {
+									continue;
+								}
+
+								optionsJSONObject.put(
+									LocaleUtil.toLanguageId(availableLocale),
+									defaultJSONArray);
+							}
+
+							return new UnlocalizedValue(
+								optionsJSONObject.toString());
+						}
+						catch (JSONException jsonException) {
+							if (_log.isDebugEnabled()) {
+								_log.debug(jsonException);
+							}
+						}
 					}
 
 					return new UnlocalizedValue(jsonObject.getString("value"));

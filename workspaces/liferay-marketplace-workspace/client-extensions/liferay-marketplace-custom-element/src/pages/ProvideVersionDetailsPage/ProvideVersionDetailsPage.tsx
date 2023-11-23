@@ -1,3 +1,8 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
 import {useEffect} from 'react';
 
 import {Header} from '../../components/Header/Header';
@@ -8,7 +13,7 @@ import {getCompanyId} from '../../liferay/constants';
 import {useAppContext} from '../../manage-app-state/AppManageState';
 import {TYPES} from '../../manage-app-state/actionTypes';
 import {
-	addSkuExpandoValue,
+	addExpandoValue,
 	createAppSKU,
 	getOptions,
 	getProductSKU,
@@ -92,7 +97,8 @@ export function ProvideVersionDetailsPage({
 
 			makeFetch();
 		}
-	}, ['appProductId', 'dispatch', 'optionId', 'productOptionId']);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [appProductId, dispatch, productOptionId]);
 
 	return (
 		<div className="provide-version-details-page-container">
@@ -105,7 +111,7 @@ export function ProvideVersionDetailsPage({
 
 			<Section
 				label="App Version"
-				tooltip="More info"
+				tooltip="When adding app versions, you can use your own numbering system, but be sure it is consistent and understandable by the customer."
 				tooltipText="More Info"
 			>
 				<Input
@@ -119,7 +125,7 @@ export function ProvideVersionDetailsPage({
 					}
 					placeholder="0.0.0"
 					required
-					tooltip="version"
+					tooltip={`Specify your app's version.  This will help the user to understand the latest version of your app offered on the Marketplace.`}
 					value={appVersion}
 				/>
 
@@ -135,7 +141,7 @@ export function ProvideVersionDetailsPage({
 					}
 					placeholder="Enter app description"
 					required
-					tooltip="notes"
+					tooltip="Notes pertaining to the release of the project.  These will be displayed when the customer goes to purchase and/or update the app."
 					value={appNotes}
 				/>
 			</Section>
@@ -151,10 +157,10 @@ export function ProvideVersionDetailsPage({
 							sku === createSkuName(appProductId, appVersion)
 					);
 
-					let id;
+					let skuId;
 
 					if (versionSku) {
-						id = versionSku.id;
+						skuId = versionSku.id;
 					}
 					else {
 						const response = await createAppSKU({
@@ -172,7 +178,7 @@ export function ProvideVersionDetailsPage({
 							},
 						});
 
-						id = response.id;
+						skuId = response.id;
 
 						dispatch({
 							payload: {
@@ -182,11 +188,16 @@ export function ProvideVersionDetailsPage({
 						});
 					}
 
-					addSkuExpandoValue({
+					addExpandoValue({
+						attributeValues: {
+							'Version': appVersion,
+							'Version Description': appNotes,
+						},
+						className:
+							'com.liferay.commerce.product.model.CPInstance',
+						classPK: skuId,
 						companyId: Number(getCompanyId()),
-						notesValue: appNotes,
-						skuId: id,
-						versionValue: appVersion,
+						tableName: 'CUSTOM_FIELDS',
 					});
 
 					onClickContinue();

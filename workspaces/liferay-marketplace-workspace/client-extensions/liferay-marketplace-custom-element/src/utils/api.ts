@@ -1,68 +1,101 @@
-/* eslint-disable @liferay/portal/no-global-fetch */
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+import {z} from 'zod';
 
 import {Liferay} from '../liferay/liferay';
+import zodSchema from '../schema/zod';
+
 const headers = {
 	'Content-Type': 'application/json',
 	'X-CSRF-Token': Liferay.authToken,
 };
 
-const baseURL = window.location.origin + Liferay.ThemeDisplay.getPathContext();
+type UserForm = z.infer<typeof zodSchema.newCustomer>;
 
-type Categories = {
-	externalReferenceCode: string;
-	id: number;
-	name: string;
-	vocabulary: string;
-};
+export const baseURL =
+	window.location.origin + Liferay.ThemeDisplay.getPathContext();
 
-export async function addSkuExpandoValue({
+// LiferayJsonWS.addExpandoValue
+
+export async function addExpandoValue({
+	attributeValues,
+	className,
+	classPK,
 	companyId,
-	notesValue,
-	skuId,
-	versionValue,
+	tableName,
 }: {
+	attributeValues: Object;
+	className: string;
+	classPK: number;
 	companyId: number;
-	notesValue: string;
-	skuId: number;
-	versionValue: string;
+	tableName: string;
 }) {
 	await Liferay.Service('/expandovalue/add-values', {
-		attributeValues: {
-			'version': versionValue,
-			'version description': notesValue,
-		},
-		className: 'com.liferay.commerce.product.model.CPInstance',
-		classPK: skuId,
+		attributeValues,
+		className,
+		classPK,
 		companyId,
-		tableName: 'CUSTOM_FIELDS',
+		tableName,
 	});
 }
+
+// HeadlessCommerceAdminCatalog.createProduct
 
 export function createApp({
 	appCategories,
 	appDescription,
 	appName,
 	catalogId,
+	productChannels,
 }: {
 	appCategories: Categories[];
 	appDescription: string;
 	appName: string;
 	catalogId: number;
+	productChannels?: Partial<Channel>[];
 }) {
 	return fetch(`${baseURL}/o/headless-commerce-admin-catalog/v1.0/products`, {
 		body: JSON.stringify({
 			active: true,
 			catalogId,
 			categories: appCategories,
-			configuration: {allowBackOrder: true, maxOrderQuantity: 1},
 			description: {en_US: appDescription},
 			name: {en_US: appName},
+			productChannels,
+			productConfiguration: {allowBackOrder: true},
 			productStatus: 2,
 			productType: 'virtual',
 		}),
 		headers,
 		method: 'POST',
 	});
+}
+
+export async function getTierPrice(
+	channelId: number,
+	productId: number | undefined,
+	accountId: number | undefined
+) {
+	const response = await fetch(
+		`${baseURL}/o/headless-commerce-delivery-catalog/v1.0/channels/${channelId}/products/${productId}?accountId=${accountId}&skus.accountId=${accountId}&nestedFields=skus`,
+		{
+			headers,
+			method: 'GET',
+		}
+	);
+
+	const {skus = []} = await response.json();
+
+	const tierPrices: [any?] = [];
+
+	skus.forEach((sku: any) => {
+		tierPrices.push({skuId: sku.id, tierPrice: sku.tierPrices || []});
+	});
+
+	return tierPrices;
 }
 
 export async function createAppLicensePrice({
@@ -85,6 +118,15 @@ export async function createAppLicensePrice({
 	return await response.json();
 }
 
+export async function getLicenseDescription() {
+	const response = await fetch(`${baseURL}/o/c/licensetypesdescriptions/`, {
+		headers,
+		method: 'GET',
+	});
+
+	return response.json();
+}
+
 export async function createAppSKU({
 	appProductId,
 	body,
@@ -105,7 +147,7 @@ export async function createAppSKU({
 	return (await response.json()) as SKU;
 }
 
-export function createAttachment({
+export async function createAttachment({
 	body,
 	externalReferenceCode,
 }: {
@@ -200,7 +242,7 @@ export async function getAccountInfo({accountId}: {accountId: number}) {
 	return response.json();
 }
 
-export async function getAccountInfoFromCommerce(accountId: number) {
+export async function getAccountInfoFromCommerce(accountId?: number) {
 	const response = await fetch(
 		`${baseURL}/o/headless-commerce-admin-account/v1.0/accounts/${accountId}`,
 		{headers, method: 'GET'}
@@ -242,6 +284,59 @@ export async function getAccountPostalAddressesByAccountId(accountId: number) {
 	return (await response.json()) as {items: AccountPostalAddresses[]};
 }
 
+export async function createCart({
+	accountId,
+	channelId,
+	currencyCode = 'USD',
+	orderTypeExternalReferenceCode,
+	orderTypeId,
+}: {
+	accountId: number;
+	channelId: number;
+	currencyCode?: string;
+	orderTypeExternalReferenceCode: string;
+	orderTypeId: number;
+}) {
+	const response = await fetch(
+		`${baseURL}/o/headless-commerce-delivery-cart/v1.0/channels/${channelId}/carts`,
+		{
+			body: JSON.stringify({
+				accountId,
+				currencyCode,
+				orderTypeExternalReferenceCode,
+				orderTypeId,
+			}),
+			headers,
+			method: 'POST',
+		}
+	);
+
+	return response.json();
+}
+
+export async function updateCart(cartId: number, cart: Cart) {
+	const response = await fetch(
+		`${baseURL}/o/headless-commerce-delivery-cart/v1.0/carts/${cartId}`,
+		{
+			body: JSON.stringify(cart),
+			headers,
+			method: 'PATCH',
+		}
+	);
+
+	return response.json();
+}
+
+export async function deleteCart(cartId: number) {
+	await fetch(
+		`${baseURL}/o/headless-commerce-delivery-cart/v1.0/carts/${cartId}`,
+		{
+			headers,
+			method: 'DELETE',
+		}
+	);
+}
+
 export async function getCart(cartId: number) {
 	const cartResponse = await fetch(
 		`${baseURL}/o/headless-commerce-delivery-cart/v1.0/carts/${cartId}`,
@@ -252,6 +347,21 @@ export async function getCart(cartId: number) {
 	);
 
 	return await cartResponse.json();
+}
+
+export async function getCartByChannelAndAccountId(
+	channelId: number,
+	accountId: number
+) {
+	const cartResponse = await fetch(
+		`${baseURL}/o/headless-commerce-delivery-cart/v1.0/channels/${channelId}/account/${accountId}/carts`,
+		{
+			headers,
+			method: 'GET',
+		}
+	);
+
+	return cartResponse.json();
 }
 
 export async function getCartItems(cartId: number) {
@@ -295,7 +405,9 @@ export async function getCategories({vocabId}: {vocabId: number}) {
 		}
 	);
 
-	return response.json();
+	const {items} = (await response.json()) as {items: Vocabulary[]};
+
+	return items;
 }
 
 export async function getCategoriesRanked() {
@@ -307,7 +419,7 @@ export async function getCategoriesRanked() {
 		}
 	);
 
-	const {items} = (await response.json()) as {items: Category[]};
+	const {items} = (await response.json()) as {items: Vocabulary[]};
 
 	return items;
 }
@@ -322,20 +434,6 @@ export async function getChannelById(channelId: number) {
 	);
 
 	return (await channelResponse.json()) as Channel;
-}
-
-export async function getChannels() {
-	const channelsResponse = await fetch(
-		`${baseURL}/o/headless-commerce-delivery-catalog/v1.0/channels`,
-		{
-			headers,
-			method: 'GET',
-		}
-	);
-
-	const response = await channelsResponse.json();
-
-	return response.items as Channel[];
 }
 
 export async function getDeliveryProduct({
@@ -358,7 +456,9 @@ export async function getDeliveryProduct({
 	return await response.json();
 }
 
-export async function getMyUserAccount() {
+// HeadlessAdminUser.getMyUserAccount
+
+export async function getMyUserAccount(): Promise<UserAccount> {
 	const response = await fetch(
 		`${baseURL}/o/headless-admin-user/v1.0/my-user-account`,
 		{
@@ -437,8 +537,8 @@ export async function getOrderTypes() {
 	const response = await fetch(
 		`${baseURL}/o/headless-commerce-admin-order/v1.0/order-types`,
 		{
-			method: 'GET',
 			headers,
+			method: 'GET',
 		}
 	);
 
@@ -447,17 +547,75 @@ export async function getOrderTypes() {
 	return items;
 }
 
-export async function getProduct({appERC}: {appERC: string}) {
+export async function getProduct({
+	appERC,
+	nestedFields,
+}: {
+	appERC?: string;
+	nestedFields?: string;
+}) {
+	let url = `/o/headless-commerce-admin-catalog/v1.0/products/by-externalReferenceCode/${appERC}`;
+
+	if (nestedFields) {
+		url = url + `?nestedFields=${nestedFields}`;
+	}
+
+	const response = await fetch(url, {
+		headers,
+		method: 'GET',
+	});
+
+	return (await response.json()) as Product;
+}
+
+export async function getProductById({
+	nestedFields,
+	productId,
+}: {
+	nestedFields?: string;
+	productId?: string | number;
+}) {
+	let url = `${baseURL}/o/headless-commerce-admin-catalog/v1.0/products/${productId}`;
+
+	if (nestedFields) {
+		url = `${url}?nestedFields=${nestedFields}`;
+	}
+	const response = await fetch(url, {
+		headers,
+		method: 'GET',
+	});
+
+	return (await response.json()) as Product;
+}
+
+export async function getProductAttachments(
+	accountId: number,
+	channelId: number,
+	productId: number
+) {
 	const response = await fetch(
-		`${baseURL}/o/headless-commerce-admin-catalog/v1.0/products/by-externalReferenceCode/${appERC}
-		`,
+		`${baseURL}/o/headless-commerce-delivery-catalog/v1.0/channels/${channelId}/products/${productId}/attachments?accountId=${accountId}`,
 		{
 			headers,
 			method: 'GET',
 		}
 	);
 
-	return await response.json();
+	const {items} = await response.json();
+
+	return items as ProductAttachment[];
+}
+
+export async function getProductIdCategories({appId}: {appId: string}) {
+	const response = await fetch(
+		`${baseURL}/o/headless-commerce-admin-catalog/v1.0/products/${appId}/categories`,
+		{
+			headers,
+			method: 'GET',
+		}
+	);
+
+	return (await response.json()) as {items: Categories[]};
 }
 
 export async function getProductImages({appProductId}: {appProductId: number}) {
@@ -472,19 +630,22 @@ export async function getProductImages({appProductId}: {appProductId: number}) {
 	return await response.json();
 }
 
-export async function getProducts() {
-	const response = await fetch(
-		`${baseURL}/o/headless-commerce-admin-catalog/v1.0/products?pageSize=-1`,
-		{
-			headers,
-			method: 'GET',
-		}
-	);
+export async function getProducts(nestedFields?: string) {
+	let url = `${baseURL}/o/headless-commerce-admin-catalog/v1.0/products?pageSize=-1`;
+
+	if (nestedFields) {
+		url = url + `&nestedFields=${nestedFields}`;
+	}
+
+	const response = await fetch(url, {
+		headers,
+		method: 'GET',
+	});
 
 	return (await response.json()) as {items: Product[]};
 }
 
-export async function getProductSKU({appProductId}: {appProductId: number}) {
+export async function getProductSKU({appProductId}: {appProductId?: number}) {
 	const response = await fetch(
 		`${baseURL}/o/headless-commerce-admin-catalog/v1.0/products/${appProductId}/skus`,
 		{
@@ -499,7 +660,7 @@ export async function getProductSKU({appProductId}: {appProductId: number}) {
 export async function getProductSpecifications({
 	appProductId,
 }: {
-	appProductId: number;
+	appProductId?: number;
 }) {
 	const response = await fetch(
 		`${baseURL}/o/headless-commerce-admin-catalog/v1.0/products/${appProductId}/productSpecifications`,
@@ -509,7 +670,9 @@ export async function getProductSpecifications({
 		}
 	);
 
-	const {items} = (await response.json()) as {items: ProductSpecification[]};
+	const {items} = (await response.json()) as {
+		items: ProductSpecification[];
+	};
 
 	return items;
 }
@@ -542,24 +705,28 @@ export async function getSKUById(skuId: number) {
 	return await response.json();
 }
 
-export async function getSKUCustomFieldExpandoValue({
+export async function getCustomFieldExpandoValue({
+	className,
+	classPK,
+	columnName,
 	companyId,
-	customFieldName,
-	skuId,
+	tableName,
 }: {
+	className: string;
+	classPK: number;
+	columnName: string;
 	companyId: number;
-	customFieldName: string;
-	skuId: number;
+	tableName: string;
 }) {
 	let response = '';
 	await Liferay.Service(
 		'/expandovalue/get-data',
 		{
-			className: 'com.liferay.commerce.product.model.CPInstance',
-			classPK: skuId,
-			columnName: customFieldName,
+			className,
+			classPK,
+			columnName,
 			companyId,
-			tableName: 'CUSTOM_FIELDS',
+			tableName,
 		},
 		(object: any) => {
 			response = object;
@@ -581,14 +748,7 @@ export async function getSpecifications() {
 	return await response.json();
 }
 
-export async function getUserAccount() {
-	const response = await fetch(
-		`${baseURL}/o/headless-admin-user/v1.0/my-user-account`,
-		{headers, method: 'GET'}
-	);
-
-	return response.json();
-}
+// HeadlessAdminUser.getUserAccounts
 
 export async function getUserAccounts() {
 	const response = await fetch(
@@ -599,8 +759,10 @@ export async function getUserAccounts() {
 		}
 	);
 
-	return response.json();
+	return await response.json();
 }
+
+// HeadlessAdminUser.getUserAccountById
 
 export async function getUserAccountsById() {
 	const response = await fetch(
@@ -612,6 +774,20 @@ export async function getUserAccountsById() {
 	);
 
 	return response;
+}
+
+// HeadlessAdminUser.getUserAccountsByAccountId
+
+export async function getUserAccountsByAccountId(accountId: number) {
+	const response = await fetch(
+		`${baseURL}/o/headless-admin-user/v1.0/accounts/${accountId}/user-accounts`,
+		{
+			headers,
+			method: 'GET',
+		}
+	);
+
+	return response.json();
 }
 
 export async function getVocabularies() {
@@ -654,6 +830,23 @@ export async function patchOrderByERC(erc: string, body: any) {
 	);
 
 	return response;
+}
+
+export async function patchProductIdCategory({
+	appId,
+	body,
+}: {
+	appId: string;
+	body: any;
+}) {
+	await fetch(
+		`${baseURL}/o/headless-commerce-admin-catalog/v1.0/products/${appId}/categories`,
+		{
+			body: JSON.stringify(body),
+			headers,
+			method: 'PATCH',
+		}
+	);
 }
 
 export async function patchSKUById(skuId: number, body: any) {
@@ -738,8 +931,8 @@ export async function postOrder(order: Order) {
 		'/o/headless-commerce-admin-order/v1.0/orders',
 		{
 			body: JSON.stringify(order),
-			method: 'POST',
 			headers,
+			method: 'POST',
 		}
 	);
 
@@ -788,7 +981,8 @@ export async function postTrialProductOption(
 			body: JSON.stringify([
 				{
 					description: {
-						en_US: 'Specifies if a trial exists for a given app or solution submission.',
+						en_US:
+							'Specifies if a trial exists for a given app or solution submission.',
 					},
 					facetable: true,
 					fieldType: 'radio',
@@ -814,7 +1008,7 @@ export async function postTrialProductOption(
 	return id;
 }
 
-export function updateApp({
+export async function updateApp({
 	appDescription,
 	appERC,
 	appName,
@@ -823,7 +1017,7 @@ export function updateApp({
 	appERC: string;
 	appName: string;
 }) {
-	return fetch(
+	return await fetch(
 		`${baseURL}/o/headless-commerce-admin-catalog/v1.0/products/by-externalReferenceCode/${appERC}`,
 		{
 			body: JSON.stringify({
@@ -853,4 +1047,131 @@ export async function updateProductSpecification({
 	);
 
 	return await response.json();
+}
+export async function updateUserAdditionalInfos(body: Object, id: number) {
+	const response = await fetch(
+		`${baseURL}/o/c/useradditionalinfos/${id}/?filter=contains(sendType,'shipping')`,
+		{
+			body: JSON.stringify(body),
+			headers,
+			method: 'PATCH',
+		}
+	);
+
+	return await response.json();
+}
+
+export async function getMyUserAditionalInfos(userId: number) {
+	const userAdditionalInfos = await fetch(
+		`${baseURL}/o/c/useradditionalinfos/?filter=r_userToUserAddInfo_userId eq '${userId}' and contains(sendType,'shipping')`,
+		{headers}
+	);
+
+	return await userAdditionalInfos.json();
+}
+
+// HeadlessAdminUser.updateUserAccount
+
+export async function updateUserPassword(password: string, id: number) {
+	const response = await fetch(
+		`/o/headless-admin-user/v1.0/user-accounts/${id}`,
+		{
+			body: JSON.stringify({password}),
+			headers,
+			method: 'PATCH',
+		}
+	);
+
+	return response.json();
+}
+
+// HeadlessAdminUser.sendRoleAccountUser
+
+export async function sendRoleAccountUser(
+	accountId: number,
+	roleId: number,
+	userId: number
+) {
+	await fetch(
+		`/o/headless-admin-user/v1.0/accounts/${accountId}/account-roles/${roleId}/user-accounts/${userId}`,
+		{
+			headers: {
+				...headers,
+				accept: 'application/json',
+			},
+			method: 'POST',
+		}
+	);
+}
+
+export async function updateUserImage(userId: number, formData: FormData) {
+	await fetch(
+		`${baseURL}/o/headless-admin-user/v1.0/user-accounts/${userId}/image`,
+		{
+			body: formData,
+			headers: {
+				'X-CSRF-Token': headers['X-CSRF-Token'],
+			},
+			method: 'POST',
+		}
+	);
+}
+
+export async function updateMyUserAccount(
+	userId: number,
+	formData: UserForm
+): Promise<UserAccount> {
+	const response = await fetch(
+		`${baseURL}/o/headless-admin-user/v1.0/user-accounts/${userId}`,
+		{
+			body: JSON.stringify(formData),
+			headers,
+			method: 'PATCH',
+		}
+	);
+
+	const accountBriefs = formData.accountBriefs || [];
+
+	for (const account of accountBriefs) {
+		account.roleBriefs.forEach(async (roleBrief: RoleBrief) => {
+			if (roleBrief.name === 'Invited Member') {
+				await sendRoleAccountUser(account.id, roleBrief.id, userId);
+			}
+		});
+	}
+
+	return await response.json();
+}
+
+export async function getListTypeDefinitionByExternalReferenceCode(
+	externalReferenceCode: string
+) {
+	const response = await fetch(
+		`${baseURL}/o/headless-admin-list-type/v1.0/list-type-definitions/by-external-reference-code/${externalReferenceCode}`,
+		{
+			headers,
+		}
+	);
+
+	return await response.json();
+}
+
+export async function postAccountByERCUserAccountByERC(
+	accountExternalReferenceCode: string,
+	userExternalReferenceCode: string
+) {
+	await fetch(
+		`${baseURL}/o/headless-admin-user/v1.0/accounts/by-external-reference-code/${accountExternalReferenceCode}/user-accounts/by-external-reference-code/${userExternalReferenceCode}`,
+		{headers, method: 'POST'}
+	);
+}
+
+export async function postEmailAppInformation(
+	emailInformation: EmailAppInformation
+) {
+	await fetch(`${baseURL}/o/c/getappinformations/`, {
+		body: JSON.stringify(emailInformation),
+		headers,
+		method: 'POST',
+	});
 }

@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.commerce.initializer.util;
@@ -19,7 +10,6 @@ import com.liferay.account.model.AccountEntry;
 import com.liferay.account.model.AccountEntryUserRel;
 import com.liferay.account.service.AccountEntryLocalService;
 import com.liferay.account.service.AccountEntryUserRelLocalService;
-import com.liferay.commerce.account.util.CommerceAccountHelper;
 import com.liferay.commerce.constants.CommerceOrderConstants;
 import com.liferay.commerce.constants.CommerceOrderPaymentConstants;
 import com.liferay.commerce.context.CommerceContext;
@@ -41,7 +31,9 @@ import com.liferay.commerce.product.catalog.CPQuery;
 import com.liferay.commerce.product.catalog.CPSku;
 import com.liferay.commerce.product.data.source.CPDataSourceResult;
 import com.liferay.commerce.product.model.CPInstance;
+import com.liferay.commerce.product.model.CPInstanceUnitOfMeasure;
 import com.liferay.commerce.product.service.CPInstanceLocalService;
+import com.liferay.commerce.product.service.CPInstanceUnitOfMeasureLocalService;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.product.util.CPDefinitionHelper;
 import com.liferay.commerce.service.CPDefinitionInventoryLocalService;
@@ -49,8 +41,10 @@ import com.liferay.commerce.service.CommerceAddressLocalService;
 import com.liferay.commerce.service.CommerceOrderItemLocalService;
 import com.liferay.commerce.service.CommerceOrderLocalService;
 import com.liferay.commerce.service.CommerceShippingMethodLocalService;
+import com.liferay.commerce.util.CommerceAccountHelper;
 import com.liferay.commerce.util.CommerceShippingEngineRegistry;
 import com.liferay.commerce.util.comparator.CommerceShippingMethodPriorityComparator;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -75,11 +69,14 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
+import com.liferay.portal.kernel.util.BigDecimalUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import java.io.Serializable;
+
+import java.math.BigDecimal;
 
 import java.util.List;
 import java.util.Random;
@@ -225,7 +222,7 @@ public class CommerceOrderGenerator {
 
 		_commerceOrderEngine.transitionCommerceOrder(
 			commerceOrder, CommerceOrderConstants.ORDER_STATUS_IN_PROGRESS,
-			serviceContext.getUserId());
+			serviceContext.getUserId(), true);
 
 		// Update payment status
 
@@ -265,25 +262,33 @@ public class CommerceOrderGenerator {
 				_cpDefinitionInventoryEngineRegistry.
 					getCPDefinitionInventoryEngine(cpDefinitionInventory);
 
-			int maxOrderQuantity = _getMaxOrderQuantity(
+			BigDecimal maxOrderQuantity = _getMaxOrderQuantity(
 				cpInstance, cpDefinitionInventoryEngine);
 
-			if (maxOrderQuantity < 1) {
+			if (BigDecimalUtil.lt(maxOrderQuantity, BigDecimal.ZERO)) {
 				continue;
 			}
 
 			// Add commerce order item
 
 			try {
-				int quantity = _randomInt(
+				List<CPInstanceUnitOfMeasure> cpInstanceUnitOfMeasures =
+					_cpInstanceUnitOfMeasureLocalService.
+						getCPInstanceUnitOfMeasures(
+							cpInstance.getCompanyId(), cpInstance.getSku());
+
+				BigDecimal quantity = _randomQuantity(
 					cpDefinitionInventoryEngine.getMinOrderQuantity(cpInstance),
-					maxOrderQuantity);
+					maxOrderQuantity,
+					(cpInstanceUnitOfMeasures == null) ? null :
+						cpInstanceUnitOfMeasures.get(0));
 
 				_commerceOrderItemLocalService.addCommerceOrderItem(
 					commerceOrder.getUserId(),
 					commerceOrder.getCommerceOrderId(),
-					cpInstance.getCPInstanceId(), null, quantity, 0, 0,
-					commerceContext, serviceContext);
+					cpInstance.getCPInstanceId(), null, quantity, 0,
+					BigDecimal.ZERO, StringPool.BLANK, commerceContext,
+					serviceContext);
 			}
 			catch (Exception exception) {
 				_log.error(exception);
@@ -312,7 +317,9 @@ public class CommerceOrderGenerator {
 					"status", () -> WorkflowConstants.STATUS_APPROVED
 				).put(
 					"types",
-					_commerceAccountHelper.getAccountEntryTypes(groupId)
+					_commerceAccountHelper.getAccountEntryTypes(
+						_commerceChannelLocalService.
+							getCommerceChannelGroupIdBySiteGroupId(groupId))
 				).build(),
 				QueryUtil.ALL_POS, 0, null, false);
 
@@ -427,19 +434,19 @@ public class CommerceOrderGenerator {
 		return commerceShippingMethod.getCommerceShippingMethodId();
 	}
 
-	private int _getMaxOrderQuantity(
+	private BigDecimal _getMaxOrderQuantity(
 			CPInstance cpInstance,
 			CPDefinitionInventoryEngine cpDefinitionInventoryEngine)
 		throws PortalException {
 
-		int stockQuantity = _commerceInventoryEngine.getStockQuantity(
+		BigDecimal stockQuantity = _commerceInventoryEngine.getStockQuantity(
 			cpInstance.getCompanyId(), cpInstance.getGroupId(),
-			cpInstance.getSku());
+			cpInstance.getSku(), StringPool.BLANK);
 
-		int maxOrderQuantity = cpDefinitionInventoryEngine.getMaxOrderQuantity(
-			cpInstance);
+		BigDecimal maxOrderQuantity =
+			cpDefinitionInventoryEngine.getMaxOrderQuantity(cpInstance);
 
-		if (stockQuantity < maxOrderQuantity) {
+		if (BigDecimalUtil.lt(stockQuantity, maxOrderQuantity)) {
 			return stockQuantity;
 		}
 
@@ -493,6 +500,31 @@ public class CommerceOrderGenerator {
 		}
 
 		return Math.floorMod(value, range) + min;
+	}
+
+	private BigDecimal _randomQuantity(
+		BigDecimal min, BigDecimal max,
+		CPInstanceUnitOfMeasure cpInstanceUnitOfMeasure) {
+
+		if (BigDecimalUtil.lt(max, min)) {
+			throw new IllegalArgumentException(
+				"Max value must be greater than or equal to the min value");
+		}
+
+		int randomInt = _random.nextInt();
+
+		if (cpInstanceUnitOfMeasure == null) {
+			int range = max.intValue() + 1 - min.intValue();
+
+			return BigDecimal.valueOf(
+				Math.floorMod(randomInt, range) + min.intValue());
+		}
+
+		return max.min(
+			cpInstanceUnitOfMeasure.getIncrementalOrderQuantity(
+			).multiply(
+				BigDecimal.valueOf(randomInt)
+			));
 	}
 
 	private void _setPermissionChecker(Group group) throws Exception {
@@ -577,6 +609,10 @@ public class CommerceOrderGenerator {
 
 	@Reference
 	private CPInstanceLocalService _cpInstanceLocalService;
+
+	@Reference
+	private CPInstanceUnitOfMeasureLocalService
+		_cpInstanceUnitOfMeasureLocalService;
 
 	@Reference
 	private GroupLocalService _groupLocalService;

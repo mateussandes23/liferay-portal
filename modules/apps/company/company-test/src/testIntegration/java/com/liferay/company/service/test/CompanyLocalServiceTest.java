@@ -1,21 +1,13 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.company.service.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-import com.liferay.asset.kernel.model.adapter.StagedAssetLink;
+import com.liferay.asset.link.model.adapter.StagedAssetLink;
+import com.liferay.counter.kernel.service.CounterLocalService;
 import com.liferay.document.library.kernel.model.DLFileEntryMetadata;
 import com.liferay.document.library.kernel.model.DLFileEntryType;
 import com.liferay.document.library.kernel.model.DLFileEntryTypeConstants;
@@ -25,6 +17,8 @@ import com.liferay.dynamic.data.mapping.constants.DDMStructureConstants;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureLocalService;
 import com.liferay.dynamic.data.mapping.storage.StorageType;
+import com.liferay.expando.kernel.model.adapter.StagedExpandoColumn;
+import com.liferay.expando.model.adapter.StagedExpandoTable;
 import com.liferay.exportimport.kernel.service.StagingLocalService;
 import com.liferay.layout.friendly.url.LayoutFriendlyURLEntryHelper;
 import com.liferay.layout.set.model.adapter.StagedLayoutSet;
@@ -32,6 +26,7 @@ import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskThreadLocal;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.db.partition.DBPartition;
 import com.liferay.portal.kernel.exception.CompanyMxException;
 import com.liferay.portal.kernel.exception.CompanyNameException;
 import com.liferay.portal.kernel.exception.CompanyVirtualHostException;
@@ -89,7 +84,6 @@ import com.liferay.portal.kernel.util.HashMapDictionary;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
-import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.PrefsProps;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -674,9 +668,8 @@ public class CompanyLocalServiceTest {
 			_transactionConfig,
 			() -> {
 				Assert.assertNull(
-					_portalPreferencesLocalService.fetchPortalPreferences(
-						company.getCompanyId(),
-						PortletKeys.PREFS_OWNER_TYPE_COMPANY));
+					_portalPreferencesLocalService.
+						fetchCompanyPortalPreferences(company.getCompanyId()));
 
 				return null;
 			});
@@ -785,6 +778,43 @@ public class CompanyLocalServiceTest {
 	}
 
 	@Test
+	public void testExtractCompany() {
+		if (DBPartition.isPartitionEnabled()) {
+			return;
+		}
+
+		try {
+			_companyLocalService.extractCompany(1L);
+
+			Assert.fail();
+		}
+		catch (Exception exception) {
+			Assert.assertTrue(
+				exception instanceof UnsupportedOperationException);
+		}
+	}
+
+	@Test
+	public void testExtractDefaultCompany() {
+		try {
+			_companyLocalService.extractCompany(
+				PortalInstances.getDefaultCompanyId());
+
+			Assert.fail();
+		}
+		catch (Exception exception) {
+			if (DBPartition.isPartitionEnabled()) {
+				Assert.assertTrue(
+					exception instanceof RequiredCompanyException);
+			}
+			else {
+				Assert.assertTrue(
+					exception instanceof UnsupportedOperationException);
+			}
+		}
+	}
+
+	@Test
 	public void testGetCompanyByVirtualHost() throws Exception {
 		String virtualHostName = "::1";
 
@@ -807,7 +837,6 @@ public class CompanyLocalServiceTest {
 	@Test
 	public void testUpdateCompanyLocales() throws Exception {
 		Company company = addCompany();
-
 		String languageId = "ca_ES";
 
 		try {
@@ -977,12 +1006,20 @@ public class CompanyLocalServiceTest {
 	}
 
 	protected Company addCompany() throws Exception {
-		return addCompany(RandomTestUtil.randomString() + "test.com");
+		long counterCompanyId = _counterLocalService.increment() + 1;
+
+		Company company = addCompany(
+			RandomTestUtil.randomString() + "test.com");
+
+		_verifyRandomCompanyId(company.getCompanyId(), counterCompanyId);
+
+		return company;
 	}
 
 	protected Company addCompany(String webId) throws Exception {
 		Company company = _companyLocalService.addCompany(
-			null, webId, webId, "test.com", 0, true);
+			null, webId, webId, "test.com", 0, true, null, null, null, null,
+			null, null);
 
 		PortalInstances.initCompany(company);
 
@@ -1030,8 +1067,10 @@ public class CompanyLocalServiceTest {
 	protected void deleteStagingClassNameEntries() {
 		deleteClassName(Folder.class.getName());
 		deleteClassName(StagedAssetLink.class.getName());
-		deleteClassName(StagedLayoutSet.class.getName());
+		deleteClassName(StagedExpandoColumn.class.getName());
+		deleteClassName(StagedExpandoTable.class.getName());
 		deleteClassName(StagedGroup.class.getName());
+		deleteClassName(StagedLayoutSet.class.getName());
 		deleteClassName(StagedTheme.class.getName());
 	}
 
@@ -1198,6 +1237,11 @@ public class CompanyLocalServiceTest {
 		return list;
 	}
 
+	private void _verifyRandomCompanyId(long companyId, long counterCompanyId) {
+		Assert.assertTrue(companyId >= (long)Math.pow(10, 15));
+		Assert.assertNotEquals(counterCompanyId, companyId);
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		CompanyLocalServiceTest.class);
 
@@ -1220,6 +1264,9 @@ public class CompanyLocalServiceTest {
 
 	@Inject
 	private CompanyLocalService _companyLocalService;
+
+	@Inject
+	private CounterLocalService _counterLocalService;
 
 	@Inject
 	private DDMStructureLocalService _ddmStructureLocalService;

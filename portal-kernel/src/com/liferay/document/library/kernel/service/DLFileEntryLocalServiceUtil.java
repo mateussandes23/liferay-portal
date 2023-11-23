@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.document.library.kernel.service;
@@ -445,6 +436,25 @@ public class DLFileEntryLocalServiceUtil {
 		return getService().fetchFileEntryByName(groupId, folderId, name);
 	}
 
+	public static void forEachFileEntry(
+			long companyId, java.util.function.Consumer<DLFileEntry> consumer,
+			long maximumSize, String[] mimeTypes)
+		throws PortalException {
+
+		getService().forEachFileEntry(
+			companyId, consumer, maximumSize, mimeTypes);
+	}
+
+	public static void forEachFileEntry(
+			long companyId, long classNameId,
+			java.util.function.Consumer<DLFileEntry> consumer, long maximumSize,
+			String[] mimeTypes)
+		throws PortalException {
+
+		getService().forEachFileEntry(
+			companyId, classNameId, consumer, maximumSize, mimeTypes);
+	}
+
 	public static com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery
 		getActionableDynamicQuery() {
 
@@ -729,6 +739,12 @@ public class DLFileEntryLocalServiceUtil {
 		return getService().getFileEntryByUuidAndGroupId(uuid, groupId);
 	}
 
+	public static Map<Long, Long> getFileEntryTypeIds(
+		long companyId, long[] groupIds, String treePath) {
+
+		return getService().getFileEntryTypeIds(companyId, groupIds, treePath);
+	}
+
 	public static List<DLFileEntry> getGroupFileEntries(
 		long groupId, int start, int end) {
 
@@ -1007,6 +1023,10 @@ public class DLFileEntryLocalServiceUtil {
 
 	public static DLFileEntryLocalService getService() {
 		return _service;
+	}
+
+	public static void setService(DLFileEntryLocalService service) {
+		_service = service;
 	}
 
 	private static volatile DLFileEntryLocalService _service;

@@ -1,6 +1,7 @@
 definition {
 
-	macro _addAccountRole {
+	@summary = "Default summary"
+	macro _addAccountRole(name = null, descriptionMap = null, type = null, titleMap = null) {
 		Variables.assertDefined(parameterList = "${name},${titleMap},${descriptionMap},${type}");
 
 		var portalURL = JSONCompany.getPortalURL();
@@ -21,11 +22,18 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _addRole {
+	@summary = "Default summary"
+	macro _addRole(name = null, specificURL = null, descriptionMap = null, type = null, titleMap = null) {
 		Variables.assertDefined(parameterList = "${name},${titleMap},${descriptionMap},${type}");
 
-		var portalURL = JSONCompany.getPortalURL();
-		var userLoginInfo = JSONUtil2.formatJSONUser();
+		if (isSet(specificURL)) {
+			var portalURL = ${specificURL};
+		}
+		else {
+			var portalURL = JSONCompany.getPortalURL();
+		}
+
+		var userLoginInfo = JSONUtil2.formatJSONUser(domain = ${specificURL});
 
 		var curl = '''
 			${portalURL}/api/jsonws/role/add-role \
@@ -42,7 +50,8 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _assignDepotRoleToUser {
+	@summary = "Default summary"
+	macro _assignDepotRoleToUser(roleId = null, groupId = null, userId = null) {
 		Variables.assertDefined(parameterList = "${groupId},${roleId},${userId}");
 
 		var portalURL = JSONCompany.getPortalURL();
@@ -59,7 +68,8 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _assignRoleToGroup {
+	@summary = "Default summary"
+	macro _assignRoleToGroup(roleId = null, groupId = null) {
 		Variables.assertDefined(parameterList = "${groupId},${roleId}");
 
 		var portalURL = JSONCompany.getPortalURL();
@@ -75,7 +85,8 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _assignRoleToUser {
+	@summary = "Default summary"
+	macro _assignRoleToUser(roleId = null, userId = null) {
 		Variables.assertDefined(parameterList = "${roleId},${userId}");
 
 		var portalURL = JSONCompany.getPortalURL();
@@ -91,7 +102,8 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _assignSiteRoleToUser {
+	@summary = "Default summary"
+	macro _assignSiteRoleToUser(roleId = null, groupId = null, userId = null) {
 		Variables.assertDefined(parameterList = "${groupId},${roleId},${userId}");
 
 		var portalURL = JSONCompany.getPortalURL();
@@ -108,7 +120,8 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _deleteRoleById {
+	@summary = "Default summary"
+	macro _deleteRoleById(roleId = null) {
 		Variables.assertDefined(parameterList = ${roleId});
 
 		var portalURL = JSONCompany.getPortalURL();
@@ -123,12 +136,20 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _getRoleIdByName {
+	@summary = "Default summary"
+	macro _getRoleIdByName(name = null, specificURL = null) {
 		Variables.assertDefined(parameterList = ${name});
 
-		var companyId = JSONCompany.getCompanyIdNoSelenium();
-		var portalURL = JSONCompany.getPortalURL();
-		var userLoginInfo = JSONUtil2.formatJSONUser();
+		if (isSet(specificURL)) {
+			var portalURL = ${specificURL};
+			var portalInstanceName = JSONCompany.parsePortalInstanceURL(portalURL = ${specificURL});
+		}
+		else {
+			var portalURL = JSONCompany.getPortalURL();
+		}
+
+		var companyId = JSONCompany.getCompanyIdNoSelenium(portalInstanceName = ${portalInstanceName});
+		var userLoginInfo = JSONUtil2.formatJSONUser(domain = ${specificURL});
 
 		var curl = '''
 			${portalURL}/api/jsonws/role/get-role \
@@ -142,8 +163,8 @@ definition {
 		return ${roleId};
 	}
 
-	@summary = "Returns a list of role ids based on its names"
-	macro _searchRolesIds {
+	@summary = "Default summary"
+	macro _searchRolesIds(roleName = null) {
 		Variables.assertDefined(parameterList = ${roleName});
 
 		var companyId = JSONCompany.getCompanyId();

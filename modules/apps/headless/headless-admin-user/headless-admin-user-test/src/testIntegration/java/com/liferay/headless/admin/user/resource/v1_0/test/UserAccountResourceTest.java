@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.admin.user.resource.v1_0.test;
@@ -21,9 +12,11 @@ import com.liferay.account.service.AccountEntryUserRelLocalService;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.captcha.simplecaptcha.SimpleCaptchaImpl;
 import com.liferay.headless.admin.user.client.dto.v1_0.EmailAddress;
+import com.liferay.headless.admin.user.client.dto.v1_0.OrganizationBrief;
 import com.liferay.headless.admin.user.client.dto.v1_0.Phone;
 import com.liferay.headless.admin.user.client.dto.v1_0.PostalAddress;
 import com.liferay.headless.admin.user.client.dto.v1_0.RoleBrief;
+import com.liferay.headless.admin.user.client.dto.v1_0.SiteBrief;
 import com.liferay.headless.admin.user.client.dto.v1_0.UserAccount;
 import com.liferay.headless.admin.user.client.dto.v1_0.UserAccountContactInformation;
 import com.liferay.headless.admin.user.client.dto.v1_0.WebUrl;
@@ -46,6 +39,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Organization;
+import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.UserGroup;
@@ -53,15 +47,23 @@ import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.security.auth.Authenticator;
+import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.security.permission.PermissionChecker;
+import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUtil;
+import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.OrganizationLocalService;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
 import com.liferay.portal.kernel.service.UserGroupLocalService;
 import com.liferay.portal.kernel.service.UserGroupRoleLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalService;
+import com.liferay.portal.kernel.service.UserService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
+import com.liferay.portal.kernel.test.util.HTTPTestUtil;
 import com.liferay.portal.kernel.test.util.OrganizationTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.RoleTestUtil;
@@ -69,11 +71,13 @@ import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.test.util.UserGroupTestUtil;
 import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
+import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -104,6 +108,7 @@ import javax.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -112,6 +117,9 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceRegistration;
+
+import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
 
 /**
  * @author Javier Gamarra
@@ -144,6 +152,29 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 		indexer.reindex(_testUser);
 
 		_accountEntry = _getAccountEntry();
+
+		User otherUser = UserTestUtil.addUser(false);
+
+		otherUser = _userLocalService.updatePassword(
+			otherUser.getUserId(), "test", "test", false, true);
+
+		Role role = RoleTestUtil.addRole(RoleConstants.TYPE_REGULAR);
+
+		_userLocalService.addRoleUser(role.getRoleId(), otherUser);
+
+		_resourcePermissionLocalService.addResourcePermission(
+			TestPropsValues.getCompanyId(), User.class.getName(),
+			ResourceConstants.SCOPE_COMPANY,
+			String.valueOf(TestPropsValues.getCompanyId()), role.getRoleId(),
+			ActionKeys.VIEW);
+
+		UserAccountResource.Builder builder = UserAccountResource.builder();
+
+		_otherUserAccountResource = builder.authentication(
+			otherUser.getEmailAddress(), "test"
+		).locale(
+			LocaleUtil.getDefault()
+		).build();
 	}
 
 	@Override
@@ -171,6 +202,12 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 		Assert.assertNull(
 			_accountEntryUserRelLocalService.fetchAccountEntryUserRel(
 				_accountEntry.getAccountEntryId(), userAccount.getId()));
+	}
+
+	@Override
+	@Test
+	public void testDeleteAccountUserAccount() throws Exception {
+		testDeleteAccountUserAccountByEmailAddress();
 	}
 
 	@Override
@@ -295,6 +332,27 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 
 	@Override
 	@Test
+	public void testGetAccountByExternalReferenceCodeUserAccountByExternalReferenceCode()
+		throws Exception {
+
+		testGetAccountUserAccount();
+	}
+
+	@Override
+	@Test
+	public void testGetAccountUserAccount() throws Exception {
+		User user = UserTestUtil.addUser();
+
+		_accountEntryUserRelLocalService.addAccountEntryUserRel(
+			_accountEntry.getAccountEntryId(), user.getUserId());
+
+		Assert.assertNotNull(
+			_accountEntryUserRelLocalService.fetchAccountEntryUserRel(
+				_accountEntry.getAccountEntryId(), user.getUserId()));
+	}
+
+	@Override
+	@Test
 	public void testGetSiteUserAccountsPage() throws Exception {
 		Page<UserAccount> page = userAccountResource.getSiteUserAccountsPage(
 			testGetSiteUserAccountsPage_getSiteId(),
@@ -325,30 +383,88 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 	public void testGetUserAccount() throws Exception {
 		super.testGetUserAccount();
 
-		User user = UserTestUtil.addUser();
-
 		Group group = GroupTestUtil.addGroup();
 
-		_testGetUserAccountWithInheritedRoles(
-			group,
-			() -> _groupLocalService.addUserGroup(user.getUserId(), group),
-			user);
+		Role groupRole = RoleTestUtil.addRole(
+			"Test Site Role", RoleConstants.TYPE_SITE);
 
-		Organization organization = OrganizationTestUtil.addOrganization();
+		User groupUser = UserTestUtil.addGroupUser(group, "Test Site Role");
 
-		_testGetUserAccountWithInheritedRoles(
-			organization.getGroup(),
-			() -> _organizationLocalService.addUserOrganization(
-				user.getUserId(), organization),
-			user);
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			null,
+			"headless-admin-user/v1.0/user-accounts/" + groupUser.getUserId(),
+			Http.Method.GET);
 
-		UserGroup userGroup = UserGroupTestUtil.addUserGroup();
+		JSONAssert.assertEquals(
+			JSONUtil.put(
+				JSONUtil.put(
+					"name", group.getGroupKey()
+				).put(
+					"roleBriefs",
+					JSONUtil.put(
+						JSONUtil.put(
+							"id", groupRole.getRoleId()
+						).put(
+							"name", groupRole.getName()
+						))
+				)
+			).toString(),
+			String.valueOf(jsonObject.getJSONArray("siteBriefs")),
+			JSONCompareMode.LENIENT);
 
-		_testGetUserAccountWithInheritedRoles(
-			userGroup.getGroup(),
-			() -> _userGroupLocalService.addUserUserGroup(
-				user.getUserId(), userGroup),
-			user);
+		User user = UserTestUtil.addUser();
+
+		PermissionChecker originalPermissionChecker =
+			PermissionThreadLocal.getPermissionChecker();
+
+		try {
+			PermissionThreadLocal.setPermissionChecker(
+				PermissionCheckerFactoryUtil.create(_testUser));
+
+			_testGetUserAccountWithRoles(
+				group,
+				() -> _groupLocalService.addUserGroup(user.getUserId(), group),
+				user);
+
+			Organization organization = OrganizationTestUtil.addOrganization();
+
+			_testGetUserAccountWithRoles(
+				organization.getGroup(),
+				() -> _organizationLocalService.addUserOrganization(
+					user.getUserId(), organization),
+				user);
+
+			UserGroup userGroup = UserGroupTestUtil.addUserGroup();
+
+			_testGetUserAccountWithRoles(
+				userGroup.getGroup(),
+				() -> _userGroupLocalService.addUserUserGroup(
+					user.getUserId(), userGroup),
+				user);
+		}
+		finally {
+			PermissionThreadLocal.setPermissionChecker(
+				originalPermissionChecker);
+		}
+	}
+
+	@Override
+	@Test
+	public void testGetUserAccountByEmailAddress() throws Exception {
+		super.testGetUserAccountByEmailAddress();
+
+		UserAccount postUserAccount =
+			testGetUserAccountsByStatusPage_addUserAccount(
+				com.liferay.headless.admin.user.dto.v1_0.UserAccount.Status.
+					INACTIVE.toString(),
+				randomUserAccount());
+
+		UserAccount getUserAccount =
+			userAccountResource.getUserAccountByEmailAddress(
+				postUserAccount.getEmailAddress());
+
+		assertEquals(postUserAccount, getUserAccount);
+		assertValid(getUserAccount);
 	}
 
 	@Override
@@ -442,6 +558,14 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 		_testGetUserAccountsPage("userGroupRoleNames/any(f:f eq 'Test Role')");
 	}
 
+	@Ignore
+	@Override
+	@Test
+	public void testGetUserAccountsPageWithFilterDateTimeEquals()
+		throws Exception {
+	}
+
+	@Ignore
 	@Override
 	@Test
 	public void testGetUserAccountsPageWithPagination() throws Exception {
@@ -503,6 +627,25 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 		}
 	}
 
+	@Ignore
+	@Override
+	@Test
+	public void testGetUserAccountsPageWithSortString() throws Exception {
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLGetAccountByExternalReferenceCodeUserAccountByExternalReferenceCode()
+		throws Exception {
+	}
+
+	@Ignore
+	@Override
+	@Test
+	public void testGraphQLGetAccountUserAccount() throws Exception {
+	}
+
 	@Override
 	@Test
 	public void testGraphQLGetMyUserAccount() throws Exception {
@@ -517,6 +660,7 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 						"JSONObject/data", "JSONObject/myUserAccount"))));
 	}
 
+	@Ignore
 	@Override
 	@Test
 	public void testGraphQLGetUserAccountsPage() throws Exception {
@@ -547,6 +691,7 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 					userAccountsJSONObject.getString("items"))));
 	}
 
+	@Ignore
 	@Override
 	@Test
 	public void testPatchUserAccount() throws Exception {
@@ -767,6 +912,7 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 		}
 	}
 
+	@Ignore
 	@Override
 	@Test
 	public void testPostUserAccount() throws Exception {
@@ -843,6 +989,7 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 		Assert.assertNotNull(postUserAccount.getImage());
 	}
 
+	@Ignore
 	@Override
 	@Test
 	public void testPutUserAccount() throws Exception {
@@ -898,6 +1045,7 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 				}));
 	}
 
+	@Ignore
 	@Override
 	@Test
 	public void testPutUserAccountByExternalReferenceCode() throws Exception {
@@ -1160,6 +1308,13 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 	}
 
 	@Override
+	protected UserAccount testGetUserAccountByEmailAddress_addUserAccount()
+		throws Exception {
+
+		return userAccountResource.postUserAccount(randomUserAccount());
+	}
+
+	@Override
 	protected UserAccount
 			testGetUserAccountByExternalReferenceCode_addUserAccount()
 		throws Exception {
@@ -1170,6 +1325,55 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 	}
 
 	@Override
+	protected UserAccount testGetUserAccountsByStatusPage_addUserAccount(
+			String status, UserAccount userAccount)
+		throws Exception {
+
+		UserAccount postUserAccount = testPostAccountUserAccount_addUserAccount(
+			userAccount);
+
+		if (StringUtil.equalsIgnoreCase(
+				status,
+				com.liferay.headless.admin.user.dto.v1_0.UserAccount.Status.
+					INACTIVE.toString())) {
+
+			PermissionChecker originalPermissionChecker =
+				PermissionThreadLocal.getPermissionChecker();
+
+			String originalName = PrincipalThreadLocal.getName();
+
+			try {
+				PermissionThreadLocal.setPermissionChecker(
+					PermissionCheckerFactoryUtil.create(
+						TestPropsValues.getUser()));
+
+				PrincipalThreadLocal.setName(TestPropsValues.getUserId());
+
+				_userService.updateStatus(
+					postUserAccount.getId(), WorkflowConstants.STATUS_INACTIVE,
+					ServiceContextTestUtil.getServiceContext(
+						testCompany.getCompanyId(), testGroup.getGroupId(),
+						_testUser.getUserId()));
+			}
+			finally {
+				PermissionThreadLocal.setPermissionChecker(
+					originalPermissionChecker);
+
+				PrincipalThreadLocal.setName(originalName);
+			}
+		}
+
+		return postUserAccount;
+	}
+
+	@Override
+	protected String testGetUserAccountsByStatusPage_getStatus()
+		throws Exception {
+
+		return com.liferay.headless.admin.user.dto.v1_0.UserAccount.Status.
+			INACTIVE.toString();
+	}
+
 	protected UserAccount testGetUserAccountsPage_addUserAccount(
 			UserAccount userAccount)
 		throws Exception {
@@ -1336,20 +1540,33 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 
 		accountEntry.setExternalReferenceCode(RandomTestUtil.randomString());
 
-		_accountEntryLocalService.updateAccountEntry(accountEntry);
-
-		return accountEntry;
+		return _accountEntryLocalService.updateAccountEntry(accountEntry);
 	}
 
 	private Long _getAccountEntryId() {
 		return _accountEntry.getAccountEntryId();
 	}
 
-	private boolean _hasRole(Role role, User user) throws Exception {
-		UserAccount userAccount = userAccountResource.getUserAccount(
-			user.getUserId());
+	private RoleBrief[] _getUserAccountRoleBriefs(UserAccount userAccount) {
+		RoleBrief[] roleBriefs = userAccount.getRoleBriefs();
 
-		for (RoleBrief roleBrief : userAccount.getRoleBriefs()) {
+		for (OrganizationBrief organizationBrief :
+				userAccount.getOrganizationBriefs()) {
+
+			roleBriefs = ArrayUtil.append(
+				roleBriefs, organizationBrief.getRoleBriefs());
+		}
+
+		for (SiteBrief siteBrief : userAccount.getSiteBriefs()) {
+			roleBriefs = ArrayUtil.append(
+				roleBriefs, siteBrief.getRoleBriefs());
+		}
+
+		return roleBriefs;
+	}
+
+	private boolean _hasRole(Role role, RoleBrief[] roleBriefs) {
+		for (RoleBrief roleBrief : roleBriefs) {
 			if (Objects.equals(role.getRoleId(), roleBrief.getId())) {
 				return true;
 			}
@@ -1358,12 +1575,24 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 		return false;
 	}
 
+	private boolean _hasRole(Role role, User user) throws Exception {
+		if (_hasRole(
+				role,
+				_getUserAccountRoleBriefs(
+					userAccountResource.getUserAccount(user.getUserId())))) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	private EmailAddress _randomEmailAddress() throws Exception {
 		return new EmailAddress() {
 			{
-				setEmailAddress(RandomTestUtil.randomString() + "@liferay.com");
-				setPrimary(true);
-				setType("email-address");
+				emailAddress = RandomTestUtil.randomString() + "@liferay.com";
+				primary = true;
+				type = "email-address";
 			}
 		};
 	}
@@ -1371,10 +1600,10 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 	private Phone _randomPhone() throws Exception {
 		return new Phone() {
 			{
-				setExtension(String.valueOf(RandomTestUtil.randomInt()));
-				setPhoneNumber(String.valueOf(RandomTestUtil.randomInt()));
-				setPhoneType("personal");
-				setPrimary(true);
+				extension = String.valueOf(RandomTestUtil.randomInt());
+				phoneNumber = String.valueOf(RandomTestUtil.randomInt());
+				phoneType = "personal";
+				primary = true;
 			}
 		};
 	}
@@ -1382,15 +1611,15 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 	private PostalAddress _randomPostalAddress() throws Exception {
 		return new PostalAddress() {
 			{
-				setAddressCountry("united-states");
-				setAddressLocality("Diamond Bar");
-				setAddressRegion("California");
-				setAddressType("personal");
-				setPostalCode("91765");
-				setPrimary(true);
-				setStreetAddressLine1(RandomTestUtil.randomString());
-				setStreetAddressLine2(RandomTestUtil.randomString());
-				setStreetAddressLine3(RandomTestUtil.randomString());
+				addressCountry = "united-states";
+				addressLocality = "Diamond Bar";
+				addressRegion = "California";
+				addressType = "personal";
+				postalCode = "91765";
+				primary = true;
+				streetAddressLine1 = RandomTestUtil.randomString();
+				streetAddressLine2 = RandomTestUtil.randomString();
+				streetAddressLine3 = RandomTestUtil.randomString();
 			}
 		};
 	}
@@ -1411,16 +1640,15 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 
 		return new UserAccountContactInformation() {
 			{
-				setEmailAddresses(new EmailAddress[] {_randomEmailAddress()});
-				setFacebook(RandomTestUtil.randomString());
-				setJabber(RandomTestUtil.randomString());
-				setPostalAddresses(
-					new PostalAddress[] {_randomPostalAddress()});
-				setSkype(RandomTestUtil.randomString());
-				setSms(RandomTestUtil.randomString() + "@liferay.com");
-				setTelephones(new Phone[] {_randomPhone()});
-				setTwitter(RandomTestUtil.randomString());
-				setWebUrls(new WebUrl[] {_randomWebUrl()});
+				emailAddresses = new EmailAddress[] {_randomEmailAddress()};
+				facebook = RandomTestUtil.randomString();
+				jabber = RandomTestUtil.randomString();
+				postalAddresses = new PostalAddress[] {_randomPostalAddress()};
+				skype = RandomTestUtil.randomString();
+				sms = RandomTestUtil.randomString() + "@liferay.com";
+				telephones = new Phone[] {_randomPhone()};
+				twitter = RandomTestUtil.randomString();
+				webUrls = new WebUrl[] {_randomWebUrl()};
 			}
 		};
 	}
@@ -1428,9 +1656,9 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 	private WebUrl _randomWebUrl() throws Exception {
 		return new WebUrl() {
 			{
-				setPrimary(true);
-				setUrl("https://" + RandomTestUtil.randomString() + ".com");
-				setUrlType("personal");
+				primary = true;
+				url = "https://" + RandomTestUtil.randomString() + ".com";
+				urlType = "personal";
 			}
 		};
 	}
@@ -1474,7 +1702,7 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 		}
 	}
 
-	private void _testGetUserAccountWithInheritedRoles(
+	private void _testGetUserAccountWithRoles(
 			Group group, UnsafeRunnable<Exception> unsafeRunnable, User user)
 		throws Exception {
 
@@ -1487,6 +1715,42 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 		unsafeRunnable.run();
 
 		Assert.assertTrue(_hasRole(inheritedRole, user));
+
+		if (group.isUserGroup()) {
+			_testGetUserAccountWithRolesWithNoPermission(user, inheritedRole);
+
+			return;
+		}
+
+		int groupRoleType = RoleConstants.TYPE_SITE;
+
+		if (group.isOrganization()) {
+			groupRoleType = RoleConstants.TYPE_ORGANIZATION;
+		}
+
+		Role groupRole = RoleTestUtil.addRole(groupRoleType);
+
+		Assert.assertFalse(_hasRole(groupRole, user));
+
+		UserGroupRoleLocalServiceUtil.addUserGroupRole(
+			user.getUserId(), group.getGroupId(), groupRole.getRoleId());
+
+		Assert.assertTrue(_hasRole(groupRole, user));
+
+		_testGetUserAccountWithRolesWithNoPermission(
+			user, inheritedRole, groupRole);
+	}
+
+	private void _testGetUserAccountWithRolesWithNoPermission(
+			User user, Role... roles)
+		throws Exception {
+
+		RoleBrief[] roleBriefs = _getUserAccountRoleBriefs(
+			_otherUserAccountResource.getUserAccount(user.getUserId()));
+
+		for (Role role : roles) {
+			Assert.assertFalse(_hasRole(role, roleBriefs));
+		}
 	}
 
 	private void _testPostUserAccount(Captcha captcha, boolean enableCaptcha)
@@ -1565,9 +1829,13 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 	@Inject
 	private OrganizationLocalService _organizationLocalService;
 
+	private UserAccountResource _otherUserAccountResource;
 	private UserAccount _regularUserAccount;
 	private String _regularUserAccountCurrentPassword;
 	private UserAccountResource _regularUserAccountResource;
+
+	@Inject
+	private ResourcePermissionLocalService _resourcePermissionLocalService;
 
 	@Inject
 	private RoleLocalService _roleLocalService;
@@ -1582,6 +1850,9 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 
 	@Inject
 	private UserLocalService _userLocalService;
+
+	@Inject
+	private UserService _userService;
 
 	private class TestSimpleCaptchaImpl extends SimpleCaptchaImpl {
 

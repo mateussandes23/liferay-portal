@@ -1,17 +1,12 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayLoadingIndicator from '@clayui/loading-indicator';
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {HashRouter, Route, Routes} from 'react-router-dom';
+import {useAppPropertiesContext} from '~/common/contexts/AppPropertiesContext';
 import getKebabCase from '../../../../../common/utils/getKebabCase';
 import DeactivateKeysTable from '../../../containers/DeactivateKeysTable';
 import GenerateNewKey from '../../../containers/GenerateNewKey';
@@ -34,6 +29,9 @@ import ProductOutlet from './Outlets/ProductOutlet';
 
 const ProjectRoutes = () => {
 	const [{project, subscriptionGroups}, dispatch] = useCustomerPortal();
+	const {featureFlags} = useAppPropertiesContext();
+
+	const [hasKeyComplimentary, setHasKeyComplimentary] = useState(false);
 
 	useEffect(() => {
 		if (project && subscriptionGroups) {
@@ -56,7 +54,7 @@ const ProjectRoutes = () => {
 				<Route element={<Layout />} path="/:accountKey">
 					<Route element={<Overview />} index />
 
-					{Liferay.FeatureFlags['LPS-153478'] && (
+					{featureFlags.includes('LPS-153478') && (
 						<Route
 							element={
 								<ProductOutlet
@@ -93,16 +91,43 @@ const ProjectRoutes = () => {
 							}
 							path={getKebabCase(PRODUCT_TYPES.portal)}
 						>
-							<Route element={<Portal />} index />
+							<Route
+								element={
+									<Portal
+										hasKeyComplimentary={
+											hasKeyComplimentary
+										}
+									/>
+								}
+								index
+							/>
 
 							<Route
 								element={
 									<GenerateNewKey
+										hasKeyComplimentary={
+											hasKeyComplimentary
+										}
 										productGroupName={PRODUCT_TYPES.portal}
+										setHasKeyComplimentary={
+											setHasKeyComplimentary
+										}
 									/>
 								}
 								path="new"
 							/>
+
+							{featureFlags.includes('LPS-186175') && (
+								<Route
+									element={
+										<DeactivateKeysTable
+											initialFilter="startswith(productName,'Portal')"
+											productName={PRODUCT_TYPES.portal}
+										/>
+									}
+									path="deactivate"
+								/>
+							)}
 						</Route>
 
 						<Route
@@ -111,12 +136,27 @@ const ProjectRoutes = () => {
 							}
 							path={getKebabCase(PRODUCT_TYPES.dxp)}
 						>
-							<Route element={<DXP />} index />
+							<Route
+								element={
+									<DXP
+										hasKeyComplimentary={
+											hasKeyComplimentary
+										}
+									/>
+								}
+								index
+							/>
 
 							<Route
 								element={
 									<GenerateNewKey
+										hasKeyComplimentary={
+											hasKeyComplimentary
+										}
 										productGroupName={PRODUCT_TYPES.dxp}
+										setHasKeyComplimentary={
+											setHasKeyComplimentary
+										}
 									/>
 								}
 								path="new"

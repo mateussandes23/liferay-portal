@@ -1,15 +1,35 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+declare module '*.svg' {
+	const content: any;
+	export default content;
+}
+
+declare module 'warning';
+
 type Account = {
 	customFields?: CustomField[];
 	description: string;
+	emailAddress: string;
 	externalReferenceCode: string;
 	id: number;
+	logoURL?: string;
 	name: string;
 	type: string;
 };
 
+type Categories = {
+	externalReferenceCode: string;
+	id: string;
+	name: string;
+	vocabulary: string;
+};
+
 type CustomField = {
 	customValue: {
-		data: string;
+		data: string | string[];
 	};
 	dataType?: string;
 	name: string;
@@ -59,10 +79,20 @@ type AccountGroup = {
 	name: string;
 };
 
+type AccountRole = {
+	accountId: number;
+	description: string;
+	displayName: string;
+	id: number;
+	name: string;
+	roleId: number;
+};
+
 type BillingAddress = {
 	city?: string;
 	country?: string;
 	countryISOCode: string;
+	description?: string;
 	name?: string;
 	phoneNumber?: string;
 	regionISOCode?: string;
@@ -77,11 +107,18 @@ type Cart = {
 	billingAddress: BillingAddress;
 	cartItems: CartItem[];
 	currencyCode: string;
-	paymentMethod: string;
-	purchaseOrderNumber?: string;
-	shippingAddress: BillingAddress;
+	id: number;
+	orderStatusInfo: {[key: string]: string};
 	orderTypeExternalReferenceCode: string;
 	orderTypeId: number;
+	paymentMethod: string;
+	paymentStatusInfo: {[key: string]: string};
+	paymentStatusLabel: string;
+	purchaseOrderNumber?: string;
+	shippingAddress: BillingAddress;
+	summary: {
+		totalFormatted: string;
+	};
 };
 
 type CartItem = {
@@ -89,10 +126,10 @@ type CartItem = {
 	price: {
 		currency: string;
 		discount: number;
-		finalPrice: number;
-		price: number;
+		finalPrice?: number;
+		price?: number;
 	};
-	productId: number;
+	productId?: number;
 	quantity: number;
 	settings: {
 		maxQuantity: number;
@@ -109,7 +146,15 @@ type Catalog = {
 	system: boolean;
 };
 
-type Category = {
+type EmailAppInformation = {
+	dashboardLink: string;
+	orderID: number;
+	priceModel?: string;
+	productName?: string;
+	productType: string;
+};
+
+type Vocabulary = {
 	description: string;
 	externalReferenceCode: string;
 	id: string;
@@ -123,6 +168,7 @@ type Category = {
 };
 
 type Channel = {
+	channelId: number;
 	currencyCode: string;
 	externalReferenceCode: string;
 	id: number;
@@ -131,10 +177,14 @@ type Channel = {
 	type: string;
 };
 
+type DefaultProperties = {
+	cloudBaseURL: string;
+};
+
 interface CommerceAccount extends Omit<Account, 'description'> {
 	active: boolean;
-	taxId: string;
 	logoURL: string;
+	taxId: string;
 }
 
 type CommerceOption = {
@@ -152,7 +202,7 @@ interface Order {
 	accountId: number;
 	billingAddressId?: number;
 	channel: {
-		currencyCode: string;
+		currencyCode?: string;
 		id: number;
 		type: string;
 	};
@@ -169,13 +219,17 @@ interface Order {
 	orderDate?: string;
 	orderItems: [
 		{
+			id?: number;
+			quantity?: number;
 			skuId: number;
-			unitPriceWithTaxAmount: number;
+			unitPriceWithTaxAmount?: number;
 		}
 	];
 	orderStatus: number;
 	orderTypeExternalReferenceCode?: string;
 	orderTypeId: number;
+	shippingAmount?: number;
+	shippingWithTaxAmount?: number;
 }
 
 interface OrderType {
@@ -187,9 +241,7 @@ interface OrderType {
 	name: {[key: string]: string};
 }
 
-type PaymentMethodMode = 'PayPal';
-
-type PaymentMethodSelector = 'order' | 'pay' | 'trial' | null;
+type PaymentMethodSelector = 'order' | 'pay' | 'trial' | 'free';
 
 interface PlacedOrder {
 	account: string;
@@ -210,10 +262,12 @@ interface PlacedOrder {
 interface PlacedOrderItems {
 	id: number;
 	name: string;
+	productId: number;
 	skuId: number;
 	subscription: boolean;
 	thumbnail: string;
 	version: string;
+	virtualItemURLs: string;
 }
 
 interface PostalAddressResponse {
@@ -260,31 +314,53 @@ interface PostCheckoutCartResponse extends PostCartResponse {
 	cartItems: CartItem[];
 }
 
-type Product = {
+interface Product {
 	active: boolean;
-	categories: {
-		externalReferenceCode: string;
-		id: number;
-		name: string;
-		vocabulary: string;
-	}[];
+	attachments: ProductAttachment[];
+	catalog: Catalog;
 	catalogId: number;
+	categories: ProductCategories[];
+	customFields?: CustomField[];
 	description: {[key: string]: string};
-	name: {[key: string]: string};
 	externalReferenceCode: string;
-	id: number;
+	finalPrice?: number;
+	id?: number;
+	images: ProductImages[];
+	modifiedDate: string;
+	name: {[key: string]: string};
+	price?: number;
+	productChannels: Channel[];
 	productId: number;
+	productSpecifications: ProductSpecification[];
 	productStatus: number;
 	productType: string;
+	skus: SKU[];
+	thumbnail: string;
 	version: number;
 	workflowStatusInfo: {
 		code: number;
 		label: string;
 		label_i18n: string;
 	};
-	thumbnail: string;
-	modifiedDate: string;
+}
+
+interface ProductAttachment {
+	customFields?: CustomField[];
+	externalReferenceCode: string;
+	id: number;
+	priority: number;
+	src: string;
+	title: {[key: string]: string};
+}
+
+type ProductCategories = {
+	externalReferenceCode: string;
+	id: number;
+	name: string;
+	vocabulary: string;
 };
+
+interface ProductImages extends ProductAttachment {}
 
 type ProductOptionItem = {
 	id: number;
@@ -298,9 +374,15 @@ type RoleBrief = {
 	name: string;
 };
 
+type PermissionDescription = {
+	permissionName: string;
+	permissionTooltip: string;
+	permittedRoles: string[];
+};
+
 type SKU = {
-	customFields?: CustomField[];
 	cost: number;
+	customFields?: CustomField[];
 	externalReferenceCode: string;
 	id: number;
 	price: number;
@@ -309,17 +391,116 @@ type SKU = {
 };
 
 type ProductSpecification = {
-	id: number;
-	optionCategoryId: number;
-	priority: number;
-	productId: number;
-	specificationId: number;
-	specificationKey: string;
+	id?: number;
+	optionCategoryId?: number;
+	priority?: number;
+	productId?: number;
+	specificationId?: number;
+	specificationKey?: string;
 	value: {[key: string]: string};
 };
 
 type UserAccount = {
 	accountBriefs: AccountBrief[];
+	alternateName: string;
+	currentPassword: string;
+	emailAddress: string;
+	externalReferenceCode: string;
+	familyName: string;
+	givenName: string;
+	id: number;
+	image: string;
 	isCustomerAccount: boolean;
 	isPublisherAccount: boolean;
+	newsSubscription: boolean;
+	password: string;
+};
+
+type RequestBody = {
+	[keys: string]: string;
+};
+
+interface CheckboxRole {
+	isChecked: boolean;
+	roleName: string;
+}
+
+type UserLogged = {
+	accountBriefs: AccountBrief[];
+	isAdminAccount: boolean;
+	isCustomerAccount: boolean;
+	isPublisherAccount: boolean;
+};
+
+type AdditionalInfoBody = {
+	acceptInviteStatus: boolean;
+	accountName: string;
+	emailOfMember: string;
+	id?: number;
+	inviteURL: string;
+	inviterName: string;
+	mothersName: string;
+	r_accountEntryToUserAdditionalInfo_accountEntryId: number;
+	r_userToUserAddInfo_userId: string;
+	roles: string;
+	sendType: {key: string; name: string};
+	userFirstName: string;
+};
+
+type PhonesFlags = {
+	code: string;
+	flag: string;
+};
+
+type Industries = {
+	externalReferenceCode: string;
+	id: number;
+	key: string;
+	name: string;
+	name_i18n: {
+		'en-US': string;
+	};
+};
+
+type UserForm = {
+	accountQuantity: number;
+	accountSelected: Account | undefined;
+	accounts: Account[];
+	agreeToTermsAndConditions: boolean;
+	companyName: string;
+	emailAddress: string;
+	extension?: string | undefined;
+	familyName: string;
+	givenName: string;
+	industry: string;
+	phone: PhonesFlags;
+	phoneNumber: string;
+};
+
+type OfferingType = {
+	description: string;
+	disabled?: boolean;
+	label: string;
+};
+
+type OrderInfo = {
+	account: Account | UserForm;
+	product?: Product;
+	sku?: number;
+	specifications?: ProductSpecification[];
+};
+
+type RadioOption<T> = {
+	index: number;
+	value: T;
+};
+
+type APIResponse<Query = any> = {
+	actions: ObjectActions;
+	facets: Facets[];
+	items: Query[];
+	lastPage: number;
+	page: number;
+	pageSize: number;
+	totalCount: number;
 };

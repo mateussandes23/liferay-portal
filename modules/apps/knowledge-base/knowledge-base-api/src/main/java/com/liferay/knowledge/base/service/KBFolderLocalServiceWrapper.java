@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.knowledge.base.service;
@@ -17,6 +8,7 @@ package com.liferay.knowledge.base.service;
 import com.liferay.knowledge.base.model.KBFolder;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.portal.kernel.service.ServiceWrapper;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 
 /**
@@ -120,6 +112,15 @@ public class KBFolderLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _kbFolderLocalService.deleteKBFolder(kbFolderId);
+	}
+
+	@Override
+	public KBFolder deleteKBFolder(
+			long kbFolderId, boolean includeTrashedEntries)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _kbFolderLocalService.deleteKBFolder(
+			kbFolderId, includeTrashedEntries);
 	}
 
 	@Override
@@ -399,6 +400,22 @@ public class KBFolderLocalServiceWrapper
 
 	@Override
 	public java.util.List<Object> getKBFoldersAndKBArticles(
+		long groupId, long parentResourcePrimKey) {
+
+		return _kbFolderLocalService.getKBFoldersAndKBArticles(
+			groupId, parentResourcePrimKey);
+	}
+
+	@Override
+	public java.util.List<Object> getKBFoldersAndKBArticles(
+		long groupId, long parentResourcePrimKey, int status) {
+
+		return _kbFolderLocalService.getKBFoldersAndKBArticles(
+			groupId, parentResourcePrimKey, status);
+	}
+
+	@Override
+	public java.util.List<Object> getKBFoldersAndKBArticles(
 		long groupId, long parentResourcePrimKey, int status, int start,
 		int end,
 		com.liferay.portal.kernel.util.OrderByComparator<?> orderByComparator) {
@@ -469,6 +486,15 @@ public class KBFolderLocalServiceWrapper
 			groupId, parentKBFolderId);
 	}
 
+	@Override
+	public int getKBFoldersCount(
+			long groupId, long parentKBFolderId, int status)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _kbFolderLocalService.getKBFoldersCount(
+			groupId, parentKBFolderId, status);
+	}
+
 	/**
 	 * Returns the OSGi service identifier.
 	 *
@@ -491,10 +517,34 @@ public class KBFolderLocalServiceWrapper
 	}
 
 	@Override
-	public void moveKBFolder(long kbFolderId, long parentKBFolderId)
+	public KBFolder moveKBFolder(long kbFolderId, long parentKBFolderId)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
-		_kbFolderLocalService.moveKBFolder(kbFolderId, parentKBFolderId);
+		return _kbFolderLocalService.moveKBFolder(kbFolderId, parentKBFolderId);
+	}
+
+	@Override
+	public KBFolder moveKBFolderFromTrash(
+			long userId, long kbFolderId, long parentKBFolderId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _kbFolderLocalService.moveKBFolderFromTrash(
+			userId, kbFolderId, parentKBFolderId);
+	}
+
+	@Override
+	public KBFolder moveKBFolderToTrash(long userId, long kbFolderId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _kbFolderLocalService.moveKBFolderToTrash(userId, kbFolderId);
+	}
+
+	@Override
+	public KBFolder restoreKBFolderFromTrash(long userId, long kbFolderId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _kbFolderLocalService.restoreKBFolderFromTrash(
+			userId, kbFolderId);
 	}
 
 	/**
@@ -522,6 +572,18 @@ public class KBFolderLocalServiceWrapper
 		return _kbFolderLocalService.updateKBFolder(
 			parentResourceClassNameId, parentResourcePrimKey, kbFolderId, name,
 			description, serviceContext);
+	}
+
+	@Override
+	public KBFolder updateStatus(long userId, KBFolder kbFolder, int status)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _kbFolderLocalService.updateStatus(userId, kbFolder, status);
+	}
+
+	@Override
+	public BasePersistence<?> getBasePersistence() {
+		return _kbFolderLocalService.getBasePersistence();
 	}
 
 	@Override

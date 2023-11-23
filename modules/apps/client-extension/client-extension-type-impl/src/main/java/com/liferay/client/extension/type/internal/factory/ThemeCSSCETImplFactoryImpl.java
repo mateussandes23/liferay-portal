@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.client.extension.type.internal.factory;
@@ -72,21 +63,24 @@ public class ThemeCSSCETImplFactoryImpl implements CETImplFactory<ThemeCSSCET> {
 
 		if (!Validator.isBlank(baseURL) && !Validator.isUrl(baseURL, true)) {
 			throw new ClientExtensionEntryTypeSettingsException(
-				"please-enter-a-valid-base-url");
+				"Invalid base URL: " + baseURL, "base-url-x-is-invalid",
+				baseURL);
 		}
 
 		String clayURL = newThemeCSSCET.getClayURL();
 
 		if (!Validator.isBlank(clayURL) && !Validator.isUrl(clayURL, true)) {
 			throw new ClientExtensionEntryTypeSettingsException(
-				"please-enter-a-valid-clay-url");
+				"Invalid Clay CSS URL: " + clayURL, "clay-css-url-x-is-invalid",
+				clayURL);
 		}
 
 		String mainURL = newThemeCSSCET.getMainURL();
 
 		if (!Validator.isBlank(mainURL) && !Validator.isUrl(mainURL, true)) {
 			throw new ClientExtensionEntryTypeSettingsException(
-				"please-enter-a-valid-main-url");
+				"Invalid Main CSS URL: " + mainURL, "main-css-url-x-is-invalid",
+				mainURL);
 		}
 	}
 

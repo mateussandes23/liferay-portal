@@ -1,48 +1,42 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import {ClayToggle} from '@clayui/form';
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 interface IProps {
+	ariaLabel: string;
+	companyId: number;
 	disabled: boolean;
+	enabled: boolean;
 	featureFlagKey: string;
 	inputName: string;
-	labelOff: string;
-	labelOn: string;
-	toggled: boolean;
+	onItemsChange: (value: Array<any>) => void;
 }
 
 const FeatureFlagToggle = ({
-	disabled: initialDisabled,
+	ariaLabel,
+	companyId,
+	disabled,
+	enabled,
 	featureFlagKey,
 	inputName,
-	labelOff,
-	labelOn,
-	toggled: initialToggled,
+	onItemsChange,
 }: IProps) => {
-	const [disabled, setDisabled] = useState(initialDisabled);
-	const [toggled, setToggled] = useState(initialToggled);
+	const [isLoading, setIsLoading] = useState<boolean | undefined>();
+	const toggleRef = useRef<any>(null);
 
-	async function updateToggled(newToggled: boolean) {
-		setDisabled(true);
+	const updateToggled = async (newToggled: boolean) => {
+		setIsLoading(true);
 
 		try {
 			const response = await Liferay.Util.fetch(
 				'/o/com-liferay-feature-flag-web/set-enabled',
 				{
 					body: Liferay.Util.objectToFormData({
+						companyId,
 						enabled: newToggled,
 						key: featureFlagKey,
 					}),
@@ -51,7 +45,17 @@ const FeatureFlagToggle = ({
 			);
 
 			if (response.ok) {
-				setToggled(newToggled);
+				const data = await response.json();
+
+				onItemsChange([
+					{
+						enabled: newToggled,
+						key: featureFlagKey,
+					},
+					...(data.dependentFeatureFlags.length
+						? data.dependentFeatureFlags
+						: []),
+				]);
 			}
 			else {
 				Liferay.Util.openToast({
@@ -63,21 +67,31 @@ const FeatureFlagToggle = ({
 			}
 		}
 		finally {
-			setDisabled(false);
+			setIsLoading(false);
 		}
-	}
+	};
+
+	useEffect(() => {
+		if (isLoading !== undefined && !disabled && !isLoading) {
+			toggleRef.current.focus();
+		}
+	}, [disabled, isLoading]);
 
 	return (
-		<>
-			<ClayToggle
-				disabled={disabled}
-				id={inputName}
-				label={toggled ? labelOn : labelOff}
-				onToggle={updateToggled}
-				toggled={toggled}
-				type="checkbox"
-			/>
-		</>
+		<ClayToggle
+			aria-label={ariaLabel}
+			disabled={disabled || isLoading}
+			id={inputName}
+			label={
+				enabled
+					? Liferay.Language.get('enabled')
+					: Liferay.Language.get('disabled')
+			}
+			onToggle={updateToggled}
+			ref={toggleRef}
+			toggled={enabled}
+			type="checkbox"
+		/>
 	);
 };
 

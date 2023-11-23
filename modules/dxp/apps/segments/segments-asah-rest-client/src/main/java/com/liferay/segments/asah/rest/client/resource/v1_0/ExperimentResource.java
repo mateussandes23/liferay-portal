@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
- *
- *
- *
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.segments.asah.rest.client.resource.v1_0;
@@ -18,6 +9,8 @@ import com.liferay.segments.asah.rest.client.dto.v1_0.Experiment;
 import com.liferay.segments.asah.rest.client.http.HttpInvoker;
 import com.liferay.segments.asah.rest.client.problem.Problem;
 import com.liferay.segments.asah.rest.client.serdes.v1_0.ExperimentSerDes;
+
+import java.net.URL;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -109,6 +102,10 @@ public interface ExperimentResource {
 			_scheme = scheme;
 
 			return this;
+		}
+
+		public Builder endpoint(URL url) {
+			return endpoint(url.getHost(), url.getPort(), url.getProtocol());
 		}
 
 		public Builder header(String key, String value) {

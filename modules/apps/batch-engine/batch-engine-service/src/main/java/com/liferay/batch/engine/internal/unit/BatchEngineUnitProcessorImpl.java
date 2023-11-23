@@ -1,32 +1,29 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.batch.engine.internal.unit;
 
 import com.liferay.batch.engine.BatchEngineImportTaskExecutor;
 import com.liferay.batch.engine.BatchEngineTaskExecuteStatus;
+import com.liferay.batch.engine.BatchEngineTaskItemDelegate;
 import com.liferay.batch.engine.BatchEngineTaskOperation;
 import com.liferay.batch.engine.constants.BatchEngineImportTaskConstants;
+import com.liferay.batch.engine.internal.writer.BatchEngineTaskItemDelegateProvider;
 import com.liferay.batch.engine.model.BatchEngineImportTask;
 import com.liferay.batch.engine.service.BatchEngineImportTaskLocalService;
 import com.liferay.batch.engine.unit.BatchEngineUnit;
 import com.liferay.batch.engine.unit.BatchEngineUnitConfiguration;
+import com.liferay.batch.engine.unit.BatchEngineUnitMetaInfo;
 import com.liferay.batch.engine.unit.BatchEngineUnitProcessor;
-import com.liferay.petra.executor.PortalExecutorManager;
+import com.liferay.batch.engine.unit.BatchEngineUnitThreadLocal;
+import com.liferay.batch.engine.unit.BundleBatchEngineUnit;
 import com.liferay.petra.io.StreamUtil;
 import com.liferay.petra.io.unsync.UnsyncByteArrayOutputStream;
+import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -40,16 +37,25 @@ import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
 
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * @author Matija Petanjek
@@ -58,12 +64,33 @@ import org.osgi.service.component.annotations.Reference;
 public class BatchEngineUnitProcessorImpl implements BatchEngineUnitProcessor {
 
 	@Override
-	public void processBatchEngineUnits(
-		Iterable<BatchEngineUnit> batchEngineUnits) {
+	public CompletableFuture<Void> processBatchEngineUnits(
+		Collection<BatchEngineUnit> batchEngineUnits) {
+
+		List<CompletableFuture<Void>> completableFutures = new ArrayList<>();
 
 		for (BatchEngineUnit batchEngineUnit : batchEngineUnits) {
 			try {
-				_processBatchEngineUnit(batchEngineUnit);
+				BatchEngineUnitMetaInfo batchEngineUnitMetaInfo =
+					batchEngineUnit.getBatchEngineUnitMetaInfo();
+
+				String featureFlag = batchEngineUnitMetaInfo.getFeatureFlag();
+
+				if (_isFeatureFlagDisabled(featureFlag)) {
+					_featureFlagBatchEngineUnitProcessor.
+						registerBatchEngineUnit(
+							batchEngineUnitMetaInfo.getCompanyId(), featureFlag,
+							() -> _processBatchEngineUnit(batchEngineUnit));
+
+					continue;
+				}
+
+				CompletableFuture<Void> completableFuture =
+					_processBatchEngineUnit(batchEngineUnit);
+
+				if (completableFuture != null) {
+					completableFutures.add(completableFuture);
+				}
 
 				if (_log.isInfoEnabled()) {
 					_log.info(
@@ -79,9 +106,213 @@ public class BatchEngineUnitProcessorImpl implements BatchEngineUnitProcessor {
 				}
 			}
 		}
+
+		return CompletableFuture.allOf(
+			completableFutures.toArray(new CompletableFuture[0]));
 	}
 
-	private void _processBatchEngineUnit(BatchEngineUnit batchEngineUnit)
+	@Activate
+	protected void activate(BundleContext bundleContext) {
+		_bundleContext = bundleContext;
+	}
+
+	private CompletableFuture<Void> _execute(
+			BatchEngineUnit batchEngineUnit,
+			BatchEngineUnitConfiguration batchEngineUnitConfiguration,
+			byte[] content, String contentType)
+		throws Exception {
+
+		CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+
+		ServiceTracker<Object, Object> serviceTracker =
+			new ServiceTracker<Object, Object>(
+				_bundleContext,
+				_bundleContext.createFilter(
+					StringBundler.concat(
+						"(|(&(batch.engine.entity.class.name=",
+						batchEngineUnitConfiguration.getClassName(), ")",
+						"(!(batch.engine.task.item.delegate.name=*)))",
+						"(&(batch.engine.entity.class.name=",
+						_getObjectEntryClassName(batchEngineUnitConfiguration),
+						")(batch.engine.task.item.delegate.name=",
+						batchEngineUnitConfiguration.getTaskItemDelegateName(),
+						"))(&(batch.engine.entity.class.name=",
+						batchEngineUnitConfiguration.getClassName(),
+						")(batch.engine.task.item.delegate.name=",
+						batchEngineUnitConfiguration.getTaskItemDelegateName(),
+						")))")),
+				null) {
+
+				@Override
+				public Object addingService(
+					ServiceReference<Object> serviceReference) {
+
+					Object service = _bundleContext.getService(
+						serviceReference);
+
+					try {
+						_execute(
+							batchEngineUnit, batchEngineUnitConfiguration,
+							content, contentType, service, this);
+					}
+					catch (Exception exception) {
+						if (_log.isWarnEnabled()) {
+							_log.warn(exception);
+						}
+					}
+					finally {
+						completableFuture.complete(null);
+					}
+
+					_bundleContext.ungetService(serviceReference);
+
+					return null;
+				}
+
+			};
+
+		serviceTracker.open();
+
+		return completableFuture;
+	}
+
+	private void _execute(
+			BatchEngineUnit batchEngineUnit,
+			BatchEngineUnitConfiguration batchEngineUnitConfiguration,
+			byte[] content, String contentType, Object service,
+			ServiceTracker<Object, Object> serviceTracker)
+		throws Exception {
+
+		BatchEngineTaskItemDelegate<?> batchEngineTaskItemDelegate =
+			_batchEngineTaskItemDelegateProvider.toBatchEngineTaskItemDelegate(
+				service);
+
+		BatchEngineImportTask batchEngineImportTask =
+			_batchEngineImportTaskLocalService.addBatchEngineImportTask(
+				null, batchEngineUnitConfiguration.getCompanyId(),
+				batchEngineUnitConfiguration.getUserId(), 100,
+				batchEngineUnitConfiguration.getCallbackURL(),
+				batchEngineUnitConfiguration.getClassName(), content,
+				StringUtil.toUpperCase(contentType),
+				BatchEngineTaskExecuteStatus.INITIAL.name(),
+				batchEngineUnitConfiguration.getFieldNameMappingMap(),
+				BatchEngineImportTaskConstants.IMPORT_STRATEGY_ON_ERROR_FAIL,
+				BatchEngineTaskOperation.CREATE.name(),
+				batchEngineUnitConfiguration.getParameters(),
+				batchEngineUnitConfiguration.getTaskItemDelegateName(),
+				batchEngineTaskItemDelegate);
+
+		try {
+			BatchEngineUnitThreadLocal.setFileName(
+				batchEngineUnit.getFileName());
+
+			_batchEngineImportTaskExecutor.execute(
+				batchEngineImportTask, batchEngineTaskItemDelegate,
+				batchEngineUnitConfiguration.isCheckPermissions());
+		}
+		finally {
+			BatchEngineUnitThreadLocal.setFileName(StringPool.BLANK);
+		}
+
+		if (_log.isInfoEnabled()) {
+			_log.info(
+				StringBundler.concat(
+					"Successfully deployed batch engine file ",
+					batchEngineUnit.getFileName(), " ",
+					batchEngineUnit.getDataFileName()));
+		}
+
+		serviceTracker.close();
+	}
+
+	private Bundle _getBundle(BatchEngineUnit batchEngineUnit) {
+		if (!(batchEngineUnit instanceof BundleBatchEngineUnit)) {
+			return null;
+		}
+
+		BundleBatchEngineUnit bundleBatchEngineUnit =
+			(BundleBatchEngineUnit)batchEngineUnit;
+
+		return bundleBatchEngineUnit.getBundle();
+	}
+
+	private String _getObjectEntryClassName(
+		BatchEngineUnitConfiguration batchEngineUnitConfiguration) {
+
+		String className = batchEngineUnitConfiguration.getClassName();
+
+		String taskItemDelegateName =
+			batchEngineUnitConfiguration.getTaskItemDelegateName();
+
+		if (Validator.isNotNull(taskItemDelegateName)) {
+			className = StringBundler.concat(
+				className, StringPool.POUND, taskItemDelegateName);
+		}
+
+		return className;
+	}
+
+	private boolean _isFeatureFlagDisabled(String featureFlagKey) {
+		if (Validator.isNotNull(featureFlagKey) &&
+			!FeatureFlagManagerUtil.isEnabled(featureFlagKey)) {
+
+			return true;
+		}
+
+		return false;
+	}
+
+	private boolean _isProcessed(BatchEngineUnit batchEngineUnit) {
+		Bundle bundle = _getBundle(batchEngineUnit);
+
+		if (bundle == null) {
+			return false;
+		}
+
+		try {
+			BatchEngineUnitConfiguration batchEngineUnitConfiguration =
+				batchEngineUnit.getBatchEngineUnitConfiguration();
+
+			String dataFileName = batchEngineUnit.getDataFileName();
+
+			java.io.File processedFile = bundle.getDataFile(
+				com.liferay.petra.string.StringUtil.merge(
+					Arrays.asList(
+						dataFileName.replaceAll("\\W+", "."),
+						batchEngineUnitConfiguration.getCompanyId(),
+						"processed"),
+					"."));
+
+			if (processedFile == null) {
+				return false;
+			}
+
+			String lastModifiedString = String.valueOf(
+				bundle.getLastModified());
+
+			if (processedFile.exists() &&
+				Objects.equals(_file.read(processedFile), lastModifiedString)) {
+
+				return true;
+			}
+
+			if (!processedFile.exists()) {
+				processedFile.createNewFile();
+			}
+
+			_file.write(processedFile, lastModifiedString, true);
+
+			return false;
+		}
+		catch (IOException ioException) {
+			ReflectionUtil.throwException(ioException);
+		}
+
+		return false;
+	}
+
+	private CompletableFuture<Void> _processBatchEngineUnit(
+			BatchEngineUnit batchEngineUnit)
 		throws Exception {
 
 		BatchEngineUnitConfiguration batchEngineUnitConfiguration = null;
@@ -119,51 +350,24 @@ public class BatchEngineUnitProcessorImpl implements BatchEngineUnitProcessor {
 					" ", batchEngineUnit.getDataFileName()));
 		}
 
-		Map<String, Serializable> parameters =
-			batchEngineUnitConfiguration.getParameters();
-
-		String featureFlag = (String)parameters.get("featureFlag");
-
-		if (Validator.isNotNull(featureFlag) &&
-			!FeatureFlagManagerUtil.isEnabled(featureFlag)) {
-
-			return;
+		if (_isProcessed(batchEngineUnit)) {
+			return null;
 		}
 
-		ExecutorService executorService =
-			_portalExecutorManager.getPortalExecutor(
-				BatchEngineUnitProcessorImpl.class.getName());
-
-		BatchEngineImportTask batchEngineImportTask =
-			_batchEngineImportTaskLocalService.addBatchEngineImportTask(
-				null, batchEngineUnitConfiguration.getCompanyId(),
-				batchEngineUnitConfiguration.getUserId(), 100,
-				batchEngineUnitConfiguration.getCallbackURL(),
-				batchEngineUnitConfiguration.getClassName(), content,
-				StringUtil.toUpperCase(contentType),
-				BatchEngineTaskExecuteStatus.INITIAL.name(),
-				batchEngineUnitConfiguration.getFieldNameMappingMap(),
-				BatchEngineImportTaskConstants.IMPORT_STRATEGY_ON_ERROR_FAIL,
-				BatchEngineTaskOperation.CREATE.name(),
-				batchEngineUnitConfiguration.getParameters(),
-				batchEngineUnitConfiguration.getTaskItemDelegateName());
-
-		executorService.submit(
-			() -> {
-				_batchEngineImportTaskExecutor.execute(batchEngineImportTask);
-
-				if (_log.isInfoEnabled()) {
-					_log.info(
-						StringBundler.concat(
-							"Successfully deployed batch engine file ",
-							batchEngineUnit.getFileName(), " ",
-							batchEngineUnit.getDataFileName()));
-				}
-			});
+		return _execute(
+			batchEngineUnit, batchEngineUnitConfiguration, content,
+			contentType);
 	}
 
 	private BatchEngineUnitConfiguration _updateBatchEngineUnitConfiguration(
 		BatchEngineUnitConfiguration batchEngineUnitConfiguration) {
+
+		if ((batchEngineUnitConfiguration.getUserId() == 0) &&
+			batchEngineUnitConfiguration.isCheckPermissions() &&
+			batchEngineUnitConfiguration.isMultiCompany()) {
+
+			batchEngineUnitConfiguration.setCheckPermissions(false);
+		}
 
 		if (batchEngineUnitConfiguration.getCompanyId() == 0) {
 			if (_log.isInfoEnabled()) {
@@ -212,13 +416,20 @@ public class BatchEngineUnitProcessorImpl implements BatchEngineUnitProcessor {
 		_batchEngineImportTaskLocalService;
 
 	@Reference
+	private BatchEngineTaskItemDelegateProvider
+		_batchEngineTaskItemDelegateProvider;
+
+	private BundleContext _bundleContext;
+
+	@Reference
 	private CompanyLocalService _companyLocalService;
 
 	@Reference
-	private File _file;
+	private FeatureFlagBatchEngineUnitProcessor
+		_featureFlagBatchEngineUnitProcessor;
 
 	@Reference
-	private PortalExecutorManager _portalExecutorManager;
+	private File _file;
 
 	@Reference
 	private UserLocalService _userLocalService;

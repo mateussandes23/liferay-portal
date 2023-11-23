@@ -1,31 +1,30 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.layout.internal.importer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.liferay.asset.kernel.NoSuchClassTypeException;
+import com.liferay.client.extension.constants.ClientExtensionEntryConstants;
+import com.liferay.client.extension.service.ClientExtensionEntryRelLocalService;
+import com.liferay.client.extension.type.CET;
+import com.liferay.client.extension.type.manager.CETManager;
+import com.liferay.document.library.kernel.service.DLAppService;
 import com.liferay.fragment.listener.FragmentEntryLinkListener;
 import com.liferay.fragment.listener.FragmentEntryLinkListenerRegistry;
 import com.liferay.fragment.model.FragmentEntryLink;
 import com.liferay.fragment.service.FragmentEntryLinkLocalService;
+import com.liferay.headless.delivery.dto.v1_0.ClientExtension;
 import com.liferay.headless.delivery.dto.v1_0.ContentSubtype;
 import com.liferay.headless.delivery.dto.v1_0.ContentType;
 import com.liferay.headless.delivery.dto.v1_0.DisplayPageTemplate;
 import com.liferay.headless.delivery.dto.v1_0.MasterPage;
 import com.liferay.headless.delivery.dto.v1_0.PageDefinition;
 import com.liferay.headless.delivery.dto.v1_0.PageElement;
+import com.liferay.headless.delivery.dto.v1_0.PageRule;
 import com.liferay.headless.delivery.dto.v1_0.PageTemplate;
 import com.liferay.headless.delivery.dto.v1_0.PageTemplateCollection;
 import com.liferay.headless.delivery.dto.v1_0.Settings;
@@ -35,16 +34,21 @@ import com.liferay.info.item.InfoItemFormVariation;
 import com.liferay.info.item.InfoItemServiceRegistry;
 import com.liferay.info.item.provider.InfoItemFormVariationsProvider;
 import com.liferay.layout.admin.constants.LayoutAdminPortletKeys;
+import com.liferay.layout.helper.LayoutCopyHelper;
+import com.liferay.layout.importer.LayoutsImportStrategy;
 import com.liferay.layout.importer.LayoutsImporter;
 import com.liferay.layout.importer.LayoutsImporterResultEntry;
 import com.liferay.layout.internal.importer.exception.DropzoneLayoutStructureItemException;
 import com.liferay.layout.internal.importer.structure.util.LayoutStructureItemImporter;
+import com.liferay.layout.internal.importer.structure.util.LayoutStructureRuleImporter;
 import com.liferay.layout.internal.importer.validator.DisplayPageTemplateValidator;
 import com.liferay.layout.internal.importer.validator.MasterPageValidator;
 import com.liferay.layout.internal.importer.validator.PageDefinitionValidator;
 import com.liferay.layout.internal.importer.validator.PageTemplateCollectionValidator;
 import com.liferay.layout.internal.importer.validator.PageTemplateValidator;
 import com.liferay.layout.internal.importer.validator.UtilityPageTemplateValidator;
+import com.liferay.layout.page.template.constants.LayoutPageTemplateCollectionTypeConstants;
+import com.liferay.layout.page.template.constants.LayoutPageTemplateConstants;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeConstants;
 import com.liferay.layout.page.template.constants.LayoutPageTemplateExportImportConstants;
 import com.liferay.layout.page.template.model.LayoutPageTemplateCollection;
@@ -55,7 +59,6 @@ import com.liferay.layout.page.template.service.LayoutPageTemplateCollectionServ
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalService;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryService;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
-import com.liferay.layout.util.LayoutCopyHelper;
 import com.liferay.layout.util.constants.LayoutStructureConstants;
 import com.liferay.layout.util.structure.FragmentStyledLayoutStructureItem;
 import com.liferay.layout.util.structure.LayoutStructure;
@@ -72,7 +75,6 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.json.validator.JSONValidatorException;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
@@ -91,6 +93,7 @@ import com.liferay.portal.kernel.service.ThemeLocalService;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -109,6 +112,7 @@ import com.liferay.style.book.service.StyleBookEntryLocalService;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -138,32 +142,38 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 	@Override
 	public void importFile(
-			long userId, long groupId, File file, boolean overwrite)
+			long userId, long groupId, File file,
+			LayoutsImportStrategy layoutsImportStrategy)
 		throws Exception {
 
-		importFile(userId, groupId, 0, file, overwrite);
+		importFile(userId, groupId, 0, file, layoutsImportStrategy);
 	}
 
 	@Override
 	public List<LayoutsImporterResultEntry> importFile(
 			long userId, long groupId, long layoutPageTemplateCollectionId,
-			File file, boolean overwrite)
+			File file, LayoutsImportStrategy layoutsImportStrategy)
 		throws Exception {
 
-		_layoutsImporterResultEntries = new ArrayList<>();
+		List<LayoutsImporterResultEntry> layoutsImporterResultEntries =
+			new ArrayList<>();
 
 		try (ZipFile zipFile = new ZipFile(file)) {
 			_processMasterLayoutPageTemplateEntries(
-				groupId, overwrite, userId, zipFile);
+				groupId, layoutsImporterResultEntries, layoutsImportStrategy,
+				userId, zipFile);
 
 			_processLayoutUtilityPageEntries(
-				groupId, overwrite, userId, zipFile);
+				groupId, layoutsImporterResultEntries, layoutsImportStrategy,
+				userId, zipFile);
 
 			_processDisplayPageTemplatePageTemplateEntries(
-				groupId, overwrite, userId, zipFile);
+				groupId, layoutsImporterResultEntries, layoutsImportStrategy,
+				userId, zipFile);
 
 			_processBasicLayoutPageTemplateEntries(
-				groupId, layoutPageTemplateCollectionId, overwrite, userId,
+				groupId, layoutPageTemplateCollectionId,
+				layoutsImporterResultEntries, layoutsImportStrategy, userId,
 				zipFile);
 		}
 		catch (PortalException portalException) {
@@ -174,7 +184,17 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 			}
 		}
 
-		return _layoutsImporterResultEntries;
+		return layoutsImporterResultEntries;
+	}
+
+	@Override
+	public Layout importLayoutSettings(
+			long userId, Layout layout, String settingsJSON)
+		throws Exception {
+
+		Settings settings = Settings.toDTO(settingsJSON);
+
+		return _updateLayoutSettings(userId, layout, settings);
 	}
 
 	@Override
@@ -230,6 +250,44 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 			position, segmentsExperienceId);
 	}
 
+	@Override
+	public boolean validateFile(
+			long groupId, long layoutPageTemplateCollectionId, File file)
+		throws Exception {
+
+		List<LayoutsImporterResultEntry> layoutsImporterResultEntries =
+			new ArrayList<>();
+
+		try (ZipFile zipFile = new ZipFile(file)) {
+			boolean valid = _validateMasterLayoutPageTemplateEntries(
+				groupId, layoutsImporterResultEntries, zipFile);
+
+			if (!valid) {
+				return false;
+			}
+
+			valid = _validateDisplayPageTemplatePageTemplateEntries(
+				groupId, layoutsImporterResultEntries, zipFile);
+
+			if (!valid) {
+				return false;
+			}
+
+			return _validateBasicLayoutPageTemplateEntries(
+				groupId, layoutsImporterResultEntries,
+				layoutPageTemplateCollectionId, zipFile);
+		}
+		catch (PortalException portalException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(portalException);
+
+				throw portalException;
+			}
+		}
+
+		return false;
+	}
+
 	@Activate
 	protected void activate(BundleContext bundleContext) {
 		_serviceTrackerMap = ServiceTrackerMapFactory.openSingleValueMap(
@@ -242,6 +300,59 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	@Deactivate
 	protected void deactivate() {
 		_serviceTrackerMap.close();
+	}
+
+	private void _addClientExtensionEntryRel(
+		String cetExternalReferenceCode, Layout layout,
+		ServiceContext serviceContext, String type,
+		Map<String, String> clientExtensionConfig, long userId) {
+
+		CET cet = _cetManager.getCET(
+			layout.getCompanyId(), cetExternalReferenceCode);
+
+		if ((cet == null) || !Objects.equals(type, cet.getType())) {
+			return;
+		}
+
+		UnicodeProperties unicodeProperties = new UnicodeProperties(true);
+
+		if (clientExtensionConfig != null) {
+			for (Map.Entry<String, String> entry :
+					clientExtensionConfig.entrySet()) {
+
+				unicodeProperties.put(entry.getKey(), entry.getValue());
+			}
+		}
+
+		try {
+			_clientExtensionEntryRelLocalService.addClientExtensionEntryRel(
+				userId, layout.getGroupId(),
+				_portal.getClassNameId(Layout.class.getName()),
+				layout.getPlid(), cetExternalReferenceCode, type,
+				unicodeProperties.toString(), serviceContext);
+		}
+		catch (PortalException portalException) {
+			_log.error(portalException);
+		}
+	}
+
+	private LayoutPageTemplateEntry _addLayoutPageTemplateEntry(
+			long groupId, long layoutPageTemplateCollectionId, long classNameId,
+			long classTypeId, String name, int layoutPageTemplateEntryType)
+		throws PortalException {
+
+		if (classNameId == 0) {
+			return _layoutPageTemplateEntryService.addLayoutPageTemplateEntry(
+				groupId, layoutPageTemplateCollectionId, name,
+				layoutPageTemplateEntryType, 0,
+				WorkflowConstants.STATUS_APPROVED,
+				ServiceContextThreadLocal.getServiceContext());
+		}
+
+		return _layoutPageTemplateEntryService.addLayoutPageTemplateEntry(
+			groupId, layoutPageTemplateCollectionId, classNameId, classTypeId,
+			name, 0, WorkflowConstants.STATUS_APPROVED,
+			ServiceContextThreadLocal.getServiceContext());
 	}
 
 	private void _deleteExistingPortletPreferences(long plid) {
@@ -271,7 +382,9 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	}
 
 	private List<DisplayPageTemplateEntry> _getDisplayPageTemplateEntries(
-			long groupId, ZipFile zipFile)
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			ZipFile zipFile)
 		throws Exception {
 
 		List<DisplayPageTemplateEntry> displayPageTemplateEntries =
@@ -307,10 +420,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 						jsonValidatorException);
 				}
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						zipEntry.getName(),
-						LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE,
+						LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -347,10 +460,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 						exception);
 				}
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						displayPageTemplate.getName(),
-						LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE,
+						LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -382,6 +495,21 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 		return _language.format(locale, languageKey, arguments);
 	}
 
+	private long _getFileEntryId(long contentDocumentId) {
+		try {
+			FileEntry fileEntry = _dlAppService.getFileEntry(contentDocumentId);
+
+			return fileEntry.getFileEntryId();
+		}
+		catch (PortalException portalException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(portalException);
+			}
+		}
+
+		return 0;
+	}
+
 	private String _getKey(String defaultKey, String name, ZipEntry zipEntry) {
 		String[] pathParts = StringUtil.split(
 			zipEntry.getName(), CharPool.SLASH);
@@ -404,8 +532,8 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 	private LayoutPageTemplateCollection _getLayoutPageTemplateCollection(
 			long groupId, long layoutPageTemplateCollectionId,
-			PageTemplateCollectionEntry pageTemplateCollectionEntry,
-			boolean overwrite)
+			LayoutsImportStrategy layoutsImportStrategy,
+			PageTemplateCollectionEntry pageTemplateCollectionEntry)
 		throws Exception {
 
 		LayoutPageTemplateCollection layoutPageTemplateCollection = null;
@@ -434,24 +562,48 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 		layoutPageTemplateCollection =
 			_layoutPageTemplateCollectionLocalService.
 				fetchLayoutPageTemplateCollection(
-					groupId, layoutPageTemplateCollectionKey);
+					groupId, layoutPageTemplateCollectionKey,
+					LayoutPageTemplateEntryTypeConstants.BASIC);
 
 		if (layoutPageTemplateCollection == null) {
 			layoutPageTemplateCollection =
 				_layoutPageTemplateCollectionLocalService.
 					fetchLayoutPageTemplateCollectionByName(
-						groupId, pageTemplateCollection.getName());
+						groupId, pageTemplateCollection.getName(),
+						LayoutPageTemplateEntryTypeConstants.BASIC);
 
 			if (layoutPageTemplateCollection == null) {
 				return _layoutPageTemplateCollectionService.
 					addLayoutPageTemplateCollection(
-						groupId, pageTemplateCollection.getName(),
+						groupId,
+						LayoutPageTemplateConstants.
+							PARENT_LAYOUT_PAGE_TEMPLATE_COLLECTION_ID_DEFAULT,
+						pageTemplateCollection.getName(),
 						pageTemplateCollection.getDescription(),
+						LayoutPageTemplateCollectionTypeConstants.BASIC,
 						ServiceContextThreadLocal.getServiceContext());
 			}
 		}
 
-		if (overwrite) {
+		if (Objects.equals(
+				LayoutsImportStrategy.KEEP_BOTH, layoutsImportStrategy)) {
+
+			return _layoutPageTemplateCollectionService.
+				addLayoutPageTemplateCollection(
+					groupId,
+					LayoutPageTemplateConstants.
+						PARENT_LAYOUT_PAGE_TEMPLATE_COLLECTION_ID_DEFAULT,
+					_layoutPageTemplateCollectionLocalService.
+						getUniqueLayoutPageTemplateCollectionName(
+							groupId, pageTemplateCollection.getName(),
+							LayoutPageTemplateEntryTypeConstants.BASIC),
+					pageTemplateCollection.getDescription(),
+					LayoutPageTemplateCollectionTypeConstants.BASIC,
+					ServiceContextThreadLocal.getServiceContext());
+		}
+		else if (Objects.equals(
+					LayoutsImportStrategy.OVERWRITE, layoutsImportStrategy)) {
+
 			return _layoutPageTemplateCollectionService.
 				updateLayoutPageTemplateCollection(
 					layoutPageTemplateCollection.
@@ -470,7 +622,9 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	}
 
 	private List<UtilityPageTemplateEntry> _getLayoutUtilityPageEntries(
-			long groupId, ZipFile zipFile)
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			ZipFile zipFile)
 		throws Exception {
 
 		List<UtilityPageTemplateEntry> utilityPageTemplateEntries =
@@ -506,7 +660,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 						jsonValidatorException);
 				}
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						zipEntry.getName(),
 						LayoutsImporterResultEntry.Status.INVALID,
@@ -515,13 +669,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 							"x-could-not-be-imported-because-its-utility-" +
 								"page-is-invalid",
 							new String[] {zipEntry.getName()})));
-
-				continue;
-			}
-
-			if (!FeatureFlagManagerUtil.isEnabled("LPS-165914") &&
-				(utilityPageTemplate.getType() ==
-					UtilityPageTemplate.Type.ERROR_CODE500)) {
 
 				continue;
 			}
@@ -552,7 +699,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 						exception);
 				}
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						utilityPageTemplate.getName(),
 						LayoutsImporterResultEntry.Status.INVALID,
@@ -568,7 +715,9 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	}
 
 	private List<MasterPageEntry> _getMasterPageEntries(
-			long groupId, ZipFile zipFile)
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			ZipFile zipFile)
 		throws Exception {
 
 		List<MasterPageEntry> masterPageEntries = new ArrayList<>();
@@ -598,10 +747,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 						jsonValidatorException);
 				}
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						zipEntry.getName(),
-						LayoutPageTemplateEntryTypeConstants.TYPE_MASTER_LAYOUT,
+						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -637,10 +786,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 						exception);
 				}
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						masterPage.getName(),
-						LayoutPageTemplateEntryTypeConstants.TYPE_MASTER_LAYOUT,
+						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -672,7 +821,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	}
 
 	private Map<String, PageTemplateCollectionEntry>
-			_getPageTemplateCollectionEntryMap(long groupId, ZipFile zipFile)
+			_getPageTemplateCollectionEntryMap(
+				long groupId,
+				List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+				ZipFile zipFile)
 		throws Exception {
 
 		Map<String, PageTemplateCollectionEntry> pageTemplateCollectionMap =
@@ -746,10 +898,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 						exception);
 				}
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						zipEntry.getName(),
-						LayoutPageTemplateEntryTypeConstants.TYPE_BASIC,
+						LayoutPageTemplateEntryTypeConstants.BASIC,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -791,10 +943,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 						exception);
 				}
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						pageTemplate.getName(),
-						LayoutPageTemplateEntryTypeConstants.TYPE_BASIC,
+						LayoutPageTemplateEntryTypeConstants.BASIC,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -995,12 +1147,14 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 	private void _processBasicLayoutPageTemplateEntries(
 			long groupId, long layoutPageTemplateCollectionId,
-			boolean overwrite, long userId, ZipFile zipFile)
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy, long userId,
+			ZipFile zipFile)
 		throws Exception {
 
 		Map<String, PageTemplateCollectionEntry>
 			pageTemplateCollectionEntryMap = _getPageTemplateCollectionEntryMap(
-				groupId, zipFile);
+				groupId, layoutsImporterResultEntries, zipFile);
 
 		for (Map.Entry<String, PageTemplateCollectionEntry> entry :
 				pageTemplateCollectionEntryMap.entrySet()) {
@@ -1018,26 +1172,32 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 			LayoutPageTemplateCollection layoutPageTemplateCollection =
 				_getLayoutPageTemplateCollection(
 					groupId, layoutPageTemplateCollectionId,
-					pageTemplateCollectionEntry, overwrite);
+					layoutsImportStrategy, pageTemplateCollectionEntry);
 
 			_processPageTemplateEntries(
-				groupId, layoutPageTemplateCollection, pageTemplatesEntries,
-				overwrite, userId, zipFile);
+				groupId, layoutPageTemplateCollection,
+				layoutsImporterResultEntries, layoutsImportStrategy,
+				pageTemplatesEntries, userId, zipFile);
 		}
 	}
 
 	private void _processDisplayPageTemplatePageTemplateEntries(
-			long groupId, boolean overwrite, long userId, ZipFile zipFile)
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy, long userId,
+			ZipFile zipFile)
 		throws Exception {
 
 		List<DisplayPageTemplateEntry> displayPageTemplateEntries =
-			_getDisplayPageTemplateEntries(groupId, zipFile);
+			_getDisplayPageTemplateEntries(
+				groupId, layoutsImporterResultEntries, zipFile);
 
 		for (DisplayPageTemplateEntry displayPageTemplateEntry :
 				displayPageTemplateEntries) {
 
 			Callable<Void> callable = new DisplayPagesImporterCallable(
-				groupId, displayPageTemplateEntry, overwrite, userId, zipFile);
+				groupId, displayPageTemplateEntry, layoutsImporterResultEntries,
+				layoutsImportStrategy, userId, zipFile);
 
 			try {
 				TransactionInvokerUtil.invoke(_transactionConfig, callable);
@@ -1050,10 +1210,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				DisplayPageTemplate displayPageTemplate =
 					displayPageTemplateEntry.getDisplayPageTemplate();
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						displayPageTemplate.getName(),
-						LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE,
+						LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -1067,38 +1227,51 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	private LayoutPageTemplateEntry _processLayoutPageTemplateEntry(
 			long classNameId, long classTypeId, long groupId,
 			long layoutPageTemplateCollectionId,
-			LayoutPageTemplateEntry layoutPageTemplateEntry, String name,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy, String name,
 			PageDefinition pageDefinition, int layoutPageTemplateEntryType,
-			boolean overwrite, long userId, ZipEntry thumbnailZipEntry,
-			String zipPath, ZipFile zipFile)
+			long userId, ZipEntry thumbnailZipEntry, String zipPath,
+			ZipFile zipFile)
 		throws Exception {
 
+		LayoutPageTemplateEntry layoutPageTemplateEntry =
+			_layoutPageTemplateEntryLocalService.fetchLayoutPageTemplateEntry(
+				groupId, name, layoutPageTemplateEntryType);
+
 		try {
+			if ((layoutPageTemplateEntry != null) &&
+				Objects.equals(
+					LayoutsImportStrategy.DO_NOT_IMPORT,
+					layoutsImportStrategy)) {
+
+				return null;
+			}
+
 			boolean added = false;
 
 			if (layoutPageTemplateEntry == null) {
-				if (classNameId == 0) {
-					layoutPageTemplateEntry =
-						_layoutPageTemplateEntryService.
-							addLayoutPageTemplateEntry(
-								groupId, layoutPageTemplateCollectionId, name,
-								layoutPageTemplateEntryType, 0,
-								WorkflowConstants.STATUS_APPROVED,
-								ServiceContextThreadLocal.getServiceContext());
-				}
-				else {
-					layoutPageTemplateEntry =
-						_layoutPageTemplateEntryService.
-							addLayoutPageTemplateEntry(
-								groupId, layoutPageTemplateCollectionId,
-								classNameId, classTypeId, name, 0,
-								WorkflowConstants.STATUS_APPROVED,
-								ServiceContextThreadLocal.getServiceContext());
-				}
-
+				layoutPageTemplateEntry = _addLayoutPageTemplateEntry(
+					groupId, layoutPageTemplateCollectionId, classNameId,
+					classTypeId, name, layoutPageTemplateEntryType);
 				added = true;
 			}
-			else if (overwrite) {
+			else if (Objects.equals(
+						LayoutsImportStrategy.KEEP_BOTH,
+						layoutsImportStrategy)) {
+
+				layoutPageTemplateEntry = _addLayoutPageTemplateEntry(
+					groupId, layoutPageTemplateCollectionId, classNameId,
+					classTypeId,
+					_layoutPageTemplateEntryLocalService.
+						getUniqueLayoutPageTemplateEntryName(
+							groupId, name, layoutPageTemplateEntryType),
+					layoutPageTemplateEntryType);
+				added = true;
+			}
+			else if (Objects.equals(
+						LayoutsImportStrategy.OVERWRITE,
+						layoutsImportStrategy)) {
+
 				_deleteExistingPortletPreferences(
 					layoutPageTemplateEntry.getPlid());
 
@@ -1116,7 +1289,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				Set<String> warningMessages = new HashSet<>();
 
 				_processPageDefinition(
-					layoutPageTemplateEntry.getPlid(), pageDefinition,
+					layoutPageTemplateEntry.getPlid(), pageDefinition, userId,
 					warningMessages);
 
 				long previewFileEntryId = _getPreviewFileEntryId(
@@ -1131,14 +1304,14 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 								getLayoutPageTemplateEntryId(),
 							previewFileEntryId);
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						name, layoutPageTemplateEntryType,
 						LayoutsImporterResultEntry.Status.IMPORTED,
 						warningMessages.toArray(new String[0])));
 			}
 			else {
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						name, layoutPageTemplateEntryType,
 						LayoutsImporterResultEntry.Status.IGNORED,
@@ -1159,17 +1332,32 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 			throw new PortalException();
 		}
+		catch (NoSuchClassTypeException noSuchClassTypeException) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(noSuchClassTypeException);
+			}
+
+			layoutsImporterResultEntries.add(
+				new LayoutsImporterResultEntry(
+					name, layoutPageTemplateEntryType,
+					LayoutsImporterResultEntry.Status.INVALID,
+					_getErrorMessage(
+						groupId, _MESSAGE_KEY_TYPE_INVALID,
+						new String[] {zipPath})));
+
+			return null;
+		}
 		catch (PortalException portalException) {
 			if (_log.isWarnEnabled()) {
 				_log.warn(portalException);
 			}
 
-			_layoutsImporterResultEntries.add(
+			layoutsImporterResultEntries.add(
 				new LayoutsImporterResultEntry(
 					name, layoutPageTemplateEntryType,
 					LayoutsImporterResultEntry.Status.INVALID,
 					_getErrorMessage(
-						groupId, _MESSAGE_KEY_INVALID,
+						groupId, _MESSAGE_KEY_NAME_INVALID,
 						new String[] {
 							zipPath, _toTypeName(layoutPageTemplateEntryType)
 						})));
@@ -1181,17 +1369,22 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	}
 
 	private void _processLayoutUtilityPageEntries(
-			long groupId, boolean overwrite, long userId, ZipFile zipFile)
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy, long userId,
+			ZipFile zipFile)
 		throws Exception {
 
 		List<UtilityPageTemplateEntry> utilityPageTemplateEntries =
-			_getLayoutUtilityPageEntries(groupId, zipFile);
+			_getLayoutUtilityPageEntries(
+				groupId, layoutsImporterResultEntries, zipFile);
 
 		for (UtilityPageTemplateEntry utilityPageTemplateEntry :
 				utilityPageTemplateEntries) {
 
 			Callable<Void> callable = new UtilityPageImporterCallable(
-				groupId, utilityPageTemplateEntry, overwrite, userId, zipFile);
+				groupId, layoutsImporterResultEntries, layoutsImportStrategy,
+				utilityPageTemplateEntry, userId, zipFile);
 
 			try {
 				TransactionInvokerUtil.invoke(_transactionConfig, callable);
@@ -1204,7 +1397,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				UtilityPageTemplate utilityPageTemplate =
 					utilityPageTemplateEntry.getUtilityPageTemplate();
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						utilityPageTemplate.getName(),
 						LayoutsImporterResultEntry.Status.INVALID,
@@ -1219,10 +1412,11 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 	private void _processLayoutUtilityPageTemplateEntry(
 			String externalReferenceCode, long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy,
 			LayoutUtilityPageEntry layoutUtilityPageEntry, String name,
-			PageDefinition pageDefinition, String type, boolean overwrite,
-			long userId, ZipEntry thumbnailZipEntry, String zipPath,
-			ZipFile zipFile)
+			PageDefinition pageDefinition, String type, long userId,
+			ZipEntry thumbnailZipEntry, String zipPath, ZipFile zipFile)
 		throws Exception {
 
 		try {
@@ -1236,7 +1430,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 				added = true;
 			}
-			else if (overwrite) {
+			else if (Objects.equals(
+						LayoutsImportStrategy.OVERWRITE,
+						layoutsImportStrategy)) {
+
 				_deleteExistingPortletPreferences(
 					layoutUtilityPageEntry.getPlid());
 
@@ -1252,7 +1449,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				Set<String> warningMessages = new HashSet<>();
 
 				_processPageDefinition(
-					layoutUtilityPageEntry.getPlid(), pageDefinition,
+					layoutUtilityPageEntry.getPlid(), pageDefinition, userId,
 					warningMessages);
 
 				long previewFileEntryId = _getPreviewFileEntryId(
@@ -1266,13 +1463,13 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 						previewFileEntryId);
 				}
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						name, LayoutsImporterResultEntry.Status.IMPORTED,
 						warningMessages.toArray(new String[0])));
 			}
 			else {
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						name, LayoutsImporterResultEntry.Status.IGNORED,
 						_getErrorMessage(
@@ -1294,25 +1491,29 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				_log.warn(portalException);
 			}
 
-			_layoutsImporterResultEntries.add(
+			layoutsImporterResultEntries.add(
 				new LayoutsImporterResultEntry(
 					name, LayoutsImporterResultEntry.Status.INVALID,
 					_getErrorMessage(
-						groupId, _MESSAGE_KEY_INVALID,
+						groupId, _MESSAGE_KEY_NAME_INVALID,
 						new String[] {zipPath, "utility page"})));
 		}
 	}
 
 	private void _processMasterLayoutPageTemplateEntries(
-			long groupId, boolean overwrite, long userId, ZipFile zipFile)
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy, long userId,
+			ZipFile zipFile)
 		throws Exception {
 
 		List<MasterPageEntry> masterPageEntries = _getMasterPageEntries(
-			groupId, zipFile);
+			groupId, layoutsImporterResultEntries, zipFile);
 
 		for (MasterPageEntry masterPageEntry : masterPageEntries) {
 			Callable<Void> callable = new MasterLayoutTemplatesImporterCallable(
-				groupId, masterPageEntry, overwrite, userId, zipFile);
+				groupId, layoutsImporterResultEntries, layoutsImportStrategy,
+				masterPageEntry, userId, zipFile);
 
 			try {
 				TransactionInvokerUtil.invoke(_transactionConfig, callable);
@@ -1324,10 +1525,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 				MasterPage masterPage = masterPageEntry.getMasterPage();
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						masterPage.getName(),
-						LayoutPageTemplateEntryTypeConstants.TYPE_MASTER_LAYOUT,
+						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -1339,7 +1540,7 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	}
 
 	private void _processPageDefinition(
-			long plid, PageDefinition pageDefinition,
+			long plid, PageDefinition pageDefinition, long userId,
 			Set<String> warningMessages)
 		throws Exception {
 
@@ -1347,11 +1548,11 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 		LayoutStructure layoutStructure = new LayoutStructure();
 
-		LayoutStructureItem rootLayoutStructureItem =
-			layoutStructure.addRootLayoutStructureItem();
-
 		if (pageDefinition != null) {
 			PageElement pageElement = pageDefinition.getPageElement();
+
+			LayoutStructureItem rootLayoutStructureItem =
+				layoutStructure.addRootLayoutStructureItem(pageElement.getId());
 
 			if ((pageElement.getType() == PageElement.Type.ROOT) &&
 				(pageElement.getPageElements() != null)) {
@@ -1377,11 +1578,21 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				}
 			}
 
+			if (pageDefinition.getPageRules() != null) {
+				for (PageRule pageRule : pageDefinition.getPageRules()) {
+					LayoutStructureRuleImporter.addLayoutStructureRule(
+						layoutStructure, pageRule);
+				}
+			}
+
 			Settings settings = pageDefinition.getSettings();
 
 			layout = _layoutLocalService.fetchLayout(layout.getPlid());
 
-			_updateLayoutSettings(layout, settings);
+			layout = _updateLayoutSettings(userId, layout, settings);
+		}
+		else {
+			layoutStructure.addRootLayoutStructureItem();
 		}
 
 		_updateLayoutPageTemplateStructure(layout, layoutStructure);
@@ -1455,8 +1666,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	private void _processPageTemplateEntries(
 			long groupId,
 			LayoutPageTemplateCollection layoutPageTemplateCollection,
-			Map<String, PageTemplateEntry> pageTemplateEntryMap,
-			boolean overwrite, long userId, ZipFile zipFile)
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy,
+			Map<String, PageTemplateEntry> pageTemplateEntryMap, long userId,
+			ZipFile zipFile)
 		throws Exception {
 
 		for (Map.Entry<String, PageTemplateEntry> entry :
@@ -1464,16 +1677,12 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 			PageTemplateEntry pageTemplateEntry = entry.getValue();
 
-			LayoutPageTemplateEntry layoutPageTemplateEntry =
-				_layoutPageTemplateEntryLocalService.
-					fetchLayoutPageTemplateEntry(groupId, entry.getKey());
-
 			Callable<Void> callable = new BasicLayoutsImporterCallable(
 				groupId,
 				layoutPageTemplateCollection.
 					getLayoutPageTemplateCollectionId(),
-				layoutPageTemplateEntry, overwrite, userId, pageTemplateEntry,
-				zipFile);
+				layoutsImporterResultEntries, layoutsImportStrategy, userId,
+				pageTemplateEntry, zipFile);
 
 			try {
 				TransactionInvokerUtil.invoke(_transactionConfig, callable);
@@ -1485,10 +1694,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 				PageTemplate pageTemplate = pageTemplateEntry.getPageTemplate();
 
-				_layoutsImporterResultEntries.add(
+				layoutsImporterResultEntries.add(
 					new LayoutsImporterResultEntry(
 						pageTemplate.getName(),
-						LayoutPageTemplateEntryTypeConstants.TYPE_MASTER_LAYOUT,
+						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT,
 						LayoutsImporterResultEntry.Status.INVALID,
 						_getErrorMessage(
 							groupId,
@@ -1501,19 +1710,19 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 	private String _toTypeName(int layoutPageTemplateEntryType) {
 		if (layoutPageTemplateEntryType ==
-				LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE) {
+				LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE) {
 
 			return "display page template";
 		}
 
 		if (layoutPageTemplateEntryType ==
-				LayoutPageTemplateEntryTypeConstants.TYPE_MASTER_LAYOUT) {
+				LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT) {
 
 			return "master page";
 		}
 
 		if (layoutPageTemplateEntryType ==
-				LayoutPageTemplateEntryTypeConstants.TYPE_BASIC) {
+				LayoutPageTemplateEntryTypeConstants.BASIC) {
 
 			return "page template";
 		}
@@ -1571,15 +1780,14 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 			ServiceContextThreadLocal.getServiceContext());
 	}
 
-	private void _updateLayoutSettings(Layout layout, Settings settings) {
+	private Layout _updateLayoutSettings(
+		long userId, Layout layout, Settings settings) {
+
 		if (settings == null) {
 			layout.setThemeId(null);
-
 			layout.setColorSchemeId(null);
 
-			_layoutLocalService.updateLayout(layout);
-
-			return;
+			return _layoutLocalService.updateLayout(layout);
 		}
 
 		UnicodeProperties unicodeProperties =
@@ -1616,8 +1824,41 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 			layout.setColorSchemeId(settings.getColorSchemeName());
 		}
 
+		StyleBook styleBook = settings.getStyleBook();
+
+		if (styleBook != null) {
+			StyleBookEntry styleBookEntry =
+				_styleBookEntryLocalService.fetchStyleBookEntry(
+					layout.getGroupId(), styleBook.getKey());
+
+			if (styleBookEntry != null) {
+				layout.setStyleBookEntryId(
+					styleBookEntry.getStyleBookEntryId());
+			}
+		}
+
 		if (Validator.isNotNull(settings.getCss())) {
 			layout.setCss(settings.getCss());
+		}
+
+		ServiceContext serviceContext =
+			ServiceContextThreadLocal.getServiceContext();
+
+		Map<String, Serializable> favIconMap =
+			(Map<String, Serializable>)settings.getFavIcon();
+
+		if (MapUtil.isNotEmpty(favIconMap)) {
+			if (Objects.equals(favIconMap.get("contentType"), "Document")) {
+				layout.setFaviconFileEntryId(
+					_getFileEntryId(GetterUtil.getLong(favIconMap.get("id"))));
+			}
+			else if (favIconMap.containsKey("externalReferenceCode")) {
+				_addClientExtensionEntryRel(
+					String.valueOf(favIconMap.get("externalReferenceCode")),
+					layout, serviceContext,
+					ClientExtensionEntryConstants.TYPE_THEME_FAVICON, null,
+					userId);
+			}
 		}
 
 		MasterPage masterPage = settings.getMasterPage();
@@ -1634,20 +1875,143 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 			}
 		}
 
-		StyleBook styleBook = settings.getStyleBook();
+		ArrayUtil.isNotEmptyForEach(
+			settings.getGlobalCSSClientExtensions(),
+			globalCSSClientExtension -> _addClientExtensionEntryRel(
+				globalCSSClientExtension.getExternalReferenceCode(), layout,
+				serviceContext, ClientExtensionEntryConstants.TYPE_GLOBAL_CSS,
+				globalCSSClientExtension.getClientExtensionConfig(), userId));
+		ArrayUtil.isNotEmptyForEach(
+			settings.getGlobalJSClientExtensions(),
+			globalJSClientExtension -> _addClientExtensionEntryRel(
+				globalJSClientExtension.getExternalReferenceCode(), layout,
+				serviceContext, ClientExtensionEntryConstants.TYPE_GLOBAL_JS,
+				globalJSClientExtension.getClientExtensionConfig(), userId));
 
-		if (styleBook != null) {
-			StyleBookEntry styleBookEntry =
-				_styleBookEntryLocalService.fetchStyleBookEntry(
-					layout.getGroupId(), styleBook.getKey());
+		ClientExtension themeCSSClientExtension =
+			settings.getThemeCSSClientExtension();
 
-			if (styleBookEntry != null) {
-				layout.setStyleBookEntryId(
-					styleBookEntry.getStyleBookEntryId());
+		if (themeCSSClientExtension != null) {
+			_addClientExtensionEntryRel(
+				themeCSSClientExtension.getExternalReferenceCode(), layout,
+				serviceContext, ClientExtensionEntryConstants.TYPE_THEME_CSS,
+				themeCSSClientExtension.getClientExtensionConfig(), userId);
+		}
+
+		return _layoutLocalService.updateLayout(layout);
+	}
+
+	private boolean _validateBasicLayoutPageTemplateEntries(
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			long layoutPageTemplateCollectionId, ZipFile zipFile)
+		throws Exception {
+
+		Map<String, PageTemplateCollectionEntry>
+			pageTemplateCollectionEntryMap = _getPageTemplateCollectionEntryMap(
+				groupId, layoutsImporterResultEntries, zipFile);
+
+		for (Map.Entry<String, PageTemplateCollectionEntry> entry1 :
+				pageTemplateCollectionEntryMap.entrySet()) {
+
+			PageTemplateCollectionEntry pageTemplateCollectionEntry =
+				entry1.getValue();
+
+			Map<String, PageTemplateEntry> pageTemplatesEntries =
+				pageTemplateCollectionEntry.getPageTemplatesEntries();
+
+			if (MapUtil.isEmpty(pageTemplatesEntries)) {
+				continue;
+			}
+
+			if (layoutPageTemplateCollectionId == 0) {
+				LayoutPageTemplateCollection layoutPageTemplateCollection =
+					_layoutPageTemplateCollectionLocalService.
+						fetchLayoutPageTemplateCollection(
+							groupId, pageTemplateCollectionEntry.getKey(),
+							LayoutPageTemplateEntryTypeConstants.BASIC);
+
+				if (layoutPageTemplateCollection != null) {
+					return false;
+				}
+			}
+
+			for (Map.Entry<String, PageTemplateEntry> entry2 :
+					pageTemplatesEntries.entrySet()) {
+
+				PageTemplateEntry pageTemplateEntry = entry2.getValue();
+
+				PageTemplate pageTemplate = pageTemplateEntry.getPageTemplate();
+
+				LayoutPageTemplateEntry layoutPageTemplateEntry =
+					_layoutPageTemplateEntryLocalService.
+						fetchLayoutPageTemplateEntry(
+							groupId, pageTemplate.getName(),
+							LayoutPageTemplateEntryTypeConstants.BASIC);
+
+				if (layoutPageTemplateEntry != null) {
+					return false;
+				}
 			}
 		}
 
-		_layoutLocalService.updateLayout(layout);
+		return true;
+	}
+
+	private boolean _validateDisplayPageTemplatePageTemplateEntries(
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			ZipFile zipFile)
+		throws Exception {
+
+		List<DisplayPageTemplateEntry> displayPageTemplateEntries =
+			_getDisplayPageTemplateEntries(
+				groupId, layoutsImporterResultEntries, zipFile);
+
+		for (DisplayPageTemplateEntry displayPageTemplateEntry :
+				displayPageTemplateEntries) {
+
+			DisplayPageTemplate displayPageTemplate =
+				displayPageTemplateEntry.getDisplayPageTemplate();
+
+			LayoutPageTemplateEntry layoutPageTemplateEntry =
+				_layoutPageTemplateEntryLocalService.
+					fetchLayoutPageTemplateEntry(
+						groupId, displayPageTemplate.getName(),
+						LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE);
+
+			if (layoutPageTemplateEntry != null) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private boolean _validateMasterLayoutPageTemplateEntries(
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			ZipFile zipFile)
+		throws Exception {
+
+		List<MasterPageEntry> masterPageEntries = _getMasterPageEntries(
+			groupId, layoutsImporterResultEntries, zipFile);
+
+		for (MasterPageEntry masterPageEntry : masterPageEntries) {
+			MasterPage masterPage = masterPageEntry.getMasterPage();
+
+			LayoutPageTemplateEntry layoutPageTemplateEntry =
+				_layoutPageTemplateEntryLocalService.
+					fetchLayoutPageTemplateEntry(
+						groupId, masterPage.getName(),
+						LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT);
+
+			if (layoutPageTemplateEntry != null) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	private static final String _DISPLAY_PAGE_TEMPLATE_ENTRY_KEY_DEFAULT =
@@ -1659,8 +2023,12 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	private static final String _MESSAGE_KEY_IGNORED =
 		"x-was-ignored-because-a-x-with-the-same-key-already-exists";
 
-	private static final String _MESSAGE_KEY_INVALID =
+	private static final String _MESSAGE_KEY_NAME_INVALID =
 		"x-could-not-be-imported-because-a-x-with-the-same-name-already-exists";
+
+	private static final String _MESSAGE_KEY_TYPE_INVALID =
+		"x-could-not-be-imported-because-its-content-type-or-subtype-is-" +
+			"missing";
 
 	private static final String _PAGE_TEMPLATE_COLLECTION_KEY_DEFAULT =
 		"imported";
@@ -1683,6 +2051,16 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	private static final TransactionConfig _transactionConfig =
 		TransactionConfig.Factory.create(
 			Propagation.REQUIRED, new Class<?>[] {Exception.class});
+
+	@Reference
+	private CETManager _cetManager;
+
+	@Reference
+	private ClientExtensionEntryRelLocalService
+		_clientExtensionEntryRelLocalService;
+
+	@Reference
+	private DLAppService _dlAppService;
 
 	@Reference
 	private FragmentEntryLinkListenerRegistry
@@ -1721,8 +2099,6 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 	@Reference
 	private LayoutPageTemplateStructureLocalService
 		_layoutPageTemplateStructureLocalService;
-
-	private List<LayoutsImporterResultEntry> _layoutsImporterResultEntries;
 
 	@Reference
 	private LayoutUtilityPageEntryLocalService
@@ -1885,10 +2261,10 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 			_processLayoutPageTemplateEntry(
 				0, 0, _groupId, _layoutPageTemplateCollectionId,
-				_layoutPageTemplateEntry, pageTemplate.getName(),
-				_pageTemplateEntry.getPageDefinition(),
-				LayoutPageTemplateEntryTypeConstants.TYPE_BASIC, _overwrite,
-				_userId, _pageTemplateEntry.getThumbnailZipEntry(),
+				_layoutsImporterResultEntries, _layoutsImportStrategy,
+				pageTemplate.getName(), _pageTemplateEntry.getPageDefinition(),
+				LayoutPageTemplateEntryTypeConstants.BASIC, _userId,
+				_pageTemplateEntry.getThumbnailZipEntry(),
 				_pageTemplateEntry.getZipPath(), _zipFile);
 
 			return null;
@@ -1896,13 +2272,14 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 		private BasicLayoutsImporterCallable(
 			long groupId, long layoutPageTemplateCollectionId,
-			LayoutPageTemplateEntry layoutPageTemplateEntry, boolean overwrite,
-			long userId, PageTemplateEntry pageTemplateEntry, ZipFile zipFile) {
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy, long userId,
+			PageTemplateEntry pageTemplateEntry, ZipFile zipFile) {
 
 			_groupId = groupId;
 			_layoutPageTemplateCollectionId = layoutPageTemplateCollectionId;
-			_layoutPageTemplateEntry = layoutPageTemplateEntry;
-			_overwrite = overwrite;
+			_layoutsImporterResultEntries = layoutsImporterResultEntries;
+			_layoutsImportStrategy = layoutsImportStrategy;
 			_userId = userId;
 			_pageTemplateEntry = pageTemplateEntry;
 			_zipFile = zipFile;
@@ -1910,8 +2287,9 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 		private final long _groupId;
 		private final long _layoutPageTemplateCollectionId;
-		private final LayoutPageTemplateEntry _layoutPageTemplateEntry;
-		private final boolean _overwrite;
+		private final List<LayoutsImporterResultEntry>
+			_layoutsImporterResultEntries;
+		private final LayoutsImportStrategy _layoutsImportStrategy;
 		private final PageTemplateEntry _pageTemplateEntry;
 		private final long _userId;
 		private final ZipFile _zipFile;
@@ -1934,18 +2312,14 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 				displayPageTemplate, classNameId);
 
 			LayoutPageTemplateEntry layoutPageTemplateEntry =
-				_layoutPageTemplateEntryLocalService.
-					fetchLayoutPageTemplateEntry(
-						_groupId, _displayPageTemplateEntry.getKey());
-
-			layoutPageTemplateEntry = _processLayoutPageTemplateEntry(
-				classNameId, classTypeId, _groupId, 0, layoutPageTemplateEntry,
-				displayPageTemplate.getName(),
-				_displayPageTemplateEntry.getPageDefinition(),
-				LayoutPageTemplateEntryTypeConstants.TYPE_DISPLAY_PAGE,
-				_overwrite, _userId,
-				_displayPageTemplateEntry.getThumbnailZipEntry(),
-				_displayPageTemplateEntry.getZipPath(), _zipFile);
+				_processLayoutPageTemplateEntry(
+					classNameId, classTypeId, _groupId, 0,
+					_layoutsImporterResultEntries, _layoutsImportStrategy,
+					displayPageTemplate.getName(),
+					_displayPageTemplateEntry.getPageDefinition(),
+					LayoutPageTemplateEntryTypeConstants.DISPLAY_PAGE, _userId,
+					_displayPageTemplateEntry.getThumbnailZipEntry(),
+					_displayPageTemplateEntry.getZipPath(), _zipFile);
 
 			boolean defaultTemplate = GetterUtil.getBoolean(
 				displayPageTemplate.getDefaultTemplate());
@@ -1962,11 +2336,14 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 		private DisplayPagesImporterCallable(
 			long groupId, DisplayPageTemplateEntry displayPageTemplateEntry,
-			boolean overwrite, long userId, ZipFile zipFile) {
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy, long userId,
+			ZipFile zipFile) {
 
 			_groupId = groupId;
 			_displayPageTemplateEntry = displayPageTemplateEntry;
-			_overwrite = overwrite;
+			_layoutsImporterResultEntries = layoutsImporterResultEntries;
+			_layoutsImportStrategy = layoutsImportStrategy;
 			_userId = userId;
 			_zipFile = zipFile;
 		}
@@ -2015,7 +2392,9 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 		private final DisplayPageTemplateEntry _displayPageTemplateEntry;
 		private final long _groupId;
-		private final boolean _overwrite;
+		private final List<LayoutsImporterResultEntry>
+			_layoutsImporterResultEntries;
+		private final LayoutsImportStrategy _layoutsImportStrategy;
 		private final long _userId;
 		private final ZipFile _zipFile;
 
@@ -2028,35 +2407,36 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 		public Void call() throws Exception {
 			MasterPage masterPage = _masterPageEntry.getMasterPage();
 
-			LayoutPageTemplateEntry layoutPageTemplateEntry =
-				_layoutPageTemplateEntryLocalService.
-					fetchLayoutPageTemplateEntry(
-						_groupId, _masterPageEntry.getKey());
-
 			_processLayoutPageTemplateEntry(
-				0, 0, _groupId, 0, layoutPageTemplateEntry,
-				masterPage.getName(), _masterPageEntry.getPageDefinition(),
-				LayoutPageTemplateEntryTypeConstants.TYPE_MASTER_LAYOUT,
-				_overwrite, _userId, _masterPageEntry.getThumbnailZipEntry(),
+				0, 0, _groupId, 0, _layoutsImporterResultEntries,
+				_layoutsImportStrategy, masterPage.getName(),
+				_masterPageEntry.getPageDefinition(),
+				LayoutPageTemplateEntryTypeConstants.MASTER_LAYOUT, _userId,
+				_masterPageEntry.getThumbnailZipEntry(),
 				_masterPageEntry.getZipPath(), _zipFile);
 
 			return null;
 		}
 
 		private MasterLayoutTemplatesImporterCallable(
-			long groupId, MasterPageEntry masterPageEntry, boolean overwrite,
-			long userId, ZipFile zipFile) {
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy,
+			MasterPageEntry masterPageEntry, long userId, ZipFile zipFile) {
 
 			_groupId = groupId;
+			_layoutsImporterResultEntries = layoutsImporterResultEntries;
+			_layoutsImportStrategy = layoutsImportStrategy;
 			_masterPageEntry = masterPageEntry;
-			_overwrite = overwrite;
 			_userId = userId;
 			_zipFile = zipFile;
 		}
 
 		private final long _groupId;
+		private final List<LayoutsImporterResultEntry>
+			_layoutsImporterResultEntries;
+		private final LayoutsImportStrategy _layoutsImportStrategy;
 		private final MasterPageEntry _masterPageEntry;
-		private final boolean _overwrite;
 		private final long _userId;
 		private final ZipFile _zipFile;
 
@@ -2146,30 +2526,36 @@ public class LayoutsImporterImpl implements LayoutsImporter {
 
 			_processLayoutUtilityPageTemplateEntry(
 				utilityPageTemplate.getExternalReferenceCode(), _groupId,
+				_layoutsImporterResultEntries, _layoutsImportStrategy,
 				layoutUtilityPageEntry, utilityPageTemplate.getName(),
 				_utilityPageTemplateEntry.getPageDefinition(),
 				LayoutUtilityPageEntryTypeConverter.convertToInternalValue(
 					utilityPageTemplate.getTypeAsString()),
-				_overwrite, _userId,
-				_utilityPageTemplateEntry.getThumbnailZipEntry(),
+				_userId, _utilityPageTemplateEntry.getThumbnailZipEntry(),
 				_utilityPageTemplateEntry.getZipPath(), _zipFile);
 
 			return null;
 		}
 
 		private UtilityPageImporterCallable(
-			long groupId, UtilityPageTemplateEntry utilityPageTemplateEntry,
-			boolean overwrite, long userId, ZipFile zipFile) {
+			long groupId,
+			List<LayoutsImporterResultEntry> layoutsImporterResultEntries,
+			LayoutsImportStrategy layoutsImportStrategy,
+			UtilityPageTemplateEntry utilityPageTemplateEntry, long userId,
+			ZipFile zipFile) {
 
 			_groupId = groupId;
+			_layoutsImporterResultEntries = layoutsImporterResultEntries;
+			_layoutsImportStrategy = layoutsImportStrategy;
 			_utilityPageTemplateEntry = utilityPageTemplateEntry;
-			_overwrite = overwrite;
 			_userId = userId;
 			_zipFile = zipFile;
 		}
 
 		private final long _groupId;
-		private final boolean _overwrite;
+		private final List<LayoutsImporterResultEntry>
+			_layoutsImporterResultEntries;
+		private final LayoutsImportStrategy _layoutsImportStrategy;
 		private final long _userId;
 		private final UtilityPageTemplateEntry _utilityPageTemplateEntry;
 		private final ZipFile _zipFile;

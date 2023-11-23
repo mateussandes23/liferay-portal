@@ -14,9 +14,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -27,6 +27,9 @@ definition {
 	@description = "User can enable local staging on site which is based on Masterclass site template."
 	@priority = 4
 	test CanEnableLocalStagingOnMasterclassSiteTemplate {
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
+
 		task ("Given: Add a new site based on Masterclass site template") {
 			Site.openSitesAdmin();
 
@@ -45,17 +48,11 @@ definition {
 		task ("Then: User can publish the staging site") {
 			Navigator.openSiteURL(siteName = "Test Masterclass Site");
 
-			var key_tabName = "Staging";
+			Staging.openStagingAdmin(siteURLKey = "test-masterclass-site-staging");
 
-			while (IsElementNotPresent(locator1 = "StagingPublishToLive#TAB_NAME")) {
-				Refresh();
-			}
+			WaitForElementPresent(locator1 = "Staging#PROCESS_SUCCESSFUL");
 
-			Click(locator1 = "StagingPublishToLive#TAB_NAME");
-
-			Staging.gotoPublishToLive();
-
-			Staging.publishToLive();
+			Staging.publishCustomPublication();
 		}
 	}
 
@@ -98,6 +95,9 @@ definition {
 	@description = "User can enable local staging on site which is based on Raylife site template."
 	@priority = 4
 	test CanEnableLocalStagingOnRaylifeSiteTemplate {
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
+
 		task ("Given: Add a new site based on Raylife site template") {
 			Site.openSitesAdmin();
 

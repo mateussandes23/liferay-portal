@@ -1,27 +1,31 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import {ClayInput} from '@clayui/form';
+import ClayIcon from '@clayui/icon';
 import {useEffect, useMemo} from 'react';
+import {useAppPropertiesContext} from '~/common/contexts/AppPropertiesContext';
+import useCurrentKoroneikiAccount from '~/common/hooks/useCurrentKoroneikiAccount';
+import useProvisioningLicenseKeys from '~/common/hooks/useProvisioningLicenseKeys';
+import useUserAccountsByAccountExternalReferenceCode from '~/routes/customer-portal/pages/Project/TeamMembers/components/TeamMembersTable/hooks/useUserAccountsByAccountExternalReferenceCode';
 import i18n from '../../../../I18n';
 import {Input, Select} from '../../../../components';
 import useBannedDomains from '../../../../hooks/useBannedDomains';
-import {ROLE_TYPES} from '../../../../utils/constants';
-import {isValidEmail} from '../../../../utils/validations.form';
+import {ROLE_TYPES} from '../../../../utils/constants/';
+import {liferayDomains} from '../../../../utils/constants/liferayDomains';
+import {
+	isLiferayDomain,
+	isValidEmail,
+} from '../../../../utils/validations.form';
 
 const FETCH_DELAY_AFTER_TYPING = 500;
 
 const TeamMemberInputs = ({
 	administratorsAssetsAvailable,
 	disableError,
+	errors,
 	id,
 	invite,
 	onSelectRole,
@@ -29,10 +33,55 @@ const TeamMemberInputs = ({
 	placeholderEmail,
 	selectOnChange,
 }) => {
+	const {accountSettingsURL, featureFlags} = useAppPropertiesContext();
+	const provisioningService = useProvisioningLicenseKeys();
+
 	const bannedDomains = useBannedDomains(
 		invite?.email,
 		FETCH_DELAY_AFTER_TYPING
 	);
+
+	const {data} = useCurrentKoroneikiAccount();
+	const koroneikiAccount = data?.koroneikiAccountByExternalReferenceCode;
+
+	const [
+		,
+		{data: userAccountsData},
+	] = useUserAccountsByAccountExternalReferenceCode(
+		koroneikiAccount?.accountKey
+	);
+
+	const currentDomain = userAccountsData?.accountUserAccountsByExternalReferenceCode.items
+		.map(({emailAddress}) => emailAddress.split('@')[1])
+		.flat();
+
+	const [, domain] = invite?.email.split('@');
+
+	const mathEmail = currentDomain?.includes(domain) || false;
+
+	const isEmailValid = !!errors.invites?.[id]?.email;
+
+	const warningMessage =
+		invite?.email.length > 1 && !mathEmail && !isEmailValid;
+
+	const validateEmail = useMemo(async () => {
+		if (isValidEmail(invite?.email, bannedDomains)) {
+			return isValidEmail(invite?.email, bannedDomains);
+		}
+
+		const hasLiferayDomain = liferayDomains.includes(domain);
+
+		if (hasLiferayDomain) {
+			const emailExistsInOkta = await provisioningService.getUserInOkta(
+				invite?.email
+			);
+			if (!emailExistsInOkta) {
+				return isLiferayDomain(invite?.email);
+			}
+
+			return false;
+		}
+	}, [bannedDomains, invite?.email, provisioningService]);
 
 	const isAdministratorOrRequestorRoleSelected =
 		invite?.role?.name === ROLE_TYPES.requester.name ||
@@ -103,9 +152,7 @@ const TeamMemberInputs = ({
 						placeholder={placeholderEmail}
 						required
 						type="email"
-						validations={[
-							(value) => isValidEmail(value, bannedDomains),
-						]}
+						validations={[() => validateEmail]}
 					/>
 				</ClayInput.GroupItem>
 
@@ -120,6 +167,56 @@ const TeamMemberInputs = ({
 					/>
 				</ClayInput.GroupItem>
 			</ClayInput.Group>
+
+			{featureFlags.includes('ISSD-100') && warningMessage && (
+				<div
+					className="alert alert-warning align-items-top d-flex m-3 p-3"
+					role="alert"
+				>
+					<div className="alert-indicator mt-1">
+						<span>
+							<ClayIcon symbol="warning-full" />
+						</span>
+					</div>
+
+					<div className="mx-2">
+						{`${i18n.translate('is')} `}
+
+						<strong>{invite.email}</strong>
+
+						{` ${i18n.sub(
+							'part-of-your-organization-it-looks-like-x-is-a-new-domain-name',
+							[`${domain}`]
+						)}`}
+
+						<ul className="mb-0">
+							<li>
+								{`${i18n.translate(
+									'to-update-an-existing-users-email-address-have-the-user-log-in-with-their-current-address-to-access'
+								)} `}
+
+								<a
+									className="alert-link"
+									href={accountSettingsURL}
+									rel="noreferrer noopener"
+									target="_blank"
+								>
+									<u className="font-weight-semi-bold text-warning">
+										{i18n.translate('account-settings')}
+									</u>
+								</a>
+							</li>
+
+							<li>
+								{i18n.translate(
+									'be-aware-that-adding-new-users-from-outside-your-organization-may-compromise-the-security-of-your-project'
+								)}
+							</li>
+						</ul>
+					</div>
+				</div>
+			)}
+
 			<hr className="mb-3 mt-2" />
 		</>
 	);

@@ -25,6 +25,7 @@ create table KBArticle (
 	latest BOOLEAN,
 	main BOOLEAN,
 	sourceURL STRING null,
+	displayDate DATE null,
 	expirationDate DATE null,
 	reviewDate DATE null,
 	lastPublishDate DATE null,
@@ -72,6 +73,10 @@ create table KBFolder (
 	urlTitle VARCHAR(75) null,
 	description STRING null,
 	lastPublishDate DATE null,
+	status INTEGER,
+	statusByUserId LONG,
+	statusByUserName VARCHAR(75) null,
+	statusDate DATE null,
 	primary key (kbFolderId, ctCollectionId)
 );
 

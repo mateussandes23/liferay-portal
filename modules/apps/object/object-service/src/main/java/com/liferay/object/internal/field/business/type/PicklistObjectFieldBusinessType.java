@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.internal.field.business.type;
@@ -21,9 +12,7 @@ import com.liferay.list.type.model.ListTypeEntry;
 import com.liferay.list.type.service.ListTypeEntryLocalService;
 import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.constants.ObjectFieldSettingConstants;
-import com.liferay.object.exception.ObjectFieldDefaultValueException;
 import com.liferay.object.exception.ObjectFieldSettingValueException;
-import com.liferay.object.exception.ObjectFieldStateException;
 import com.liferay.object.field.business.type.ObjectFieldBusinessType;
 import com.liferay.object.field.render.ObjectFieldRenderingContext;
 import com.liferay.object.field.setting.util.ObjectFieldSettingUtil;
@@ -36,9 +25,7 @@ import com.liferay.object.service.ObjectFieldSettingLocalService;
 import com.liferay.object.service.ObjectStateFlowLocalService;
 import com.liferay.object.service.ObjectStateLocalService;
 import com.liferay.petra.function.transform.TransformUtil;
-import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -68,11 +55,6 @@ public class PicklistObjectFieldBusinessType
 
 	@Override
 	public Set<String> getAllowedObjectFieldSettingsNames() {
-		if (!FeatureFlagManagerUtil.isEnabled("LPS-163716")) {
-			return SetUtil.fromArray(
-				ObjectFieldSettingConstants.NAME_STATE_FLOW);
-		}
-
 		return SetUtil.fromArray(
 			ObjectFieldSettingConstants.NAME_DEFAULT_VALUE,
 			ObjectFieldSettingConstants.NAME_DEFAULT_VALUE_TYPE,
@@ -146,6 +128,28 @@ public class PicklistObjectFieldBusinessType
 		return SetUtil.fromArray(
 			ObjectFieldSettingConstants.NAME_DEFAULT_VALUE,
 			ObjectFieldSettingConstants.NAME_DEFAULT_VALUE_TYPE);
+	}
+
+	@Override
+	public Object getValue(
+			ObjectField objectField, long userId, Map<String, Object> values)
+		throws PortalException {
+
+		Object value = values.get(objectField.getName());
+
+		if (value instanceof ListEntry) {
+			ListEntry listEntry = (ListEntry)value;
+
+			values.put(objectField.getName(), listEntry.getKey());
+		}
+		else if (value instanceof Map) {
+			values.put(
+				objectField.getName(),
+				MapUtil.getString((Map<String, String>)value, "key"));
+		}
+
+		return ObjectFieldBusinessType.super.getValue(
+			objectField, userId, values);
 	}
 
 	@Override
@@ -225,25 +229,9 @@ public class PicklistObjectFieldBusinessType
 				objectField.getListTypeDefinitionId(), defaultValue);
 
 		if (listTypeEntry == null) {
-			if (!FeatureFlagManagerUtil.isEnabled("LPS-163716")) {
-				throw new ObjectFieldDefaultValueException(
-					StringBundler.concat(
-						"Default value \"", defaultValue,
-						"\" is not a list entry in list definition ",
-						objectField.getListTypeDefinitionId()));
-			}
-
 			throw new ObjectFieldSettingValueException.InvalidValue(
 				objectField.getName(),
 				ObjectFieldSettingConstants.NAME_DEFAULT_VALUE, defaultValue);
-		}
-
-		if (!FeatureFlagManagerUtil.isEnabled("LPS-163716") &&
-			!objectField.isState()) {
-
-			throw new ObjectFieldStateException(
-				"Object field default value can only be set when the " +
-					"picklist is a state");
 		}
 	}
 

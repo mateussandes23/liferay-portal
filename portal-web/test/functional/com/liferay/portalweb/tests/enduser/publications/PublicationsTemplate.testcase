@@ -15,9 +15,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -84,6 +84,8 @@ definition {
 		PublicationsNavigator.gotoPublicationEllipsisItem(
 			menuItem = "Invite Users",
 			publicationName = "Publication Name test");
+
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
 		Publications.viewInvitedUser(
 			publicationRole = "Editor",
@@ -216,6 +218,43 @@ definition {
 		}
 	}
 
+	@description = "This is a use case for LPS-171576 - The publication template selection is gone for a created publication"
+	@priority = 3
+	test CanSelectAnotherPublicationTemplateAfterEditingPublication {
+		task ("Create Publications Templates and one Publication with template") {
+			PublicationsTemplate.gotoPublicationTemplate();
+
+			for (var order : list "1,2") {
+				PublicationsTemplate.addPublicationTemplate(
+					publicationName = "P${order}",
+					templateName = "Publication Template ${order}");
+			}
+
+			Publications.createNewPublicationWithTemplate(
+				gotoPublicationsAdmin = "true",
+				publicationName = "P1",
+				templateName = "Publication Template 1");
+		}
+
+		task ("Go to edit Publication and select another template") {
+			PublicationsNavigator.openPublicationsAdmin();
+
+			Click(
+				key_publicationName = "P1",
+				locator1 = "Publications#PUBLICATION_ELLIPSIS");
+
+			MenuItem.click(menuItem = "Edit");
+
+			Select(
+				locator1 = "Publications#TEMPLATE_OPTION",
+				value1 = "Publication Template 2");
+
+			Button.click(button = "Save");
+
+			Alert.viewSuccessMessage();
+		}
+	}
+
 	@description = "This is the use case for LPS-176196."
 	@priority = 3
 	test UseDefaultTemplateWhenCreatingNewPublication {
@@ -276,7 +315,7 @@ definition {
 		task ("Log out from test user, log in with new user") {
 			SignOut.signOut();
 
-			User.firstLoginUI(
+			User.firstLoginPG(
 				password = "test",
 				userEmailAddress = "userea@liferay.com");
 		}

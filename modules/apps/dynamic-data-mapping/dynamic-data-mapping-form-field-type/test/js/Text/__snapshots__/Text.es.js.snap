@@ -6,7 +6,6 @@ exports[`Field Text has a helptext 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       data-tooltip-align="top"
@@ -55,7 +54,6 @@ exports[`Field Text has a label 1`] = `
     <label
       aria-labelledby="textField_fieldDetails"
       class="ddm-label"
-      tabindex="0"
     >
       label
     </label>
@@ -92,7 +90,6 @@ exports[`Field Text has a placeholder 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       data-tooltip-align="top"
@@ -123,7 +120,6 @@ exports[`Field Text has a value 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       data-tooltip-align="top"
@@ -153,7 +149,6 @@ exports[`Field Text has an id 1`] = `
     aria-labelledby="Id_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       data-tooltip-align="top"
@@ -182,7 +177,6 @@ exports[`Field Text is not readOnly 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       data-tooltip-align="top"
@@ -211,7 +205,6 @@ exports[`Field Text is not required 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       data-tooltip-align="top"
@@ -241,7 +234,6 @@ exports[`Field Text is readOnly 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       data-tooltip-align="top"
@@ -274,7 +266,6 @@ exports[`Field Text renders Label if showLabel is true 1`] = `
     <label
       aria-labelledby="textField_fieldDetails"
       class="ddm-label"
-      tabindex="0"
     >
       text
     </label>

@@ -1,24 +1,11 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.site.navigation.taglib.servlet.taglib.util;
 
 import com.liferay.asset.kernel.model.AssetEntry;
-import com.liferay.info.field.InfoFieldValue;
-import com.liferay.info.item.InfoItemFieldValues;
-import com.liferay.info.item.InfoItemServiceRegistry;
-import com.liferay.info.item.provider.InfoItemFieldValuesProvider;
 import com.liferay.layout.display.page.LayoutDisplayPageObjectProvider;
 import com.liferay.layout.display.page.constants.LayoutDisplayPageWebKeys;
 import com.liferay.petra.string.StringPool;
@@ -49,11 +36,9 @@ import com.liferay.portal.kernel.servlet.taglib.ui.BreadcrumbEntry;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
-import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.site.navigation.taglib.internal.servlet.ServletContextUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -89,44 +74,24 @@ public class BreadcrumbUtil {
 			(ThemeDisplay)httpServletRequest.getAttribute(
 				WebKeys.THEME_DISPLAY);
 
-		List<BreadcrumbEntry> breadcrumbEntries = new ArrayList<>();
-
 		boolean hasAll = ArrayUtil.contains(types, ENTRY_TYPE_ANY);
 
-		if (hasAll || ArrayUtil.contains(types, ENTRY_TYPE_GUEST_GROUP)) {
-			BreadcrumbEntry breadcrumbEntry = getGuestGroupBreadcrumbEntry(
-				themeDisplay);
-
-			if (breadcrumbEntry != null) {
-				breadcrumbEntries.add(breadcrumbEntry);
-			}
-		}
-
-		if (hasAll || ArrayUtil.contains(types, ENTRY_TYPE_PARENT_GROUP)) {
-			breadcrumbEntries.addAll(
-				getParentGroupBreadcrumbEntries(themeDisplay));
-		}
-
-		if (hasAll || ArrayUtil.contains(types, ENTRY_TYPE_CURRENT_GROUP)) {
-			BreadcrumbEntry breadcrumbEntry = getScopeGroupBreadcrumbEntry(
-				themeDisplay);
-
-			if (breadcrumbEntry != null) {
-				breadcrumbEntries.add(breadcrumbEntry);
-			}
-		}
-
-		if (hasAll || ArrayUtil.contains(types, ENTRY_TYPE_LAYOUT)) {
-			breadcrumbEntries.addAll(
-				getLayoutBreadcrumbEntries(httpServletRequest, themeDisplay));
-		}
-
-		if (hasAll || ArrayUtil.contains(types, ENTRY_TYPE_PORTLET)) {
-			breadcrumbEntries.addAll(
-				getPortletBreadcrumbEntries(httpServletRequest));
-		}
-
-		return breadcrumbEntries;
+		return BreadcrumbEntryListBuilder.add(
+			() -> hasAll || ArrayUtil.contains(types, ENTRY_TYPE_GUEST_GROUP),
+			getGuestGroupBreadcrumbEntry(themeDisplay)
+		).addAll(
+			() -> hasAll || ArrayUtil.contains(types, ENTRY_TYPE_PARENT_GROUP),
+			() -> getParentGroupBreadcrumbEntries(themeDisplay)
+		).add(
+			() -> hasAll || ArrayUtil.contains(types, ENTRY_TYPE_CURRENT_GROUP),
+			getScopeGroupBreadcrumbEntry(themeDisplay)
+		).addAll(
+			() -> hasAll || ArrayUtil.contains(types, ENTRY_TYPE_LAYOUT),
+			() -> getLayoutBreadcrumbEntries(httpServletRequest, themeDisplay)
+		).addAll(
+			() -> hasAll || ArrayUtil.contains(types, ENTRY_TYPE_PORTLET),
+			() -> getPortletBreadcrumbEntries(httpServletRequest)
+		).build();
 	}
 
 	public static BreadcrumbEntry getGuestGroupBreadcrumbEntry(
@@ -163,39 +128,44 @@ public class BreadcrumbUtil {
 	}
 
 	public static List<BreadcrumbEntry> getLayoutBreadcrumbEntries(
-			HttpServletRequest httpServletRequest, ThemeDisplay themeDisplay)
-		throws Exception {
-
-		List<BreadcrumbEntry> breadcrumbEntries = new ArrayList<>();
+		HttpServletRequest httpServletRequest, ThemeDisplay themeDisplay) {
 
 		Layout layout = themeDisplay.getLayout();
 
 		Group group = layout.getGroup();
 
-		if (!group.isLayoutPrototype()) {
-			_addLayoutBreadcrumbEntries(
-				breadcrumbEntries, httpServletRequest, layout, themeDisplay);
-		}
+		return BreadcrumbEntryListBuilder.addAll(
+			() -> !group.isLayoutPrototype(),
+			() -> {
+				List<BreadcrumbEntry> breadcrumbEntries = new ArrayList<>();
 
-		return breadcrumbEntries;
+				_addLayoutBreadcrumbEntries(
+					breadcrumbEntries, httpServletRequest, layout,
+					themeDisplay);
+
+				return breadcrumbEntries;
+			}
+		).build();
 	}
 
 	public static List<BreadcrumbEntry> getParentGroupBreadcrumbEntries(
 			ThemeDisplay themeDisplay)
 		throws Exception {
 
-		List<BreadcrumbEntry> breadcrumbEntries = new ArrayList<>();
+		LayoutSet parentLayoutSet = _getParentLayoutSet(
+			themeDisplay.getLayoutSet());
 
-		Layout layout = themeDisplay.getLayout();
+		return BreadcrumbEntryListBuilder.addAll(
+			() -> parentLayoutSet != null,
+			() -> {
+				List<BreadcrumbEntry> breadcrumbEntries = new ArrayList<>();
 
-		LayoutSet parentLayoutSet = _getParentLayoutSet(layout.getLayoutSet());
+				_addGroupsBreadcrumbEntries(
+					breadcrumbEntries, themeDisplay, parentLayoutSet, true);
 
-		if (parentLayoutSet != null) {
-			_addGroupsBreadcrumbEntries(
-				breadcrumbEntries, themeDisplay, parentLayoutSet, true);
-		}
-
-		return breadcrumbEntries;
+				return breadcrumbEntries;
+			}
+		).build();
 	}
 
 	public static List<BreadcrumbEntry> getPortletBreadcrumbEntries(
@@ -373,7 +343,7 @@ public class BreadcrumbUtil {
 				httpServletRequest, themeDisplay.getLocale());
 
 			if (Validator.isNotNull(infoItemName)) {
-				layoutName = HtmlUtil.escape(infoItemName);
+				layoutName = infoItemName;
 			}
 		}
 
@@ -399,40 +369,14 @@ public class BreadcrumbUtil {
 				LayoutDisplayPageWebKeys.LAYOUT_DISPLAY_PAGE_OBJECT_PROVIDER);
 
 		if (layoutDisplayPageObjectProvider != null) {
-			InfoItemServiceRegistry infoItemServiceRegistry =
-				ServletContextUtil.getInfoItemServiceRegistry();
-
-			InfoItemFieldValuesProvider infoItemFieldValuesProvider =
-				infoItemServiceRegistry.getFirstInfoItemService(
-					InfoItemFieldValuesProvider.class,
-					layoutDisplayPageObjectProvider.getClassName());
-
-			InfoItemFieldValues infoItemFieldValues =
-				infoItemFieldValuesProvider.getInfoItemFieldValues(
-					layoutDisplayPageObjectProvider.getDisplayObject());
-
-			InfoFieldValue<Object> titleInfoFieldValue =
-				infoItemFieldValues.getInfoFieldValue("title");
-
-			if (titleInfoFieldValue != null) {
-				return HtmlUtil.escape(
-					String.valueOf(titleInfoFieldValue.getValue(locale)));
-			}
-
-			InfoFieldValue<Object> nameInfoFieldValue =
-				infoItemFieldValues.getInfoFieldValue("name");
-
-			if (nameInfoFieldValue != null) {
-				return HtmlUtil.escape(
-					String.valueOf(nameInfoFieldValue.getValue(locale)));
-			}
+			return layoutDisplayPageObjectProvider.getTitle(locale);
 		}
 
 		AssetEntry assetEntry = (AssetEntry)httpServletRequest.getAttribute(
 			WebKeys.LAYOUT_ASSET_ENTRY);
 
 		if (assetEntry != null) {
-			return HtmlUtil.escape(assetEntry.getTitle(locale));
+			return assetEntry.getTitle(locale);
 		}
 
 		return StringPool.BLANK;

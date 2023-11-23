@@ -1,45 +1,13 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import classNames from 'classnames';
 import {memo, useEffect, useMemo} from 'react';
 import {Link, useMatch, useResolvedPath} from 'react-router-dom';
-
 import {Button} from '../../../../../../common/components';
-import * as NavigationMenuIcons from '../../../../../../common/icons/navigation-menu';
-
-const icons = {
-	analytics: [
-		NavigationMenuIcons.AnalyticsIcon,
-		NavigationMenuIcons.AnalyticsIconGray,
-	],
-	commerce: [
-		NavigationMenuIcons.CommerceIcon,
-		NavigationMenuIcons.CommerceIconGray,
-	],
-	dxp: [NavigationMenuIcons.DXPIcon, NavigationMenuIcons.DXPIconGray],
-	enterprise: [
-		NavigationMenuIcons.EnterpriseIcon,
-		NavigationMenuIcons.EnterpriseIconGray,
-	],
-	lxc: [NavigationMenuIcons.LXCIcon, NavigationMenuIcons.LXCIconGray],
-	partnership: [
-		NavigationMenuIcons.PartnershipIcon,
-		NavigationMenuIcons.PartnershipIconGray,
-	],
-	portal: [
-		NavigationMenuIcons.PortalIcon,
-		NavigationMenuIcons.PortalIconGray,
-	],
-};
+import {navigationIcons} from '../../utils/navigationIcons';
 
 const MenuItem = ({children, iconKey, setActive, to}) => {
 	const isActive = !!useMatch({path: useResolvedPath(to)?.pathname});
@@ -53,12 +21,13 @@ const MenuItem = ({children, iconKey, setActive, to}) => {
 	const Icon = useMemo(() => {
 		try {
 			if (iconKey) {
-				const [activeIcon, inactiveIcon] = icons[iconKey];
+				const [activeIcon, inactiveIcon] = navigationIcons[iconKey];
 
 				return isActive ? activeIcon : inactiveIcon;
 			}
+		} catch (error) {
+			console.error('Error:', error);
 		}
-		catch {}
 	}, [iconKey, isActive]);
 
 	return (
@@ -73,11 +42,7 @@ const MenuItem = ({children, iconKey, setActive, to}) => {
 						}
 					)}
 				>
-					{Icon && (
-						<span className="mr-2">
-							<Icon height={16} width={16} />
-						</span>
-					)}
+					{Icon && <Icon className="mr-2" height={16} width={16} />}
 
 					{children}
 				</Button>

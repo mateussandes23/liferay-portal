@@ -1,6 +1,7 @@
 definition {
 
-	macro setGroupId {
+	@summary = "Default summary"
+	macro setGroupId(noSelenium = null, specificURL = null) {
 		if (!(isSet(groupName))) {
 			var groupName = "Global";
 		}
@@ -12,12 +13,14 @@ definition {
 		var groupId = JSONGroupAPI._getGroupIdByName(
 			groupName = ${groupName},
 			noSelenium = ${noSelenium},
-			site = ${site});
+			site = ${site},
+			specificURL = ${specificURL});
 
 		return ${groupId};
 	}
 
-	macro setPrimKey {
+	@summary = "Default summary"
+	macro setPrimKey(roleType = null) {
 		JSONPermissionValidator.validateRoleType(roleType = ${roleType});
 
 		if (${roleType} == "regular") {
@@ -30,15 +33,19 @@ definition {
 		return ${primKey};
 	}
 
-	macro setRoleId {
+	@summary = "Default summary"
+	macro setRoleId(roleTitle = null, specificURL = null) {
 		Variables.assertDefined(parameterList = ${roleTitle});
 
-		var roleId = JSONRoleAPI._getRoleIdByName(name = ${roleTitle});
+		var roleId = JSONRoleAPI._getRoleIdByName(
+			name = ${roleTitle},
+			specificURL = ${specificURL});
 
 		return ${roleId};
 	}
 
-	macro setRoleType {
+	@summary = "Default summary"
+	macro setRoleType() {
 		if (!(isSet(roleType))) {
 			var roleType = "regular";
 		}
@@ -46,7 +53,8 @@ definition {
 		return ${roleType};
 	}
 
-	macro setScope {
+	@summary = "Default summary"
+	macro setScope(roleType = null) {
 		JSONPermissionValidator.validateRoleType(roleType = ${roleType});
 
 		if (${roleType} == "regular") {

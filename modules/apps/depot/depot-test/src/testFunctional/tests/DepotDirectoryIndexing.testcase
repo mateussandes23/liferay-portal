@@ -16,9 +16,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -35,7 +35,7 @@ definition {
 	}
 
 	@description = "This test asserts that no document shows in FTP mode after deleting it in a depot."
-	@priority = 5
+	@priority = 4
 	@refactordone
 	test CanNotViewDocumentAfterDeleting {
 		DepotNavigator.openDepotSettingsGeneral(depotName = "Test Depot Name");
@@ -63,7 +63,7 @@ definition {
 	}
 
 	@description = "This test asserts that Not Found error returns when visiting FTP mode if indexing is disabled."
-	@priority = 5
+	@priority = 4
 	@refactordone
 	test CanNotViewDocumentWhenDisabled {
 		DepotNavigator.openDepotSettingsGeneral(depotName = "Test Depot Name");
@@ -78,9 +78,7 @@ definition {
 
 		Navigator.openSpecificURL(url = "${portalURL}/documents/test depot name");
 
-		AssertTextEquals(
-			locator1 = "Home#ERROR_MESSAGE_ALERT_ERROR",
-			value1 = "Not Found");
+		AssertTextPresent(value1 = "The requested resource could not be found.");
 	}
 
 	@description = "This test asserts that a document without guest permissions in a depot can not be accessed from FTP mode."

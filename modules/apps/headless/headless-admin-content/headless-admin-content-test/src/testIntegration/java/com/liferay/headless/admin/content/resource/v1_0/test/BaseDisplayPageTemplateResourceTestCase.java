@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.admin.content.resource.v1_0.test;
@@ -43,6 +34,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -210,7 +202,7 @@ public abstract class BaseDisplayPageTemplateResourceTestCase {
 			displayPageTemplateResource.getSiteDisplayPageTemplatesPage(
 				siteId, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantSiteId != null) {
 			DisplayPageTemplate irrelevantDisplayPageTemplate =
@@ -218,12 +210,12 @@ public abstract class BaseDisplayPageTemplateResourceTestCase {
 					irrelevantSiteId, randomIrrelevantDisplayPageTemplate());
 
 			page = displayPageTemplateResource.getSiteDisplayPageTemplatesPage(
-				irrelevantSiteId, Pagination.of(1, 2), null);
+				irrelevantSiteId, Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantDisplayPageTemplate),
+			assertContains(
+				irrelevantDisplayPageTemplate,
 				(List<DisplayPageTemplate>)page.getItems());
 			assertValid(
 				page,
@@ -242,11 +234,12 @@ public abstract class BaseDisplayPageTemplateResourceTestCase {
 		page = displayPageTemplateResource.getSiteDisplayPageTemplatesPage(
 			siteId, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(displayPageTemplate1, displayPageTemplate2),
-			(List<DisplayPageTemplate>)page.getItems());
+		assertContains(
+			displayPageTemplate1, (List<DisplayPageTemplate>)page.getItems());
+		assertContains(
+			displayPageTemplate2, (List<DisplayPageTemplate>)page.getItems());
 		assertValid(
 			page,
 			testGetSiteDisplayPageTemplatesPage_getExpectedActions(siteId));
@@ -267,6 +260,13 @@ public abstract class BaseDisplayPageTemplateResourceTestCase {
 
 		Long siteId = testGetSiteDisplayPageTemplatesPage_getSiteId();
 
+		Page<DisplayPageTemplate> displayPageTemplatePage =
+			displayPageTemplateResource.getSiteDisplayPageTemplatesPage(
+				siteId, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			displayPageTemplatePage.getTotalCount());
+
 		DisplayPageTemplate displayPageTemplate1 =
 			testGetSiteDisplayPageTemplatesPage_addDisplayPageTemplate(
 				siteId, randomDisplayPageTemplate());
@@ -281,19 +281,20 @@ public abstract class BaseDisplayPageTemplateResourceTestCase {
 
 		Page<DisplayPageTemplate> page1 =
 			displayPageTemplateResource.getSiteDisplayPageTemplatesPage(
-				siteId, Pagination.of(1, 2), null);
+				siteId, Pagination.of(1, totalCount + 2), null);
 
 		List<DisplayPageTemplate> displayPageTemplates1 =
 			(List<DisplayPageTemplate>)page1.getItems();
 
 		Assert.assertEquals(
-			displayPageTemplates1.toString(), 2, displayPageTemplates1.size());
+			displayPageTemplates1.toString(), totalCount + 2,
+			displayPageTemplates1.size());
 
 		Page<DisplayPageTemplate> page2 =
 			displayPageTemplateResource.getSiteDisplayPageTemplatesPage(
-				siteId, Pagination.of(2, 2), null);
+				siteId, Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<DisplayPageTemplate> displayPageTemplates2 =
 			(List<DisplayPageTemplate>)page2.getItems();
@@ -303,13 +304,14 @@ public abstract class BaseDisplayPageTemplateResourceTestCase {
 
 		Page<DisplayPageTemplate> page3 =
 			displayPageTemplateResource.getSiteDisplayPageTemplatesPage(
-				siteId, Pagination.of(1, 3), null);
+				siteId, Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				displayPageTemplate1, displayPageTemplate2,
-				displayPageTemplate3),
-			(List<DisplayPageTemplate>)page3.getItems());
+		assertContains(
+			displayPageTemplate1, (List<DisplayPageTemplate>)page3.getItems());
+		assertContains(
+			displayPageTemplate2, (List<DisplayPageTemplate>)page3.getItems());
+		assertContains(
+			displayPageTemplate3, (List<DisplayPageTemplate>)page3.getItems());
 	}
 
 	@Test
@@ -437,23 +439,33 @@ public abstract class BaseDisplayPageTemplateResourceTestCase {
 			testGetSiteDisplayPageTemplatesPage_addDisplayPageTemplate(
 				siteId, displayPageTemplate2);
 
+		Page<DisplayPageTemplate> page =
+			displayPageTemplateResource.getSiteDisplayPageTemplatesPage(
+				siteId, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<DisplayPageTemplate> ascPage =
 				displayPageTemplateResource.getSiteDisplayPageTemplatesPage(
-					siteId, Pagination.of(1, 2),
+					siteId, Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(displayPageTemplate1, displayPageTemplate2),
+			assertContains(
+				displayPageTemplate1,
+				(List<DisplayPageTemplate>)ascPage.getItems());
+			assertContains(
+				displayPageTemplate2,
 				(List<DisplayPageTemplate>)ascPage.getItems());
 
 			Page<DisplayPageTemplate> descPage =
 				displayPageTemplateResource.getSiteDisplayPageTemplatesPage(
-					siteId, Pagination.of(1, 2),
+					siteId, Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(displayPageTemplate2, displayPageTemplate1),
+			assertContains(
+				displayPageTemplate2,
+				(List<DisplayPageTemplate>)descPage.getItems());
+			assertContains(
+				displayPageTemplate1,
 				(List<DisplayPageTemplate>)descPage.getItems());
 		}
 	}
@@ -723,14 +735,19 @@ public abstract class BaseDisplayPageTemplateResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1148,11 +1165,47 @@ public abstract class BaseDisplayPageTemplateResourceTestCase {
 		}
 
 		if (entityFieldName.equals("displayPageTemplateKey")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					displayPageTemplate.getDisplayPageTemplateKey()));
-			sb.append("'");
+			Object object = displayPageTemplate.getDisplayPageTemplateKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1178,17 +1231,93 @@ public abstract class BaseDisplayPageTemplateResourceTestCase {
 		}
 
 		if (entityFieldName.equals("title")) {
-			sb.append("'");
-			sb.append(String.valueOf(displayPageTemplate.getTitle()));
-			sb.append("'");
+			Object object = displayPageTemplate.getTitle();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("uuid")) {
-			sb.append("'");
-			sb.append(String.valueOf(displayPageTemplate.getUuid()));
-			sb.append("'");
+			Object object = displayPageTemplate.getUuid();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

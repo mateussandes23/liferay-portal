@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayForm from '@clayui/form';
@@ -32,6 +23,7 @@ interface IMaxLengthPropertiesProps {
 	objectField: Partial<ObjectField>;
 	objectFieldSettings: ObjectFieldSetting[];
 	onSettingsChange: (setting: ObjectFieldSetting) => void;
+	onSubmit?: () => void;
 	setValues: (values: Partial<ObjectField>) => void;
 }
 
@@ -41,6 +33,7 @@ export function MaxLengthProperties({
 	objectField,
 	objectFieldSettings,
 	onSettingsChange,
+	onSubmit,
 	setValues,
 }: IMaxLengthPropertiesProps) {
 	const [defaultMaxLength, defaultMaxLengthText] =
@@ -98,6 +91,13 @@ export function MaxLengthProperties({
 					disabled={disabled}
 					label={Liferay.Language.get('limit-characters')}
 					name="showCounter"
+					onBlur={(event) => {
+						event.stopPropagation();
+
+						if (onSubmit) {
+							onSubmit();
+						}
+					}}
 					onToggle={handleToggle}
 					toggled={!!settings.showCounter}
 					tooltip={Liferay.Language.get(
@@ -120,10 +120,20 @@ export function MaxLengthProperties({
 						label={Liferay.Language.get(
 							'maximum-number-of-characters'
 						)}
+						onBlur={(event) => {
+							event.stopPropagation();
+
+							if (onSubmit) {
+								onSubmit();
+							}
+						}}
 						onChange={({target: {value}}) =>
 							onSettingsChange({
 								name: 'maxLength',
-								value: value && Number(value),
+								value:
+									Number(value) <= defaultMaxLength
+										? Number(value)
+										: (settings.maxLength as number),
 							})
 						}
 						onInput={({target: {value}}: any) =>

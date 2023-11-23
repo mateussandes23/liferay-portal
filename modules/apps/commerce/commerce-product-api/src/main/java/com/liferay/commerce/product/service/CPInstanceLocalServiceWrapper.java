@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.commerce.product.service;
@@ -17,6 +8,7 @@ package com.liferay.commerce.product.service;
 import com.liferay.commerce.product.model.CPInstance;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.portal.kernel.service.ServiceWrapper;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 import com.liferay.portal.kernel.service.persistence.change.tracking.CTPersistence;
 
 /**
@@ -371,6 +363,12 @@ public class CPInstanceLocalServiceWrapper
 	}
 
 	@Override
+	public CPInstance fetchCPInstance(long cProductId, String cpInstanceUuid) {
+		return _cpInstanceLocalService.fetchCPInstance(
+			cProductId, cpInstanceUuid);
+	}
+
+	@Override
 	public CPInstance fetchCPInstanceByExternalReferenceCode(
 		String externalReferenceCode, long companyId) {
 
@@ -399,6 +397,11 @@ public class CPInstanceLocalServiceWrapper
 
 		return _cpInstanceLocalService.fetchCProductInstance(
 			cProductId, cpInstanceUuid);
+	}
+
+	@Override
+	public CPInstance fetchDefaultCPInstance(long cpDefinitionId) {
+		return _cpInstanceLocalService.fetchDefaultCPInstance(cpDefinitionId);
 	}
 
 	@Override
@@ -510,6 +513,15 @@ public class CPInstanceLocalServiceWrapper
 		long companyId, String sku) {
 
 		return _cpInstanceLocalService.getCPInstances(companyId, sku);
+	}
+
+	@Override
+	public java.util.List<CPInstance> getCPInstances(
+		String replacementCPInstanceUuid, long replacementCProductId,
+		int status) {
+
+		return _cpInstanceLocalService.getCPInstances(
+			replacementCPInstanceUuid, replacementCProductId, status);
 	}
 
 	/**
@@ -703,10 +715,33 @@ public class CPInstanceLocalServiceWrapper
 	@Override
 	public com.liferay.portal.kernel.search.BaseModelSearchResult<CPInstance>
 			searchCPInstances(
+				long companyId, String cpInstanceUuid, long cProductId,
+				String keywords, int status, int start, int end,
+				com.liferay.portal.kernel.search.Sort sort)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _cpInstanceLocalService.searchCPInstances(
+			companyId, cpInstanceUuid, cProductId, keywords, status, start, end,
+			sort);
+	}
+
+	@Override
+	public com.liferay.portal.kernel.search.BaseModelSearchResult<CPInstance>
+			searchCPInstances(
 				com.liferay.portal.kernel.search.SearchContext searchContext)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _cpInstanceLocalService.searchCPInstances(searchContext);
+	}
+
+	@Override
+	public int searchCPInstancesCount(
+			long companyId, String cpInstanceUuid, long cProductId,
+			String keywords, int status)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _cpInstanceLocalService.searchCPInstancesCount(
+			companyId, cpInstanceUuid, cProductId, keywords, status);
 	}
 
 	/**
@@ -830,6 +865,11 @@ public class CPInstanceLocalServiceWrapper
 			deliverySubscriptionType,
 			deliverySubscriptionTypeSettingsUnicodeProperties,
 			deliveryMaxSubscriptionCycles);
+	}
+
+	@Override
+	public BasePersistence<?> getBasePersistence() {
+		return _cpInstanceLocalService.getBasePersistence();
 	}
 
 	@Override

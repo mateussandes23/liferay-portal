@@ -61,7 +61,7 @@ public interface ${schemaName}Resource {
 	/>
 
 	<#list javaMethodSignatures as javaMethodSignature>
-		public ${javaMethodSignature.returnType} ${javaMethodSignature.methodName}(${freeMarkerTool.getResourceParameters(javaMethodSignature.javaMethodParameters, openAPIYAML, javaMethodSignature.operation, false)}) throws Exception;
+		public ${javaMethodSignature.returnType} ${javaMethodSignature.methodName}(${freeMarkerTool.getResourceParameters(configYAML, javaMethodSignature.javaMethodParameters, javaMethodSignature.operation, allSchemas, false)}) throws Exception;
 	</#list>
 
 	public default void setContextAcceptLanguage(AcceptLanguage contextAcceptLanguage) {
@@ -128,6 +128,8 @@ public interface ${schemaName}Resource {
 		public Builder httpServletResponse(HttpServletResponse httpServletResponse);
 
 		public Builder preferredLocale(Locale preferredLocale);
+
+		public Builder uriInfo(UriInfo uriInfo);
 
 		public Builder user(com.liferay.portal.kernel.model.User user);
 

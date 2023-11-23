@@ -6,7 +6,6 @@ exports[`Field Paragraph has a key 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       class="form-group liferay-ddm-form-field-paragraph"
@@ -34,7 +33,6 @@ exports[`Field Paragraph has a label 1`] = `
     <label
       aria-labelledby="textField_fieldDetails"
       class="ddm-label"
-      tabindex="0"
     >
       label
     </label>
@@ -67,7 +65,6 @@ exports[`Field Paragraph has a placeholder 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       class="form-group liferay-ddm-form-field-paragraph"
@@ -92,7 +89,6 @@ exports[`Field Paragraph has a value 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       class="form-group liferay-ddm-form-field-paragraph"
@@ -117,7 +113,6 @@ exports[`Field Paragraph has an id 1`] = `
     aria-labelledby="Id_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       class="form-group liferay-ddm-form-field-paragraph"
@@ -142,7 +137,6 @@ exports[`Field Paragraph is not required 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       class="form-group liferay-ddm-form-field-paragraph"
@@ -167,7 +161,6 @@ exports[`Field Paragraph is readOnly 1`] = `
     aria-labelledby="textField_fieldDetails"
     class="form-group hide"
     data-field-name="textField"
-    tabindex="0"
   >
     <div
       class="form-group liferay-ddm-form-field-paragraph"
@@ -195,7 +188,6 @@ exports[`Field Paragraph renders Label if showLabel is true 1`] = `
     <label
       aria-labelledby="textField_fieldDetails"
       class="ddm-label"
-      tabindex="0"
     >
       text
     </label>

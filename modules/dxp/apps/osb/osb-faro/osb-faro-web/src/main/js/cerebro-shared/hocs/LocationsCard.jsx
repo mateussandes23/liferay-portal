@@ -1,4 +1,4 @@
-import BaseCard from 'cerebro-shared/components/base-card';
+import BaseCard from 'shared/components/base-card';
 import Card from 'shared/components/Card';
 import GeoMap from 'shared/components/geo-map/GeoMapCard';
 import React from 'react';
@@ -14,12 +14,12 @@ import {withEmpty, withError, withLoading} from 'shared/hoc/util';
 const withLocationsCard = (
 	withLocations,
 	withCountries,
-	{documentationTitle, documentationUrl, title}
+	{documentationTitle, documentationUrl, id, title}
 ) => {
 	const LocationsGeoMap = compose(
 		withLocations(),
 		withCountries(),
-		withLoading({alignCenter: true, page: false}),
+		withLoading(),
 		withError({page: false}),
 		withEmpty({
 			description: (
@@ -62,6 +62,7 @@ const withLocationsCard = (
 	}) => (
 		<BaseCard
 			className={className}
+			id={id}
 			label={label}
 			legacyDropdownRangeKey={legacyDropdownRangeKey}
 			minHeight={536}

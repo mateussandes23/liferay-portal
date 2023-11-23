@@ -41,7 +41,7 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		CP2Utils.tearDownForCloudEntries(
 			entry = "test@liferay.com",
@@ -52,7 +52,7 @@ definition {
 
 		CustomerPortal.customerPortalTearDown();
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -80,7 +80,7 @@ definition {
 		task ("And I open a new tab, go to the Set up modal, fill out the whole form and send it") {
 			var baseURL = PropsUtil.get("portal.url");
 
-			Open.openInTheNewTab(locator1 = "${baseURL}/web/${testSiteURL}/project/#/ERC-003/activation/analytics-cloud");
+			Open.openInTheNewTab(value1 = "${baseURL}/web/${testSiteURL}/project/#/ERC-003/activation/analytics-cloud");
 
 			WaitForElementPresent(locator1 = "CustomerPortalSite#FINISH_ACTIVATION");
 

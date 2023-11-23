@@ -293,6 +293,24 @@ export function mockChannel(seed = 1, permissionType = 0, data = {}) {
 	};
 }
 
+export function mockChannels() {
+	return {
+		disableSearch: false,
+		items: [
+			{
+				commerceChannelsCount: 5,
+				createTime: 1695241914644,
+				groupsCount: 6,
+				id: '643280225365059871',
+				name: 'Liferay DXP',
+				permissionType: 0,
+				tokenAuth: false
+			}
+		],
+		total: 1
+	};
+}
+
 export function generateCriterion(customValues) {
 	return {
 		operatorName: RelationalOperators.EQ,
@@ -687,11 +705,12 @@ export function mockSubscription(data = {}) {
 			})
 		]),
 		endDate: getTimestamp(),
-		individualsCount: 2057,
+		individualsCountSinceLastAnniversary: 2057,
 		individualsLimit: 105000,
 		individualsStatus: SubscriptionStatuses.Ok,
+		lastAnniversaryDate: getTimestamp(-2),
 		name: 'Liferay Analytics Cloud Enterprise',
-		pageViewsCount: 100023,
+		pageViewsCountSinceLastAnniversary: 100023,
 		pageViewsLimit: 7000000,
 		pageViewsStatus: SubscriptionStatuses.Ok,
 		startDate: getTimestamp(-2),
@@ -857,6 +876,7 @@ export function mockPlan({data = {}, individuals = {}, pageViews = {}} = {}) {
 			}
 		},
 		endDate: getTimestamp(),
+		lastAnniversaryDate: getTimestamp(-2),
 		metrics: {
 			individuals: new Metric({
 				count: 2057,

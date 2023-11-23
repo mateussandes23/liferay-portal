@@ -2,17 +2,10 @@
 
 exports[`withSidebar should render loading 1`] = `
 <div>
-  <div
-    class="loading-root"
-  >
-    <div
-      class="spinner-root spinner-fade-in"
-    >
-      <span
-        class="loading-animation loading-animation-dotted"
-      />
-    </div>
-  </div>
+  <span
+    aria-hidden="true"
+    class="loading-root center loading-animation"
+  />
 </div>
 `;
 
@@ -36,7 +29,7 @@ exports[`withSidebar should render with the sidebar 1`] = `
             role="presentation"
           >
             <use
-              xlink:href="#ac-logo"
+              href="#ac-logo"
             />
           </svg>
         </a>
@@ -51,7 +44,7 @@ exports[`withSidebar should render with the sidebar 1`] = `
               role="presentation"
             >
               <use
-                xlink:href="#sites"
+                href="#sites"
               />
             </svg>
           </div>
@@ -68,7 +61,7 @@ exports[`withSidebar should render with the sidebar 1`] = `
               role="presentation"
             >
               <use
-                xlink:href="#caret-right"
+                href="#caret-right"
               />
             </svg>
           </div>
@@ -106,7 +99,7 @@ exports[`withSidebar should render with the sidebar 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#ac-page"
+                        href="#ac-page"
                       />
                     </svg>
                   </span>
@@ -136,7 +129,7 @@ exports[`withSidebar should render with the sidebar 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#ac-assets"
+                        href="#ac-assets"
                       />
                     </svg>
                   </span>
@@ -166,7 +159,7 @@ exports[`withSidebar should render with the sidebar 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#ac-event-analysis"
+                        href="#ac-event-analysis"
                       />
                     </svg>
                   </span>
@@ -209,7 +202,7 @@ exports[`withSidebar should render with the sidebar 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#ac-segment"
+                        href="#ac-segment"
                       />
                     </svg>
                   </span>
@@ -239,7 +232,7 @@ exports[`withSidebar should render with the sidebar 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#ac-individual"
+                        href="#ac-individual"
                       />
                     </svg>
                   </span>
@@ -247,49 +240,6 @@ exports[`withSidebar should render with the sidebar 1`] = `
                     class="item-label"
                   >
                     Individuals
-                  </span>
-                </span>
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div
-          class="section"
-        >
-          <h5
-            class="section-title"
-          >
-            Commerce
-          </h5>
-          <ul
-            class="nav-list"
-          >
-            <li
-              class="sidebar-item-root"
-            >
-              <a
-                class="link btn btn-unstyled"
-                href="/workspace/23/1/commerce"
-              >
-                <span
-                  class="link-content-wrapper"
-                >
-                  <span
-                    class="icon-wrapper"
-                  >
-                    <svg
-                      class="lexicon-icon lexicon-icon-ac-commerce icon-root"
-                      role="presentation"
-                    >
-                      <use
-                        xlink:href="#ac-commerce"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    class="item-label"
-                  >
-                    Commerce
                   </span>
                 </span>
               </a>
@@ -325,7 +275,7 @@ exports[`withSidebar should render with the sidebar 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#ac-test"
+                        href="#ac-test"
                       />
                     </svg>
                   </span>
@@ -390,7 +340,7 @@ exports[`withSidebar should render with the sidebar 1`] = `
                     role="presentation"
                   >
                     <use
-                      xlink:href="#cog"
+                      href="#cog"
                     />
                   </svg>
                 </span>
@@ -416,11 +366,11 @@ exports[`withSidebar should render with the sidebar 1`] = `
                   class="icon-wrapper"
                 >
                   <svg
-                    class="lexicon-icon lexicon-icon-angle-left icon-root"
+                    class="lexicon-icon lexicon-icon-angle-left-small icon-root"
                     role="presentation"
                   >
                     <use
-                      xlink:href="#angle-left"
+                      href="#angle-left-small"
                     />
                   </svg>
                 </span>

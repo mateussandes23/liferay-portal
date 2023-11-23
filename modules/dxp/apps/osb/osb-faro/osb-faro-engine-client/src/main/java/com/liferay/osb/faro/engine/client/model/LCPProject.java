@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
- *
- *
- *
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.osb.faro.engine.client.model;
@@ -113,17 +104,20 @@ public class LCPProject {
 
 	public enum Cluster {
 
+		AS1("ac-asiasouth1", "asia-south1-ac5-c1"),
 		DEV("ac-asahdev", "us-west1-ac-uat-c1-2"),
 		EU2("ac-europewest2", "europe-west2-ac2-c1"),
 		EU3("ac-europewest3", "europe-west3-ac3-c1"),
 		SA("ac-southamericaeast1", "southamerica-east1-ac1-c1"),
 		UAT("ac-asahuat", "us-west1-ac-uat-c1"),
 		US("ac-uswest1", "us-west1-ac4-c1"),
-		US_LRDCOM(
-			"ac-uswest1asah652a6babdba143d086a19db542781bc2",
-			"us-west1-ac4-c1-2");
+		US_LRDCOM("ac-uswest1", "us-west1-ac4-c1-2");
 
 		public static Cluster fromString(String value) {
+			if (StringUtil.equals(value, Cluster.AS1._value)) {
+				return Cluster.AS1;
+			}
+
 			if (StringUtil.equals(value, Cluster.DEV._value)) {
 				return Cluster.DEV;
 			}

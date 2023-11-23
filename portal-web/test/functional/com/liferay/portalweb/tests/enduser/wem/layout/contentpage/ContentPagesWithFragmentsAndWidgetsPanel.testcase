@@ -1,9 +1,9 @@
 @component-name = "portal-wcm"
 definition {
 
+	property ci.retries.disabled = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testcase.url = "http://localhost:8080";
 	property testray.main.component.name = "Content Pages";
 
 	static var randomSiteName = StringUtil.randomString(8);
@@ -11,6 +11,10 @@ definition {
 	var siteURLKey = StringUtil.toLowerCase(${randomSiteName});
 
 	setUp {
+		task ("Set up virtual instance") {
+			TestCase.setUpPortalInstance();
+		}
+
 		task ("Sign in") {
 			User.firstLoginPG();
 		}
@@ -197,7 +201,7 @@ definition {
 	@description = "This is a test for LPS-158744. Each user could customize order of fragment sets and widgets categories in Fragments and Widgets panel."
 	@priority = 4
 	test CustomizeOrderOfFragmentSetsAndWidgetCategoriesByEachUser {
-		property custom.properties = "feature.flag.LPS-158737=true${line.separator}jsonws.web.service.paths.excludes=";
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property portal.release = "false";
 
 		task ("Given a page creator customizes the order of fragment sets and widget categories in the Fragments and Widgets panel") {
@@ -293,7 +297,7 @@ definition {
 	@description = "This is a test for LPS-158744. Each user could customize order of fragment sets and widgets categories in Fragments and Widgets panel."
 	@priority = 4
 	test CustomizeOrderOfFragmentSetsAndWidgetCategoriesByEachUserOnReleaseBundle {
-		property custom.properties = "feature.flag.LPS-158737=true${line.separator}jsonws.web.service.paths.excludes=";
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property portal.upstream = "false";
 
 		task ("Given a page creator customizes the order of fragment sets and widget categories in the Fragments and Widgets panel") {
@@ -336,7 +340,7 @@ definition {
 			JSONRole.assignSiteRoleToUser(
 				groupName = ${randomSiteName},
 				roleTitle = "Site Administrator",
-				userEmailAddress = "${userEmailAddress}@liferay.com");
+				userEmailAddress = StringUtil.toLowerCase("${userEmailAddress}@liferay.com"));
 
 			User.logoutAndLoginPG(userLoginEmailAddress = StringUtil.toLowerCase("${userEmailAddress}@liferay.com"));
 
@@ -528,7 +532,7 @@ definition {
 
 			Navigator.gotoNavTab(navTab = "Widgets");
 
-			for (var sectionName : list "Highlighted,Accounts") {
+			for (var sectionName : list "Highlighted,Accounts,Collaboration") {
 				Panel.collapsePanel(panel = ${sectionName});
 			}
 
@@ -546,7 +550,7 @@ definition {
 				key_tab = "Widgets",
 				locator1 = "NavTab#ACTIVE_TAB_LINK");
 
-			for (var sectionName : list "Highlighted,Accounts") {
+			for (var sectionName : list "Highlighted,Accounts,Collaboration") {
 				AssertElementPresent(
 					key_panel = ${sectionName},
 					locator1 = "Panel#PANEL_COLLAPSED");
@@ -612,7 +616,7 @@ definition {
 
 			Navigator.gotoNavTab(navTab = "Widgets");
 
-			for (var sectionName : list "Highlighted,Accounts,Business Intelligence & Reporting") {
+			for (var sectionName : list "Highlighted,Accounts,Collaboration") {
 				Panel.collapsePanel(panel = ${sectionName});
 			}
 
@@ -630,7 +634,7 @@ definition {
 				key_tab = "Widgets",
 				locator1 = "NavTab#ACTIVE_TAB_LINK");
 
-			for (var sectionName : list "Highlighted,Accounts,Business Intelligence & Reporting") {
+			for (var sectionName : list "Highlighted,Accounts,Collaboration") {
 				AssertElementPresent(
 					key_panel = ${sectionName},
 					locator1 = "Panel#PANEL_COLLAPSED");

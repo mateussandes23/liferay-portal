@@ -1,17 +1,20 @@
 definition {
 
-	@summary = "Add a basic category"
-	macro addCategory {
-		Variables.assertDefined(parameterList = "${groupName},${vocabularyName}");
+	@summary = "Default summary"
+	macro addCategory(groupName = null, site = null, description = null, vocabularyName = null, title = null) {
+		Variables.assertDefined(parameterList = ${vocabularyName});
 
 		JSONUtil2._exclusiveOrCheck(
 			a = ${title},
 			b = ${titleMap},
 			failMessage = "Please only set 'title' or only 'titleMap' but not both or none.");
 
-		var groupId = JSONCategorySetter.setGroupId(
-			groupName = ${groupName},
-			site = ${site});
+		if (!(isSet(groupId))) {
+			var groupId = JSONCategorySetter.setGroupId(
+				groupName = ${groupName},
+				site = ${site});
+		}
+
 		var parentCategoryId = JSONCategorySetter.setParentCategoryId();
 		var titleMap = JSONCategorySetter.setTitleMap(
 			title = ${title},
@@ -35,18 +38,20 @@ definition {
 		return ${categoryId};
 	}
 
-	@summary = "Add a basic subcategory"
-	macro addSubcategory {
-		Variables.assertDefined(parameterList = "${groupName},${parentCategoryName},${vocabularyName}");
+	@summary = "Default summary"
+	macro addSubcategory(parentCategoryName = null, description = null, vocabularyName = null, title = null, groupName = null, site = null) {
+		Variables.assertDefined(parameterList = "${parentCategoryName},${vocabularyName}");
 
 		JSONUtil2._exclusiveOrCheck(
 			a = ${title},
 			b = ${titleMap},
 			failMessage = "Please only set 'title' or only 'titleMap' but not both or none.");
 
-		var groupId = JSONCategorySetter.setGroupId(
-			groupName = ${groupName},
-			site = ${site});
+		if (!(isSet(groupId))) {
+			var groupId = JSONCategorySetter.setGroupId(
+				groupName = ${groupName},
+				site = ${site});
+		}
 
 		var vocabularyId = JSONCategorySetter.setVocabularyId(
 			groupId = ${groupId},
@@ -75,18 +80,19 @@ definition {
 		return ${categoryId};
 	}
 
-	@summary = "Add a basic vocabulary"
-	macro addVocabulary {
-		Variables.assertDefined(parameterList = ${groupName});
-
+	@summary = "Default summary"
+	macro addVocabulary(groupName = null, site = null, description = null, title = null) {
 		JSONUtil2._exclusiveOrCheck(
 			a = ${title},
 			b = ${titleMap},
 			failMessage = "Please only set 'title' or only 'titleMap' but not both or none.");
 
-		var groupId = JSONCategorySetter.setGroupId(
-			groupName = ${groupName},
-			site = ${site});
+		if (!(isSet(groupId))) {
+			var groupId = JSONCategorySetter.setGroupId(
+				groupName = ${groupName},
+				site = ${site});
+		}
+
 		var serviceContext = JSONCategorySetter.setServiceContext(serviceContext = ${serviceContext});
 		var titleMap = JSONCategorySetter.setTitleMap(
 			title = ${title},
@@ -109,8 +115,8 @@ definition {
 			visibilityType = ${visibilityType});
 	}
 
-	@summary = "Delete a category"
-	macro deleteCategory {
+	@summary = "Default summary"
+	macro deleteCategory(groupName = null, vocabularyName = null, categoryName = null) {
 		Variables.assertDefined(parameterList = "${groupName},${categoryName},${vocabularyName}");
 
 		var categoryId = JSONCategory.getCategoryId(
@@ -121,8 +127,8 @@ definition {
 		JSONCategoryAPI._deleteCategory(categoryId = ${categoryId});
 	}
 
-	@summary = "Delete a vocabulary"
-	macro deleteVocabulary {
+	@summary = "Default summary"
+	macro deleteVocabulary(groupName = null, vocabularyName = null) {
 		Variables.assertDefined(parameterList = "${groupName},${vocabularyName}");
 
 		var groupId = JSONCategorySetter.setGroupId(groupName = ${groupName});
@@ -134,8 +140,8 @@ definition {
 		JSONCategoryAPI._deleteVocabulary(vocabularyId = ${vocabularyId});
 	}
 
-	@summary = "Get the categoryId from any category by using categoryName, groupId, and vocabularyId"
-	macro getCategoryId {
+	@summary = "Default summary"
+	macro getCategoryId(groupName = null, site = null, vocabularyName = null, categoryName = null) {
 		Variables.assertDefined(parameterList = "${groupName},${categoryName},${vocabularyName}");
 
 		var groupId = JSONCategorySetter.setGroupId(
@@ -154,8 +160,8 @@ definition {
 		return ${categoryId};
 	}
 
-	@summary = "Delete all categories from a vocabulary"
-	macro tearDownCategories {
+	@summary = "Default summary"
+	macro tearDownCategories(groupName = null, vocabularyName = null) {
 		Variables.assertDefined(parameterList = "${groupName},${vocabularyName}");
 
 		var groupId = JSONCategorySetter.setGroupId(groupName = ${groupName});
@@ -171,7 +177,8 @@ definition {
 		}
 	}
 
-	macro updateCategoryName {
+	@summary = "Default summary"
+	macro updateCategoryName(groupName = null, description = null, vocabularyName = null, title = null, categoryName = null) {
 		Variables.assertDefined(parameterList = "${groupName},${categoryName},${vocabularyName}");
 
 		JSONUtil2._exclusiveOrCheck(

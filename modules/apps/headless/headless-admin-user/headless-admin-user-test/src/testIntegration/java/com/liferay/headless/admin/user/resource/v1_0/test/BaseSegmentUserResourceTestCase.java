@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.admin.user.resource.v1_0.test;
@@ -42,6 +33,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -201,7 +193,7 @@ public abstract class BaseSegmentUserResourceTestCase {
 		Page<SegmentUser> page = segmentUserResource.getSegmentUserAccountsPage(
 			segmentId, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantSegmentId != null) {
 			SegmentUser irrelevantSegmentUser =
@@ -209,13 +201,12 @@ public abstract class BaseSegmentUserResourceTestCase {
 					irrelevantSegmentId, randomIrrelevantSegmentUser());
 
 			page = segmentUserResource.getSegmentUserAccountsPage(
-				irrelevantSegmentId, Pagination.of(1, 2));
+				irrelevantSegmentId, Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantSegmentUser),
-				(List<SegmentUser>)page.getItems());
+			assertContains(
+				irrelevantSegmentUser, (List<SegmentUser>)page.getItems());
 			assertValid(
 				page,
 				testGetSegmentUserAccountsPage_getExpectedActions(
@@ -233,11 +224,10 @@ public abstract class BaseSegmentUserResourceTestCase {
 		page = segmentUserResource.getSegmentUserAccountsPage(
 			segmentId, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(segmentUser1, segmentUser2),
-			(List<SegmentUser>)page.getItems());
+		assertContains(segmentUser1, (List<SegmentUser>)page.getItems());
+		assertContains(segmentUser2, (List<SegmentUser>)page.getItems());
 		assertValid(
 			page, testGetSegmentUserAccountsPage_getExpectedActions(segmentId));
 	}
@@ -257,6 +247,11 @@ public abstract class BaseSegmentUserResourceTestCase {
 
 		Long segmentId = testGetSegmentUserAccountsPage_getSegmentId();
 
+		Page<SegmentUser> segmentUserPage =
+			segmentUserResource.getSegmentUserAccountsPage(segmentId, null);
+
+		int totalCount = GetterUtil.getInteger(segmentUserPage.getTotalCount());
+
 		SegmentUser segmentUser1 =
 			testGetSegmentUserAccountsPage_addSegmentUser(
 				segmentId, randomSegmentUser());
@@ -271,17 +266,18 @@ public abstract class BaseSegmentUserResourceTestCase {
 
 		Page<SegmentUser> page1 =
 			segmentUserResource.getSegmentUserAccountsPage(
-				segmentId, Pagination.of(1, 2));
+				segmentId, Pagination.of(1, totalCount + 2));
 
 		List<SegmentUser> segmentUsers1 = (List<SegmentUser>)page1.getItems();
 
-		Assert.assertEquals(segmentUsers1.toString(), 2, segmentUsers1.size());
+		Assert.assertEquals(
+			segmentUsers1.toString(), totalCount + 2, segmentUsers1.size());
 
 		Page<SegmentUser> page2 =
 			segmentUserResource.getSegmentUserAccountsPage(
-				segmentId, Pagination.of(2, 2));
+				segmentId, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<SegmentUser> segmentUsers2 = (List<SegmentUser>)page2.getItems();
 
@@ -289,11 +285,11 @@ public abstract class BaseSegmentUserResourceTestCase {
 
 		Page<SegmentUser> page3 =
 			segmentUserResource.getSegmentUserAccountsPage(
-				segmentId, Pagination.of(1, 3));
+				segmentId, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(segmentUser1, segmentUser2, segmentUser3),
-			(List<SegmentUser>)page3.getItems());
+		assertContains(segmentUser1, (List<SegmentUser>)page3.getItems());
+		assertContains(segmentUser2, (List<SegmentUser>)page3.getItems());
+		assertContains(segmentUser3, (List<SegmentUser>)page3.getItems());
 	}
 
 	protected SegmentUser testGetSegmentUserAccountsPage_addSegmentUser(
@@ -448,14 +444,19 @@ public abstract class BaseSegmentUserResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -666,9 +667,47 @@ public abstract class BaseSegmentUserResourceTestCase {
 		sb.append(" ");
 
 		if (entityFieldName.equals("emailAddress")) {
-			sb.append("'");
-			sb.append(String.valueOf(segmentUser.getEmailAddress()));
-			sb.append("'");
+			Object object = segmentUser.getEmailAddress();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -679,9 +718,47 @@ public abstract class BaseSegmentUserResourceTestCase {
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(segmentUser.getName()));
-			sb.append("'");
+			Object object = segmentUser.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

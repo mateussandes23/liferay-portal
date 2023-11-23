@@ -1,10 +1,10 @@
 @component-name = "portal-wcm"
 definition {
 
+	property ci.retries.disabled = "true";
 	property custom.properties = "jsonws.web.service.paths.excludes=";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testcase.url = "http://localhost:8080";
 	property testray.main.component.name = "Page Administration";
 
 	static var randomSiteName = StringUtil.randomString(8);
@@ -16,6 +16,10 @@ definition {
 	var userScreenName = StringUtil.randomString(8);
 
 	setUp {
+		task ("Set up virtual instance") {
+			TestCase.setUpPortalInstance();
+		}
+
 		task ("Sign in") {
 			User.firstLoginPG();
 		}
@@ -47,8 +51,6 @@ definition {
 	@description = "This is a test for LPS-136413. The global page template is invisible to user without permission in page creation."
 	@priority = 4
 	test GlobalTemplateIsInvisibleToUserWithoutPermissionInPageCreation {
-		property test.name.skip.portal.instance = "PagesAdminWithPermissions#GlobalTemplateIsInvisibleToUserWithoutPermissionInPageCreation";
-
 		var roleKey = StringUtil.randomString(8);
 
 		task ("Add a regular role") {

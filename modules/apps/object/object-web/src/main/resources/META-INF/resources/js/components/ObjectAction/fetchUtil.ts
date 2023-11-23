@@ -1,32 +1,29 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {API, getLocalizableLabel} from '@liferay/object-js-components-web';
+import {API} from '@liferay/object-js-components-web';
 
 export type ObjectsOptionsList = {
+	items: ObjectOptionsListItem[];
 	label: string;
-	options: LabelValueObject[];
-	type: string;
 }[];
 
+export type ObjectOptionsListItem = {
+	isSystemObjectDefinition: boolean;
+	label?: string;
+	objectDefinitionExternalReferenceCode: string;
+	objectDefinitionId: number;
+};
+
 function fillSelect(
+	items: ObjectOptionsListItem[],
 	label: string,
-	options: LabelValueObject[],
 	objectsOptionsList: ObjectsOptionsList
 ) {
-	if (options.length) {
-		objectsOptionsList.push({label, options, type: 'group'});
+	if (items.length) {
+		objectsOptionsList.push({items, label});
 	}
 }
 
@@ -34,63 +31,46 @@ interface FetchObjectDefinitionsProps {
 	objectDefinitionsRelationshipsURL: string;
 	setAddObjectEntryDefinitions: (values: AddObjectEntryDefinitions[]) => void;
 	setObjectOptions: (values: ObjectsOptionsList) => void;
-	setSelectedObjectDefinition?: (value: string) => void;
-	values: Partial<ObjectAction>;
 }
 
 export async function fetchObjectDefinitions({
 	objectDefinitionsRelationshipsURL,
 	setAddObjectEntryDefinitions,
 	setObjectOptions,
-	setSelectedObjectDefinition,
-	values,
 }: FetchObjectDefinitionsProps) {
 	const addObjectEntryDefinitions = await API.fetchJSON<
 		AddObjectEntryDefinitions[]
 	>(objectDefinitionsRelationshipsURL);
 
-	const relatedObjects: LabelValueObject[] = [];
-	const unrelatedObjects: LabelValueObject[] = [];
+	const relatedObjects: ObjectOptionsListItem[] = [];
+	const unrelatedObjects: ObjectOptionsListItem[] = [];
 
 	addObjectEntryDefinitions?.forEach((object) => {
 		const {externalReferenceCode, id, label, system} = object;
 
 		const target = object.related ? relatedObjects : unrelatedObjects;
 
-		target.push({label, value: `${externalReferenceCode},${id},${system}`});
+		target.push({
+			isSystemObjectDefinition: system as boolean,
+			label,
+			objectDefinitionExternalReferenceCode: externalReferenceCode,
+			objectDefinitionId: id,
+		});
 	});
 
 	const objectsOptionsList: ObjectsOptionsList = [];
 
 	fillSelect(
-		Liferay.Language.get('related-objects'),
 		relatedObjects,
+		Liferay.Language.get('related-objects'),
 		objectsOptionsList
 	);
 
 	fillSelect(
-		Liferay.Language.get('unrelated-objects'),
 		unrelatedObjects,
+		Liferay.Language.get('unrelated-objects'),
 		objectsOptionsList
 	);
-
-	const {
-		objectDefinitionExternalReferenceCode,
-	} = values.parameters as ObjectActionParameters;
-
-	if (setSelectedObjectDefinition && objectDefinitionExternalReferenceCode) {
-		const {
-			defaultLanguageId,
-			label,
-			name,
-		} = await API.getObjectDefinitionByExternalReferenceCode(
-			objectDefinitionExternalReferenceCode
-		);
-
-		setSelectedObjectDefinition(
-			getLocalizableLabel(defaultLanguageId, label, name)
-		);
-	}
 
 	setObjectOptions(objectsOptionsList);
 	setAddObjectEntryDefinitions(addObjectEntryDefinitions);
@@ -121,7 +101,7 @@ export async function fetchObjectDefinitionFields(
 	}
 
 	if (externalReferenceCode) {
-		const items = await API.getObjectFieldsByExternalReferenceCode(
+		const items = await API.getObjectDefinitionByExternalReferenceCodeObjectFields(
 			externalReferenceCode
 		);
 
@@ -144,7 +124,7 @@ export async function fetchObjectDefinitionFields(
 
 	const newPredefinedValues: PredefinedValue[] = [];
 
-	validFields.forEach(({label, name, required}) => {
+	validFields.forEach(({businessType, label, name, required}) => {
 		if (predefinedValuesMap.has(name)) {
 			const field = predefinedValuesMap.get(name);
 
@@ -154,8 +134,11 @@ export async function fetchObjectDefinitionFields(
 			required &&
 			values.objectActionExecutorKey === 'add-object-entry'
 		) {
+			const inputAsValue = businessType === 'DateTime' ? true : false;
+
 			newPredefinedValues.push({
-				inputAsValue: false,
+				businessType,
+				inputAsValue,
 				label,
 				name,
 				value: '',

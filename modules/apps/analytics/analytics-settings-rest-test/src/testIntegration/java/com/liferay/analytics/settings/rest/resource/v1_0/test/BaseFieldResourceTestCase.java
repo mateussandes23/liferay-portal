@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.analytics.settings.rest.resource.v1_0.test;
@@ -232,10 +223,10 @@ public abstract class BaseFieldResourceTestCase {
 
 	@Test
 	public void testGetFieldsAccountsPageWithPagination() throws Exception {
-		Page<Field> totalPage = fieldResource.getFieldsAccountsPage(
+		Page<Field> fieldPage = fieldResource.getFieldsAccountsPage(
 			null, null, null);
 
-		int totalCount = GetterUtil.getInteger(totalPage.getTotalCount());
+		int totalCount = GetterUtil.getInteger(fieldPage.getTotalCount());
 
 		Field field1 = testGetFieldsAccountsPage_addField(randomField());
 
@@ -260,7 +251,7 @@ public abstract class BaseFieldResourceTestCase {
 		Assert.assertEquals(fields2.toString(), 1, fields2.size());
 
 		Page<Field> page3 = fieldResource.getFieldsAccountsPage(
-			null, Pagination.of(1, totalCount + 3), null);
+			null, Pagination.of(1, (int)totalCount + 3), null);
 
 		assertContains(field1, (List<Field>)page3.getItems());
 		assertContains(field2, (List<Field>)page3.getItems());
@@ -372,19 +363,23 @@ public abstract class BaseFieldResourceTestCase {
 
 		field2 = testGetFieldsAccountsPage_addField(field2);
 
+		Page<Field> page = fieldResource.getFieldsAccountsPage(
+			null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<Field> ascPage = fieldResource.getFieldsAccountsPage(
-				null, Pagination.of(1, 2), entityField.getName() + ":asc");
+				null, Pagination.of(1, (int)page.getTotalCount() + 1),
+				entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(field1, field2), (List<Field>)ascPage.getItems());
+			assertContains(field1, (List<Field>)ascPage.getItems());
+			assertContains(field2, (List<Field>)ascPage.getItems());
 
 			Page<Field> descPage = fieldResource.getFieldsAccountsPage(
-				null, Pagination.of(1, 2), entityField.getName() + ":desc");
+				null, Pagination.of(1, (int)page.getTotalCount() + 1),
+				entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(field2, field1),
-				(List<Field>)descPage.getItems());
+			assertContains(field2, (List<Field>)descPage.getItems());
+			assertContains(field1, (List<Field>)descPage.getItems());
 		}
 	}
 
@@ -432,10 +427,10 @@ public abstract class BaseFieldResourceTestCase {
 
 	@Test
 	public void testGetFieldsOrdersPageWithPagination() throws Exception {
-		Page<Field> totalPage = fieldResource.getFieldsOrdersPage(
+		Page<Field> fieldPage = fieldResource.getFieldsOrdersPage(
 			null, null, null);
 
-		int totalCount = GetterUtil.getInteger(totalPage.getTotalCount());
+		int totalCount = GetterUtil.getInteger(fieldPage.getTotalCount());
 
 		Field field1 = testGetFieldsOrdersPage_addField(randomField());
 
@@ -460,7 +455,7 @@ public abstract class BaseFieldResourceTestCase {
 		Assert.assertEquals(fields2.toString(), 1, fields2.size());
 
 		Page<Field> page3 = fieldResource.getFieldsOrdersPage(
-			null, Pagination.of(1, totalCount + 3), null);
+			null, Pagination.of(1, (int)totalCount + 3), null);
 
 		assertContains(field1, (List<Field>)page3.getItems());
 		assertContains(field2, (List<Field>)page3.getItems());
@@ -572,19 +567,22 @@ public abstract class BaseFieldResourceTestCase {
 
 		field2 = testGetFieldsOrdersPage_addField(field2);
 
+		Page<Field> page = fieldResource.getFieldsOrdersPage(null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<Field> ascPage = fieldResource.getFieldsOrdersPage(
-				null, Pagination.of(1, 2), entityField.getName() + ":asc");
+				null, Pagination.of(1, (int)page.getTotalCount() + 1),
+				entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(field1, field2), (List<Field>)ascPage.getItems());
+			assertContains(field1, (List<Field>)ascPage.getItems());
+			assertContains(field2, (List<Field>)ascPage.getItems());
 
 			Page<Field> descPage = fieldResource.getFieldsOrdersPage(
-				null, Pagination.of(1, 2), entityField.getName() + ":desc");
+				null, Pagination.of(1, (int)page.getTotalCount() + 1),
+				entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(field2, field1),
-				(List<Field>)descPage.getItems());
+			assertContains(field2, (List<Field>)descPage.getItems());
+			assertContains(field1, (List<Field>)descPage.getItems());
 		}
 	}
 
@@ -632,10 +630,10 @@ public abstract class BaseFieldResourceTestCase {
 
 	@Test
 	public void testGetFieldsPeoplePageWithPagination() throws Exception {
-		Page<Field> totalPage = fieldResource.getFieldsPeoplePage(
+		Page<Field> fieldPage = fieldResource.getFieldsPeoplePage(
 			null, null, null);
 
-		int totalCount = GetterUtil.getInteger(totalPage.getTotalCount());
+		int totalCount = GetterUtil.getInteger(fieldPage.getTotalCount());
 
 		Field field1 = testGetFieldsPeoplePage_addField(randomField());
 
@@ -660,7 +658,7 @@ public abstract class BaseFieldResourceTestCase {
 		Assert.assertEquals(fields2.toString(), 1, fields2.size());
 
 		Page<Field> page3 = fieldResource.getFieldsPeoplePage(
-			null, Pagination.of(1, totalCount + 3), null);
+			null, Pagination.of(1, (int)totalCount + 3), null);
 
 		assertContains(field1, (List<Field>)page3.getItems());
 		assertContains(field2, (List<Field>)page3.getItems());
@@ -772,19 +770,22 @@ public abstract class BaseFieldResourceTestCase {
 
 		field2 = testGetFieldsPeoplePage_addField(field2);
 
+		Page<Field> page = fieldResource.getFieldsPeoplePage(null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<Field> ascPage = fieldResource.getFieldsPeoplePage(
-				null, Pagination.of(1, 2), entityField.getName() + ":asc");
+				null, Pagination.of(1, (int)page.getTotalCount() + 1),
+				entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(field1, field2), (List<Field>)ascPage.getItems());
+			assertContains(field1, (List<Field>)ascPage.getItems());
+			assertContains(field2, (List<Field>)ascPage.getItems());
 
 			Page<Field> descPage = fieldResource.getFieldsPeoplePage(
-				null, Pagination.of(1, 2), entityField.getName() + ":desc");
+				null, Pagination.of(1, (int)page.getTotalCount() + 1),
+				entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(field2, field1),
-				(List<Field>)descPage.getItems());
+			assertContains(field2, (List<Field>)descPage.getItems());
+			assertContains(field1, (List<Field>)descPage.getItems());
 		}
 	}
 
@@ -832,10 +833,10 @@ public abstract class BaseFieldResourceTestCase {
 
 	@Test
 	public void testGetFieldsProductsPageWithPagination() throws Exception {
-		Page<Field> totalPage = fieldResource.getFieldsProductsPage(
+		Page<Field> fieldPage = fieldResource.getFieldsProductsPage(
 			null, null, null);
 
-		int totalCount = GetterUtil.getInteger(totalPage.getTotalCount());
+		int totalCount = GetterUtil.getInteger(fieldPage.getTotalCount());
 
 		Field field1 = testGetFieldsProductsPage_addField(randomField());
 
@@ -860,7 +861,7 @@ public abstract class BaseFieldResourceTestCase {
 		Assert.assertEquals(fields2.toString(), 1, fields2.size());
 
 		Page<Field> page3 = fieldResource.getFieldsProductsPage(
-			null, Pagination.of(1, totalCount + 3), null);
+			null, Pagination.of(1, (int)totalCount + 3), null);
 
 		assertContains(field1, (List<Field>)page3.getItems());
 		assertContains(field2, (List<Field>)page3.getItems());
@@ -972,19 +973,23 @@ public abstract class BaseFieldResourceTestCase {
 
 		field2 = testGetFieldsProductsPage_addField(field2);
 
+		Page<Field> page = fieldResource.getFieldsProductsPage(
+			null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<Field> ascPage = fieldResource.getFieldsProductsPage(
-				null, Pagination.of(1, 2), entityField.getName() + ":asc");
+				null, Pagination.of(1, (int)page.getTotalCount() + 1),
+				entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(field1, field2), (List<Field>)ascPage.getItems());
+			assertContains(field1, (List<Field>)ascPage.getItems());
+			assertContains(field2, (List<Field>)ascPage.getItems());
 
 			Page<Field> descPage = fieldResource.getFieldsProductsPage(
-				null, Pagination.of(1, 2), entityField.getName() + ":desc");
+				null, Pagination.of(1, (int)page.getTotalCount() + 1),
+				entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(field2, field1),
-				(List<Field>)descPage.getItems());
+			assertContains(field2, (List<Field>)descPage.getItems());
+			assertContains(field1, (List<Field>)descPage.getItems());
 		}
 	}
 
@@ -1143,14 +1148,19 @@ public abstract class BaseFieldResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1383,17 +1393,93 @@ public abstract class BaseFieldResourceTestCase {
 		sb.append(" ");
 
 		if (entityFieldName.equals("example")) {
-			sb.append("'");
-			sb.append(String.valueOf(field.getExample()));
-			sb.append("'");
+			Object object = field.getExample();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(field.getName()));
-			sb.append("'");
+			Object object = field.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1409,17 +1495,93 @@ public abstract class BaseFieldResourceTestCase {
 		}
 
 		if (entityFieldName.equals("source")) {
-			sb.append("'");
-			sb.append(String.valueOf(field.getSource()));
-			sb.append("'");
+			Object object = field.getSource();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("type")) {
-			sb.append("'");
-			sb.append(String.valueOf(field.getType()));
-			sb.append("'");
+			Object object = field.getType();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

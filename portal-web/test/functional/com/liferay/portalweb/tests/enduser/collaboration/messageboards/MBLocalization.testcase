@@ -13,9 +13,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -28,7 +28,7 @@ definition {
 	}
 
 	@description = "This test covers LPS-84585. It ensures that a user can delete the reply of MB in Japanese."
-	@priority = 4
+	@priority = 3
 	test CanDeleteThreadReplyInJapanese {
 		JSONMBMessage.addMessage(
 			groupName = "Guest",

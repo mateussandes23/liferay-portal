@@ -1,7 +1,7 @@
 definition {
 
-	@summary = "Asserts that the currently selected Time Filter range matches the specified range \  @param cardName optional argument that is supplied when you want to assert the Time Filter within a specific card \  @param timeFilterRange the currently set range of the Time Filter, as displayed on the Time Filter dropdown button"
-	macro assertCurrentTimeFilterRange {
+	@summary = "Default summary"
+	macro assertCurrentTimeFilterRange(cardName = null, timeFilterRangeWarning = null, timeFilterRange = null) {
 		if (isSet(cardName)) {
 			var key_cardName = ${cardName};
 
@@ -21,15 +21,15 @@ definition {
 		}
 	}
 
-	@summary = "Clicks the 'More Preset Periods' option in the Time Filter Dropdown"
-	macro clickMorePresetPeriods {
+	@summary = "Default summary"
+	macro clickMorePresetPeriods() {
 		var key_dropdownOption = "More Preset Periods";
 
 		Click(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION");
 	}
 
-	@summary = "Clicks the Time Filter dropdown button. If `cardName` argument is provided, it clicks the TimeFilter within a card specified by name \  @param cardName name of the card who's Time Filter you want to click"
-	macro clickTimeFilterButton {
+	@summary = "Default summary"
+	macro clickTimeFilterButton(cardName = null) {
 		if (isSet(cardName)) {
 			var key_cardName = ${cardName};
 
@@ -40,8 +40,8 @@ definition {
 		}
 	}
 
-	@summary = "Filters the card or table by a Custom Date range \  @param startDay \  @param startMonth Full name of the start month \  @param startYear \  @param endDay \  @param endMonth Full name of the end month \  @param endYear"
-	macro setCustomRange {
+	@summary = "Default summary"
+	macro setCustomRange(cardName = null, startMonth = null, startDay = null, endDay = null, startYear = null, endMonth = null, endYear = null) {
 		var key_dropdownOption = "Custom Range";
 
 		if (isSet(cardName)) {
@@ -86,22 +86,22 @@ definition {
 		}
 	}
 
-	@summary = "Clicks the 'Last 7 days' option in the Time Filter Dropdown"
-	macro setLast7Days {
+	@summary = "Default summary"
+	macro setLast7Days() {
 		var key_dropdownOption = "Last 7 days";
 
 		Click(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION");
 	}
 
-	@summary = "Clicks the 'Last 24 hours' option in the Time Filter Dropdown"
-	macro setLast24Hours {
+	@summary = "Default summary"
+	macro setLast24Hours() {
 		var key_dropdownOption = "Last 24 hours";
 
 		Click(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION");
 	}
 
-	@summary = "Clicks the 'Last 28 days' option in the Time Filter Dropdown"
-	macro setLast28Days {
+	@summary = "Default summary"
+	macro setLast28Days() {
 		var key_dropdownOption = "More Preset Periods";
 
 		if (IsElementPresent(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION")) {
@@ -113,22 +113,22 @@ definition {
 		Click(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION");
 	}
 
-	@summary = "Clicks the 'Last 30 days' option in the Time Filter Dropdown"
-	macro setLast30Days {
+	@summary = "Default summary"
+	macro setLast30Days() {
 		var key_dropdownOption = "Last 30 days";
 
 		Click(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION");
 	}
 
-	@summary = "Clicks the 'Last 90 days' option in the Time Filter Dropdown"
-	macro setLast90Days {
+	@summary = "Default summary"
+	macro setLast90Days() {
 		var key_dropdownOption = "Last 90 days";
 
 		Click(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION");
 	}
 
-	@summary = "Clicks the 'Last 180 days' option in the Time Filter Dropdown"
-	macro setLast180Days {
+	@summary = "Default summary"
+	macro setLast180Days() {
 		var key_dropdownOption = "More Preset Periods";
 
 		if (IsElementPresent(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION")) {
@@ -140,8 +140,8 @@ definition {
 		Click(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION");
 	}
 
-	@summary = "Clicks the 'Last Year' option in the Time Filter Dropdown"
-	macro setLastYear {
+	@summary = "Default summary"
+	macro setLastYear() {
 		var key_dropdownOption = "More Preset Periods";
 
 		if (IsElementPresent(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION")) {
@@ -153,8 +153,8 @@ definition {
 		Click(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION");
 	}
 
-	@summary = "Clicks the 'Yesterday' option in the Time Filter Dropdown"
-	macro setYesterday {
+	@summary = "Default summary"
+	macro setYesterday() {
 		var key_dropdownOption = "More Preset Periods";
 
 		if (IsElementPresent(locator1 = "ACTimeFilter#TIME_FILTER_DROPDOWN_OPTION")) {

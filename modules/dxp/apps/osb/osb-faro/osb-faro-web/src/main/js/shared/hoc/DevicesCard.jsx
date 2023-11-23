@@ -1,4 +1,4 @@
-import BaseCard from 'cerebro-shared/components/base-card';
+import BaseCard from 'shared/components/base-card';
 import Card from 'shared/components/Card';
 import CardTabs from 'shared/components/CardTabs';
 import OperatingSystem from 'shared/components/OperatingSystem';
@@ -90,11 +90,11 @@ Tabs.propTypes = propTypes;
  */
 const withDevicesCard = (
 	withDevices,
-	{documentationTitle = '', documentationUrl = '', title = ''} = {}
+	{documentationTitle, documentationUrl, id, title} = {}
 ) => {
 	const TabsWithDevices = compose(
 		withDevices(),
-		withLoading({alignCenter: true, page: false}),
+		withLoading(),
 		withError({page: false}),
 		withEmpty({
 			description: (
@@ -145,6 +145,7 @@ const withDevicesCard = (
 		return (
 			<BaseCard
 				className={className}
+				id={id}
 				label={label}
 				legacyDropdownRangeKey={legacyDropdownRangeKey}
 				minHeight={536}

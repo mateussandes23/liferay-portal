@@ -8,7 +8,6 @@ exports[`Grid has a label 1`] = `
     <label
       aria-labelledby="undefined_fieldDetails"
       class="ddm-label"
-      tabindex="0"
     >
       label
     </label>
@@ -96,7 +95,6 @@ exports[`Grid has a tip 1`] = `
   <div
     aria-labelledby="undefined_fieldDetails"
     class="form-group hide"
-    tabindex="0"
   >
     <div
       class="table-responsive"
@@ -192,7 +190,6 @@ exports[`Grid has an id 1`] = `
   <div
     aria-labelledby="Id_fieldDetails"
     class="form-group hide"
-    tabindex="0"
   >
     <div
       class="table-responsive"
@@ -272,7 +269,6 @@ exports[`Grid is not editable 1`] = `
   <div
     aria-labelledby="undefined_fieldDetails"
     class="form-group hide"
-    tabindex="0"
   >
     <div
       class="table-responsive"
@@ -349,7 +345,6 @@ exports[`Grid is not required 1`] = `
   <div
     aria-labelledby="undefined_fieldDetails"
     class="form-group hide"
-    tabindex="0"
   >
     <div
       class="table-responsive"
@@ -362,6 +357,7 @@ exports[`Grid is not required 1`] = `
         class="table-responsive"
       >
         <table
+          aria-required="false"
           class="table table-autofit show-quick-actions-on-hover table-hover table-list table-striped"
         >
           <thead>
@@ -432,7 +428,6 @@ exports[`Grid renders Label if showLabel is true 1`] = `
     <label
       aria-labelledby="undefined_fieldDetails"
       class="ddm-label"
-      tabindex="0"
     >
       text
     </label>
@@ -520,7 +515,6 @@ exports[`Grid renders columns 1`] = `
   <div
     aria-labelledby="undefined_fieldDetails"
     class="form-group hide"
-    tabindex="0"
   >
     <div
       class="table-responsive"
@@ -627,7 +621,6 @@ exports[`Grid renders no columns when columns comes empty 1`] = `
   <div
     aria-labelledby="undefined_fieldDetails"
     class="form-group hide"
-    tabindex="0"
   >
     <div
       class="table-responsive"
@@ -680,7 +673,6 @@ exports[`Grid renders no rows when row comes empty 1`] = `
   <div
     aria-labelledby="undefined_fieldDetails"
     class="form-group hide"
-    tabindex="0"
   >
     <div
       class="table-responsive"
@@ -723,7 +715,6 @@ exports[`Grid renders rows 1`] = `
   <div
     aria-labelledby="undefined_fieldDetails"
     class="form-group hide"
-    tabindex="0"
   >
     <div
       class="table-responsive"

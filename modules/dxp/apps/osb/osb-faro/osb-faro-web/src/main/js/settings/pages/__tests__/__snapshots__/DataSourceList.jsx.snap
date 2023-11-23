@@ -82,7 +82,7 @@ exports[`DataSourceList should render 1`] = `
                         role="presentation"
                       >
                         <use
-                          xlink:href="#caret-bottom"
+                          href="#caret-bottom"
                         />
                       </svg>
                     </button>
@@ -101,7 +101,7 @@ exports[`DataSourceList should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#order-arrow-ascending"
+                        href="#order-arrow-ascending"
                       />
                     </svg>
                   </a>
@@ -126,6 +126,7 @@ exports[`DataSourceList should render 1`] = `
                       class="input-group-inset-item input-group-inset-item-after"
                     >
                       <button
+                        aria-label="Search"
                         class="button-root btn btn-unstyled"
                         type="button"
                       >
@@ -134,7 +135,7 @@ exports[`DataSourceList should render 1`] = `
                           role="presentation"
                         >
                           <use
-                            xlink:href="#search"
+                            href="#search"
                           />
                         </svg>
                       </button>
@@ -151,7 +152,7 @@ exports[`DataSourceList should render 1`] = `
                   role="presentation"
                 >
                   <a
-                    class="button-root nav-btn btn btn-primary"
+                    class="button-root btn btn-sm btn-primary"
                     href="/workspace/23/settings/data-source/add"
                   >
                     Add Data Source
@@ -189,7 +190,7 @@ exports[`DataSourceList should render 1`] = `
                         role="presentation"
                       >
                         <use
-                          xlink:href="#order-arrow-up"
+                          href="#order-arrow-up"
                         />
                       </svg>
                     </span>
@@ -267,7 +268,7 @@ exports[`DataSourceList should render 1`] = `
                     role="presentation"
                   >
                     <use
-                      xlink:href="#check"
+                      href="#check"
                     />
                   </svg>
                 </td>
@@ -312,7 +313,7 @@ exports[`DataSourceList should render 1`] = `
                   role="presentation"
                 >
                   <use
-                    xlink:href="#caret-bottom"
+                    href="#caret-bottom"
                   />
                 </svg>
               </button>
@@ -329,16 +330,16 @@ exports[`DataSourceList should render 1`] = `
                 class="page-item disabled"
               >
                 <a
-                  class="button-root page-link btn btn-unstyled"
+                  class="button-root btn btn-unstyled page-link"
                   disabled=""
                   href="/?page=0"
                 >
                   <svg
-                    class="lexicon-icon lexicon-icon-angle-left icon-root"
+                    class="lexicon-icon lexicon-icon-angle-left-small icon-root"
                     role="presentation"
                   >
                     <use
-                      xlink:href="#angle-left"
+                      href="#angle-left-small"
                     />
                   </svg>
                 </a>
@@ -347,7 +348,7 @@ exports[`DataSourceList should render 1`] = `
                 class="page-item active"
               >
                 <a
-                  class="button-root page-link btn btn-unstyled"
+                  class="button-root btn btn-unstyled page-link"
                   href="/?page=1"
                 >
                   1
@@ -357,16 +358,16 @@ exports[`DataSourceList should render 1`] = `
                 class="page-item disabled"
               >
                 <a
-                  class="button-root page-link btn btn-unstyled"
+                  class="button-root btn btn-unstyled page-link"
                   disabled=""
                   href="/?page=2"
                 >
                   <svg
-                    class="lexicon-icon lexicon-icon-angle-right icon-root"
+                    class="lexicon-icon lexicon-icon-angle-right-small icon-root"
                     role="presentation"
                   >
                     <use
-                      xlink:href="#angle-right"
+                      href="#angle-right-small"
                     />
                   </svg>
                 </a>
@@ -396,7 +397,7 @@ exports[`DataSourceList should render toast for multiple data sources with inval
         role="presentation"
       >
         <use
-          xlink:href="#warning-full"
+          href="#warning-full"
         />
       </svg>
     </span>
@@ -426,7 +427,7 @@ exports[`DataSourceList should render toast for multiple data sources with inval
         role="presentation"
       >
         <use
-          xlink:href="#warning-full"
+          href="#warning-full"
         />
       </svg>
     </span>
@@ -456,7 +457,7 @@ exports[`DataSourceList should render toast for one data source with invalid cre
         role="presentation"
       >
         <use
-          xlink:href="#warning-full"
+          href="#warning-full"
         />
       </svg>
     </span>
@@ -496,7 +497,7 @@ exports[`DataSourceList should render toast for one data source with invalid cre
         role="presentation"
       >
         <use
-          xlink:href="#warning-full"
+          href="#warning-full"
         />
       </svg>
     </span>
@@ -531,7 +532,7 @@ exports[`DataSourceList should render with a member-specific message to connect 
         role="presentation"
       >
         <use
-          xlink:href="#ac-satellite"
+          href="#ac-satellite"
         />
       </svg>
     </div>
@@ -564,7 +565,7 @@ exports[`DataSourceList should render with a message to connect datasources if t
         role="presentation"
       >
         <use
-          xlink:href="#ac-satellite"
+          href="#ac-satellite"
         />
       </svg>
     </div>
@@ -604,7 +605,7 @@ exports[`DataSourceList should render with an empty state 1`] = `
         role="presentation"
       >
         <use
-          xlink:href="#ac-no-results-found"
+          href="#ac-no-results-found"
         />
       </svg>
     </div>

@@ -1,7 +1,7 @@
 definition {
 
-	@summary = "Directly calls the JSON WS API to add a tag"
-	macro _addTag {
+	@summary = "Default summary"
+	macro _addTag(groupId = null, tagName = null) {
 		Variables.assertDefined(parameterList = "${groupId},${tagName}");
 
 		var portalURL = JSONCompany.getPortalURL();
@@ -17,7 +17,8 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _getTagId {
+	@summary = "Default summary"
+	macro _getTagId(groupId = null, tagName = null) {
 		Variables.assertDefined(parameterList = "${groupId},${tagName}");
 
 		var portalURL = JSONCompany.getPortalURL();

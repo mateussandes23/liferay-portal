@@ -31,6 +31,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ANY_N</td>
+	<td>xpath=(//*[*[name()='svg'][contains(@class,'lexicon-icon-${key_text}')]])[${key_indexNumber}]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>ANY_ENABLED</td>
 	<td>//*[*[name()='svg'][contains(@class,'lexicon-icon-${key_text}')]][not(@disabled='')]</td>
 	<td></td>
@@ -181,6 +186,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>EXCLAMATION_MARK</td>
+	<td>//*[contains(.,'${key_pageName}')]/*[name()='svg'][contains(@class,'icon-warning')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>EXPORT</td>
 	<td>//*[*[name()='svg'][contains(@class,'icon-download')]]</td>
 	<td></td>
@@ -306,6 +316,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>ORDER_ARROW_UP</td>
+	<td>//*[contains(@class, 'lexicon-icon lexicon-icon-order-arrow-up')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>OPENID_CONNECT</td>
 	<td>//a[@role='menuitem']/span[contains(.,'OpenId Connect')]</td>
 	<td></td>
@@ -406,6 +421,11 @@
 <tr>
 	<td>SPECIFIC_ELLIPSIS</td>
 	<td>//p[contains(text(), '${key_text}')]/ancestor::td/following-sibling::td//button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>NAVBAR_ELLIPSIS</td>
+	<td>//ul[contains(@class,'navbar')]//*[*[name()='svg'][contains(@class,'icon-ellipsis-v')]]</td>
 	<td></td>
 </tr>
 <tr>

@@ -16,9 +16,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -31,7 +31,7 @@ definition {
 	}
 
 	@description = "This ensures that an asset library can be assigned to a user from the user profile."
-	@priority = 5
+	@priority = 4
 	@refactordone
 	test CanAssignALFromUserProfile {
 		JSONUser.addUser(
@@ -57,7 +57,8 @@ definition {
 	@priority = 3
 	@refactordone
 	test CanAssignALWithTranslationForUser {
-		property test.name.skip.portal.instance = "DepotMemberships#AssignALWithTranslationForUser";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		JSONUser.addUser(
 			userEmailAddress = "userea@liferay.com",
@@ -138,7 +139,7 @@ definition {
 	}
 
 	@description = "This ensures that an assigned asset library can be removed from the user profile."
-	@priority = 5
+	@priority = 4
 	@refactordone
 	test CanRemoveALFromUserProfile {
 		JSONUser.addUser(
@@ -167,7 +168,7 @@ definition {
 	}
 
 	@description = "This ensures that an organization can be added and removed in the membership of an asset library."
-	@priority = 5
+	@priority = 4
 	@refactordone
 	test CanRemoveOrganizationFromMemberships {
 		JSONOrganization.addOrganization(
@@ -194,11 +195,9 @@ definition {
 	}
 
 	@description = "This ensures that a user can be added and removed in the membership of an asset library."
-	@priority = 5
+	@priority = 4
 	@refactordone
 	test CanRemoveUserFromMemberships {
-		property portal.acceptance = "true";
-
 		JSONUser.addUser(
 			userEmailAddress = "userea@liferay.com",
 			userFirstName = "userfn",
@@ -226,7 +225,7 @@ definition {
 	}
 
 	@description = "This ensures that a user group can be added and removed in the membership of an asset library."
-	@priority = 5
+	@priority = 4
 	@refactordone
 	test CanRemoveUserGroupFromMemberships {
 		JSONUserGroup.addUserGroup(userGroupName = "User Group Name");

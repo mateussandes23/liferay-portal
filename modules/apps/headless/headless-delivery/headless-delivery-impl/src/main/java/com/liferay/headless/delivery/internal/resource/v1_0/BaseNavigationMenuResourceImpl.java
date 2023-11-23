@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.delivery.internal.resource.v1_0;
@@ -21,6 +12,7 @@ import com.liferay.petra.function.UnsafeBiConsumer;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.GroupedModel;
 import com.liferay.portal.kernel.model.Resource;
@@ -36,6 +28,7 @@ import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourceLocalServiceUtil;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
+import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.GroupThreadLocal;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -43,6 +36,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.odata.filter.ExpressionConvert;
 import com.liferay.portal.odata.filter.FilterParser;
@@ -389,6 +383,7 @@ public abstract class BaseNavigationMenuResourceImpl
 			@io.swagger.v3.oas.annotations.tags.Tag(name = "NavigationMenu")
 		}
 	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
 	@javax.ws.rs.Path("/navigation-menus/{navigationMenuId}/permissions")
 	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@javax.ws.rs.PUT
@@ -735,6 +730,7 @@ public abstract class BaseNavigationMenuResourceImpl
 			@io.swagger.v3.oas.annotations.tags.Tag(name = "NavigationMenu")
 		}
 	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
 	@javax.ws.rs.Path("/sites/{siteId}/navigation-menus/permissions")
 	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@javax.ws.rs.PUT
@@ -783,15 +779,15 @@ public abstract class BaseNavigationMenuResourceImpl
 			Map<String, Serializable> parameters)
 		throws Exception {
 
-		UnsafeConsumer<NavigationMenu, Exception> navigationMenuUnsafeConsumer =
-			null;
+		UnsafeFunction<NavigationMenu, NavigationMenu, Exception>
+			navigationMenuUnsafeFunction = null;
 
 		String createStrategy = (String)parameters.getOrDefault(
 			"createStrategy", "INSERT");
 
-		if ("INSERT".equalsIgnoreCase(createStrategy)) {
+		if (StringUtil.equalsIgnoreCase(createStrategy, "INSERT")) {
 			if (parameters.containsKey("siteId")) {
-				navigationMenuUnsafeConsumer =
+				navigationMenuUnsafeFunction =
 					navigationMenu -> postSiteNavigationMenu(
 						(Long)parameters.get("siteId"), navigationMenu);
 			}
@@ -801,19 +797,23 @@ public abstract class BaseNavigationMenuResourceImpl
 			}
 		}
 
-		if (navigationMenuUnsafeConsumer == null) {
+		if (navigationMenuUnsafeFunction == null) {
 			throw new NotSupportedException(
 				"Create strategy \"" + createStrategy +
 					"\" is not supported for NavigationMenu");
 		}
 
-		if (contextBatchUnsafeConsumer != null) {
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(
+				navigationMenus, navigationMenuUnsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
 			contextBatchUnsafeConsumer.accept(
-				navigationMenus, navigationMenuUnsafeConsumer);
+				navigationMenus, navigationMenuUnsafeFunction::apply);
 		}
 		else {
 			for (NavigationMenu navigationMenu : navigationMenus) {
-				navigationMenuUnsafeConsumer.accept(navigationMenu);
+				navigationMenuUnsafeFunction.apply(navigationMenu);
 			}
 		}
 	}
@@ -900,32 +900,36 @@ public abstract class BaseNavigationMenuResourceImpl
 			Map<String, Serializable> parameters)
 		throws Exception {
 
-		UnsafeConsumer<NavigationMenu, Exception> navigationMenuUnsafeConsumer =
-			null;
+		UnsafeFunction<NavigationMenu, NavigationMenu, Exception>
+			navigationMenuUnsafeFunction = null;
 
 		String updateStrategy = (String)parameters.getOrDefault(
 			"updateStrategy", "UPDATE");
 
-		if ("UPDATE".equalsIgnoreCase(updateStrategy)) {
-			navigationMenuUnsafeConsumer = navigationMenu -> putNavigationMenu(
+		if (StringUtil.equalsIgnoreCase(updateStrategy, "UPDATE")) {
+			navigationMenuUnsafeFunction = navigationMenu -> putNavigationMenu(
 				navigationMenu.getId() != null ? navigationMenu.getId() :
 					_parseLong((String)parameters.get("navigationMenuId")),
 				navigationMenu);
 		}
 
-		if (navigationMenuUnsafeConsumer == null) {
+		if (navigationMenuUnsafeFunction == null) {
 			throw new NotSupportedException(
 				"Update strategy \"" + updateStrategy +
 					"\" is not supported for NavigationMenu");
 		}
 
-		if (contextBatchUnsafeConsumer != null) {
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(
+				navigationMenus, navigationMenuUnsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
 			contextBatchUnsafeConsumer.accept(
-				navigationMenus, navigationMenuUnsafeConsumer);
+				navigationMenus, navigationMenuUnsafeFunction::apply);
 		}
 		else {
 			for (NavigationMenu navigationMenu : navigationMenus) {
-				navigationMenuUnsafeConsumer.accept(navigationMenu);
+				navigationMenuUnsafeFunction.apply(navigationMenu);
 			}
 		}
 	}
@@ -1105,6 +1109,15 @@ public abstract class BaseNavigationMenuResourceImpl
 		this.contextAcceptLanguage = contextAcceptLanguage;
 	}
 
+	public void setContextBatchUnsafeBiConsumer(
+		UnsafeBiConsumer
+			<Collection<NavigationMenu>,
+			 UnsafeFunction<NavigationMenu, NavigationMenu, Exception>,
+			 Exception> contextBatchUnsafeBiConsumer) {
+
+		this.contextBatchUnsafeBiConsumer = contextBatchUnsafeBiConsumer;
+	}
+
 	public void setContextBatchUnsafeConsumer(
 		UnsafeBiConsumer
 			<Collection<NavigationMenu>,
@@ -1122,6 +1135,13 @@ public abstract class BaseNavigationMenuResourceImpl
 
 	public void setContextHttpServletRequest(
 		HttpServletRequest contextHttpServletRequest) {
+
+		if ((contextHttpServletRequest != null) &&
+			(contextHttpServletRequest.getAttribute(WebKeys.CTX) == null)) {
+
+			contextHttpServletRequest.setAttribute(
+				WebKeys.CTX, ServletContextPool.get(StringPool.BLANK));
+		}
 
 		this.contextHttpServletRequest = contextHttpServletRequest;
 	}
@@ -1364,6 +1384,10 @@ public abstract class BaseNavigationMenuResourceImpl
 	}
 
 	protected AcceptLanguage contextAcceptLanguage;
+	protected UnsafeBiConsumer
+		<Collection<NavigationMenu>,
+		 UnsafeFunction<NavigationMenu, NavigationMenu, Exception>, Exception>
+			contextBatchUnsafeBiConsumer;
 	protected UnsafeBiConsumer
 		<Collection<NavigationMenu>, UnsafeConsumer<NavigationMenu, Exception>,
 		 Exception> contextBatchUnsafeConsumer;

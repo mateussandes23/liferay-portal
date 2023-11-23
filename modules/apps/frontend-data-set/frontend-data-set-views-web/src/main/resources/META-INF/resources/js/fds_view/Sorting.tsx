@@ -1,57 +1,45 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
-import ClayForm, {ClaySelectWithOption} from '@clayui/form';
+import ClayForm, {ClayInput, ClaySelectWithOption} from '@clayui/form';
 import ClayLayout from '@clayui/layout';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import ClayModal from '@clayui/modal';
-import {fetch, navigate, openModal, openToast} from 'frontend-js-web';
+import {fetch, openModal} from 'frontend-js-web';
 import fuzzy from 'fuzzy';
 import React, {useEffect, useState} from 'react';
 
 import {API_URL, FUZZY_OPTIONS, OBJECT_RELATIONSHIP} from '../Constants';
-import {FDSViewSectionInterface} from '../FDSView';
+import {IFDSViewSectionProps} from '../FDSView';
 import {FDSViewType} from '../FDSViews';
 import {getFields} from '../api';
 import OrderableTable from '../components/OrderableTable';
 import RequiredMark from '../components/RequiredMark';
-
-interface IContentRendererProps {
-	item: IFDSSort;
-	query: string;
-}
-
-interface IField {
-	format: string;
-	label: string;
-	name: string;
-	type: string;
-}
-
-interface IFDSSort {
-	fieldName: string;
-	id: number;
-	sortingDirection: string;
-}
+import {IField} from '../types';
+import openDefaultFailureToast from '../utils/openDefaultFailureToast';
+import openDefaultSuccessToast from '../utils/openDefaultSuccessToast';
 
 interface IAddFDSSortModalContentInterface {
 	closeModal: Function;
 	fdsView: FDSViewType;
 	fields: IField[];
 	onSave: (newSort: IFDSSort) => void;
+}
+
+interface IContentRendererProps {
+	item: IFDSSort;
+	query: string;
+}
+
+interface IFDSSort {
+	externalReferenceCode: string;
+	fieldName: string;
+	id: number;
+	sortingDirection: string;
 }
 
 const SORTING_DIRECTION = {
@@ -69,20 +57,6 @@ const SORTING_OPTIONS = [
 	SORTING_DIRECTION.ASCENDING,
 	SORTING_DIRECTION.DESCENDING,
 ];
-
-function alertFailed() {
-	openToast({
-		message: Liferay.Language.get('your-request-failed-to-complete'),
-		type: 'danger',
-	});
-}
-
-function alertSuccess() {
-	openToast({
-		message: Liferay.Language.get('your-request-completed-successfully'),
-		type: 'success',
-	});
-}
 
 const sortingDirectionTextMatch = (item: IFDSSort) => {
 	return item.sortingDirection === SORTING_DIRECTION.ASCENDING.value
@@ -119,20 +93,23 @@ const AddFDSSortModalContent = ({
 	fields,
 	onSave,
 }: IAddFDSSortModalContentInterface) => {
+	const [saveButtonDisabled, setSaveButtonDisabled] = useState(false);
 	const [selectedField, setSelectedField] = useState<string>();
 	const [selectedSortingDirection, setSelectedSortingDirection] = useState<
 		string
 	>(SORTING_DIRECTION.ASCENDING.value);
 
 	const handleSave = async () => {
+		setSaveButtonDisabled(true);
+
 		const field = fields.find(
 			(item: IField) => item.name === selectedField
 		);
 
 		if (!field) {
-			alertFailed();
+			openDefaultFailureToast();
 
-			return null;
+			return;
 		}
 
 		const response = await fetch(API_URL.FDS_SORTS, {
@@ -149,14 +126,16 @@ const AddFDSSortModalContent = ({
 		});
 
 		if (!response.ok) {
-			alertFailed();
+			setSaveButtonDisabled(false);
 
-			return null;
+			openDefaultFailureToast();
+
+			return;
 		}
 
 		const responseJSON = await response.json();
 
-		alertSuccess();
+		openDefaultSuccessToast();
 
 		onSave(responseJSON);
 
@@ -164,7 +143,7 @@ const AddFDSSortModalContent = ({
 	};
 
 	return (
-		<div className="fds-view-fields-modal">
+		<>
 			<ClayModal.Header>
 				{Liferay.Language.get('new-default-sort')}
 			</ClayModal.Header>
@@ -222,42 +201,164 @@ const AddFDSSortModalContent = ({
 				last={
 					<ClayButton.Group spaced>
 						<ClayButton
+							disabled={saveButtonDisabled || !selectedField}
+							onClick={handleSave}
+						>
+							{Liferay.Language.get('save')}
+						</ClayButton>
+
+						<ClayButton
 							displayType="secondary"
 							onClick={() => closeModal()}
 						>
 							{Liferay.Language.get('cancel')}
 						</ClayButton>
+					</ClayButton.Group>
+				}
+			/>
+		</>
+	);
+};
 
+interface IEditFDSSortModalContentProps {
+	closeModal: Function;
+	fdsSort: IFDSSort;
+	fields: IField[];
+	namespace: string;
+	onSave: Function;
+}
+
+const EditFDSSortModalContent = ({
+	closeModal,
+	fdsSort,
+	namespace,
+	onSave,
+}: IEditFDSSortModalContentProps) => {
+	const [saveButtonDisabled, setSaveButtonDisabled] = useState(false);
+	const [selectedSortingDirection, setSelectedSortingDirection] = useState(
+		fdsSort.sortingDirection
+	);
+
+	const handleSave = async () => {
+		setSaveButtonDisabled(true);
+
+		const response = await fetch(
+			`${API_URL.FDS_SORTS}/by-external-reference-code/${fdsSort.externalReferenceCode}`,
+			{
+				body: JSON.stringify({
+					sortingDirection: selectedSortingDirection,
+				}),
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json',
+				},
+				method: 'PATCH',
+			}
+		);
+
+		if (!response.ok) {
+			setSaveButtonDisabled(false);
+
+			openDefaultFailureToast();
+
+			return;
+		}
+
+		const editedFDSSort = await response.json();
+
+		closeModal();
+
+		openDefaultSuccessToast();
+
+		onSave({editedFDSSort});
+	};
+
+	const fdsSortFieldNameInputId = `${namespace}fdsSortFieldNameInput`;
+	const fdsSortSortingDirectionInputId = `${namespace}fdsSortSortingDirectionInput`;
+
+	return (
+		<>
+			<ClayModal.Header>
+				{Liferay.Util.sub(
+					Liferay.Language.get('edit-x-sorting'),
+					fdsSort.fieldName
+				)}
+			</ClayModal.Header>
+
+			<ClayModal.Body>
+				<ClayForm.Group>
+					<label
+						className="disabled"
+						htmlFor={fdsSortFieldNameInputId}
+					>
+						{Liferay.Language.get('field')}
+					</label>
+
+					<ClayInput
+						aria-label={Liferay.Language.get('field')}
+						disabled
+						name={fdsSortFieldNameInputId}
+						title={Liferay.Language.get('field')}
+						value={fdsSort.fieldName}
+					/>
+				</ClayForm.Group>
+
+				<ClayForm.Group>
+					<label htmlFor={fdsSortSortingDirectionInputId}>
+						{Liferay.Language.get('sorting')}
+
+						<RequiredMark />
+					</label>
+
+					<ClaySelectWithOption
+						aria-label={Liferay.Language.get('sorting')}
+						id={fdsSortSortingDirectionInputId}
+						onChange={(event) =>
+							setSelectedSortingDirection(event.target.value)
+						}
+						options={SORTING_OPTIONS}
+						value={selectedSortingDirection}
+					/>
+				</ClayForm.Group>
+			</ClayModal.Body>
+
+			<ClayModal.Footer
+				last={
+					<ClayButton.Group spaced>
 						<ClayButton
-							disabled={!selectedField}
+							disabled={saveButtonDisabled}
 							onClick={handleSave}
 						>
 							{Liferay.Language.get('save')}
 						</ClayButton>
+
+						<ClayButton
+							displayType="secondary"
+							onClick={() => closeModal()}
+						>
+							{Liferay.Language.get('cancel')}
+						</ClayButton>
 					</ClayButton.Group>
 				}
 			/>
-		</div>
+		</>
 	);
 };
 
-const Sorting = ({fdsView, fdsViewsURL}: FDSViewSectionInterface) => {
+const Sorting = ({fdsView, namespace}: IFDSViewSectionProps) => {
 	const [fields, setFields] = React.useState<IField[]>([]);
 	const [fdsSorts, setFDSSorts] = useState<Array<IFDSSort>>([]);
 	const [loading, setLoading] = useState(true);
-	const [newFDSSortsOrder, setNewFDSSortsOrder] = React.useState<string>('');
 
 	useEffect(() => {
 		const getFDSSort = async () => {
 			const response = await fetch(
-				`${API_URL.FDS_VIEWS}/${fdsView.id}?nestedFields=${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_SORT}`
+				`${API_URL.FDS_SORTS}?filter=(${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_SORT_ID} eq '${fdsView.id}')&nestedFields=${OBJECT_RELATIONSHIP.FDS_VIEW_FDS_SORT}&sort=dateCreated:desc`
 			);
 
 			const responseJSON = await response.json();
 
-			const storedFDSSorts = responseJSON[
-				OBJECT_RELATIONSHIP.FDS_VIEW_FDS_SORT
-			] as IFDSSort[];
+			const storedFDSSorts: IFDSSort[] = responseJSON.items;
 
 			let ordered = storedFDSSorts;
 			let notOrdered: IFDSSort[] = [];
@@ -275,15 +376,12 @@ const Sorting = ({fdsView, fdsViewsURL}: FDSViewSectionInterface) => {
 					)
 					.filter(Boolean) as IFDSSort[];
 
-				if (storedFDSSorts.length > fdsSortsOrderArray.length) {
-					notOrdered = storedFDSSorts.filter(
-						(filter) =>
-							!fdsSortsOrderArray.includes(String(filter.id))
-					);
-				}
+				notOrdered = storedFDSSorts.filter(
+					(filter) => !fdsSortsOrderArray.includes(String(filter.id))
+				);
 			}
 
-			setFDSSorts([...ordered, ...notOrdered]);
+			setFDSSorts([...notOrdered, ...ordered]);
 
 			setLoading(false);
 		};
@@ -297,42 +395,7 @@ const Sorting = ({fdsView, fdsViewsURL}: FDSViewSectionInterface) => {
 		});
 	}, [fdsView]);
 
-	const updateFDSFieldsOrder = async () => {
-		const response = await fetch(
-			`${API_URL.FDS_VIEWS}/by-external-reference-code/${fdsView.externalReferenceCode}`,
-			{
-				body: JSON.stringify({
-					fdsSortsOrder: newFDSSortsOrder,
-				}),
-				headers: {
-					'Accept': 'application/json',
-					'Content-Type': 'application/json',
-				},
-				method: 'PATCH',
-			}
-		);
-
-		if (!response.ok) {
-			alertFailed();
-
-			return null;
-		}
-
-		const responseJSON = await response.json();
-
-		const fdsSortsOrder = responseJSON?.fdsSortsOrder;
-
-		if (fdsSortsOrder && fdsSortsOrder === newFDSSortsOrder) {
-			alertSuccess();
-
-			setNewFDSSortsOrder('');
-		}
-		else {
-			alertFailed();
-		}
-	};
-
-	const onCreationButtonClick = () =>
+	const handleCreation = () =>
 		openModal({
 			contentComponent: ({closeModal}: {closeModal: Function}) => (
 				<AddFDSSortModalContent
@@ -343,6 +406,116 @@ const Sorting = ({fdsView, fdsViewsURL}: FDSViewSectionInterface) => {
 				/>
 			),
 		});
+
+	const handleDelete = ({item}: {item: IFDSSort}) => {
+		openModal({
+			bodyHTML: Liferay.Language.get(
+				'are-you-sure-you-want-to-delete-this-sorting?-fragments-using-it-will-be-affected'
+			),
+			buttons: [
+				{
+					autoFocus: true,
+					displayType: 'secondary',
+					label: Liferay.Language.get('cancel'),
+					type: 'cancel',
+				},
+				{
+					displayType: 'danger',
+					label: Liferay.Language.get('delete'),
+					onClick: async ({
+						processClose,
+					}: {
+						processClose: Function;
+					}) => {
+						processClose();
+
+						const url = `${API_URL.FDS_SORTS}/${item.id}`;
+
+						const response = await fetch(url, {
+							method: 'DELETE',
+						});
+
+						if (!response.ok) {
+							openDefaultFailureToast();
+
+							return;
+						}
+
+						openDefaultSuccessToast();
+
+						setFDSSorts(
+							fdsSorts?.filter(
+								(fdsSort: IFDSSort) => fdsSort.id !== item.id
+							) || []
+						);
+					},
+				},
+			],
+			status: 'warning',
+			title: Liferay.Language.get('delete-filter'),
+		});
+	};
+
+	const handleEdit = ({item}: {item: IFDSSort}) => {
+		openModal({
+			contentComponent: ({closeModal}: {closeModal: Function}) => (
+				<EditFDSSortModalContent
+					closeModal={closeModal}
+					fdsSort={item}
+					fields={fields}
+					namespace={namespace}
+					onSave={({editedFDSSort}: {editedFDSSort: IFDSSort}) => {
+						setFDSSorts(
+							fdsSorts?.map((fdsSort) => {
+								if (fdsSort.id === editedFDSSort.id) {
+									return editedFDSSort;
+								}
+
+								return fdsSort;
+							}) || []
+						);
+					}}
+				/>
+			),
+		});
+	};
+
+	const updateFDSSortsOrder = async ({
+		fdsSortsOrder,
+	}: {
+		fdsSortsOrder: string;
+	}) => {
+		const response = await fetch(
+			`${API_URL.FDS_VIEWS}/by-external-reference-code/${fdsView.externalReferenceCode}`,
+			{
+				body: JSON.stringify({
+					fdsSortsOrder,
+				}),
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json',
+				},
+				method: 'PATCH',
+			}
+		);
+
+		if (!response.ok) {
+			openDefaultFailureToast();
+
+			return;
+		}
+
+		const responseJSON = await response.json();
+
+		const storedFDSSortsOrder = responseJSON?.fdsSortsOrder;
+
+		if (storedFDSSortsOrder && storedFDSSortsOrder === fdsSortsOrder) {
+			openDefaultSuccessToast();
+		}
+		else {
+			openDefaultFailureToast();
+		}
+	};
 
 	return (
 		<ClayLayout.ContainerFluid>
@@ -357,7 +530,24 @@ const Sorting = ({fdsView, fdsViewsURL}: FDSViewSectionInterface) => {
 					</ClayAlert>
 
 					<OrderableTable
-						disableSave={!newFDSSortsOrder.length}
+						actions={[
+							{
+								icon: 'pencil',
+								label: Liferay.Language.get('edit'),
+								onClick: handleEdit,
+							},
+							{
+								icon: 'trash',
+								label: Liferay.Language.get('delete'),
+								onClick: handleDelete,
+							},
+						]}
+						creationMenuItems={[
+							{
+								label: Liferay.Language.get('new-default-sort'),
+								onClick: handleCreation,
+							},
+						]}
 						fields={[
 							{
 								headingTitle: true,
@@ -383,20 +573,9 @@ const Sorting = ({fdsView, fdsViewsURL}: FDSViewSectionInterface) => {
 						noItemsTitle={Liferay.Language.get(
 							'no-default-sort-created-yet'
 						)}
-						onCancelButtonClick={() => navigate(fdsViewsURL)}
-						onCreationButtonClick={onCreationButtonClick}
-						onOrderChange={({
-							orderedItems,
-						}: {
-							orderedItems: IFDSSort[];
-						}) => {
-							setNewFDSSortsOrder(
-								orderedItems
-									.map((fdsSort) => fdsSort.id)
-									.join(',')
-							);
+						onOrderChange={({order}: {order: string}) => {
+							updateFDSSortsOrder({fdsSortsOrder: order});
 						}}
-						onSaveButtonClick={updateFDSFieldsOrder}
 						title={Liferay.Language.get('sorting')}
 					/>
 				</>

@@ -1,16 +1,7 @@
 <%--
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 --%>
 
@@ -61,9 +52,35 @@ boolean discontinued = BeanParamUtil.getBoolean(cpInstance, request, "discontinu
 		<div class="row">
 			<div class="col-6">
 				<aui:input bean="<%= cpInstance %>" model="<%= CPInstance.class %>" name="sku" />
+			</div>
 
+			<div class="col-6">
+				<aui:input bean="<%= cpInstance %>" helpMessage="gtin-help" label="global-trade-item-number" model="<%= CPInstance.class %>" name="gtin" />
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-6">
 				<aui:input bean="<%= cpInstance %>" model="<%= CPInstance.class %>" name="externalReferenceCode" />
+			</div>
 
+			<div class="col-6">
+				<aui:input bean="<%= cpInstance %>" model="<%= CPInstance.class %>" name="manufacturerPartNumber" />
+			</div>
+		</div>
+
+		<div class="align-items-end row">
+			<div class="col-6">
+				<aui:input bean="<%= cpInstance %>" label="unspsc" model="<%= CPInstance.class %>" name="unspsc" />
+			</div>
+
+			<div class="col-6">
+				<aui:input checked="<%= (cpInstance == null) ? false : cpInstance.isPurchasable() %>" inlineLabel="right" label="purchasable" name="purchasable" type="toggle-switch" />
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-12 product-options-wrapper">
 				<c:if test="<%= !cpDefinition.isIgnoreSKUCombinations() %>">
 					<c:choose>
 						<c:when test="<%= cpInstance != null %>">
@@ -93,55 +110,67 @@ boolean discontinued = BeanParamUtil.getBoolean(cpInstance, request, "discontinu
 
 						</c:when>
 						<c:otherwise>
-							<%= cpInstanceDisplayContext.renderOptions(PipingServletResponseFactory.createPipingServletResponse(pageContext)) %>
+							<div id="<portlet:namespace />optionsContainer">
 
-							<aui:input name="ddmFormValues" type="hidden" />
+								<%
+								cpInstanceDisplayContext.renderOptions(PipingServletResponseFactory.createPipingServletResponse(pageContext));
+								%>
+
+								<aui:input name="cpInstanceOptions" type="hidden" />
+							</div>
 						</c:otherwise>
 					</c:choose>
 				</c:if>
-
-				<aui:input checked="<%= (cpInstance == null) ? false : cpInstance.isPurchasable() %>" name="purchasable" type="toggle-switch" />
-			</div>
-
-			<div class="col-6">
-				<aui:input bean="<%= cpInstance %>" helpMessage="gtin-help" label="global-trade-item-number" model="<%= CPInstance.class %>" name="gtin" />
-
-				<aui:input bean="<%= cpInstance %>" model="<%= CPInstance.class %>" name="manufacturerPartNumber" />
-
-				<aui:input bean="<%= cpInstance %>" label="unspsc" model="<%= CPInstance.class %>" name="unspsc" />
 			</div>
 		</div>
 	</commerce-ui:panel>
 
-	<commerce-ui:panel
-		title='<%= LanguageUtil.get(request, "pricing") %>'
-	>
-		<div class="row">
-			<div class="col-4">
-				<aui:input label="base-price" name="price" suffix="<%= HtmlUtil.escape(commerceCurrencyCode) %>" type="text" value="<%= cpInstanceDisplayContext.getPrice() %>">
-					<aui:validator name="min"><%= CommercePriceConstants.PRICE_VALUE_MIN %></aui:validator>
-					<aui:validator name="max"><%= CommercePriceConstants.PRICE_VALUE_MAX %></aui:validator>
-					<aui:validator name="number" />
-				</aui:input>
-			</div>
+	<c:if test='<%= !FeatureFlagManagerUtil.isEnabled("COMMERCE-11287") %>'>
+		<commerce-ui:panel
+			title='<%= LanguageUtil.get(request, "pricing") %>'
+		>
 
-			<div class="col-4">
-				<aui:input label="promotion-price" name="promoPrice" suffix="<%= HtmlUtil.escape(commerceCurrencyCode) %>" type="text" value="<%= cpInstanceDisplayContext.getPromoPrice() %>">
-					<aui:validator name="min"><%= CommercePriceConstants.PRICE_VALUE_MIN %></aui:validator>
-					<aui:validator name="max"><%= CommercePriceConstants.PRICE_VALUE_MAX %></aui:validator>
-					<aui:validator name="number" />
-				</aui:input>
-			</div>
+			<%
+			CommercePriceEntry commercePriceEntry = cpInstanceDisplayContext.getCommercePriceEntry(cpInstance);
 
-			<div class="col-4">
-				<aui:input name="cost" suffix="<%= HtmlUtil.escape(commerceCurrencyCode) %>" type="text" value="<%= (cpInstance == null) ? StringPool.BLANK : cpInstanceDisplayContext.round(cpInstance.getCost()) %>">
-					<aui:validator name="min"><%= CommercePriceConstants.PRICE_VALUE_MIN %></aui:validator>
-					<aui:validator name="max"><%= CommercePriceConstants.PRICE_VALUE_MAX %></aui:validator>
-					<aui:validator name="number" />
-				</aui:input>
+			boolean priceOnApplication = (commercePriceEntry != null) && commercePriceEntry.isPriceOnApplication();
+			%>
+
+			<c:if test='<%= FeatureFlagManagerUtil.isEnabled("COMMERCE-11028") %>'>
+				<div class="row">
+					<div class="col-8">
+						<aui:input checked="<%= priceOnApplication %>" helpMessage="do-not-set-a-base-price-for-this-product" inlineLabel="right" label="<%= CommercePriceConstants.PRICE_VALUE_PRICE_ON_APPLICATION %>" name="priceOnApplication" type="toggle-switch" />
+					</div>
+				</div>
+			</c:if>
+
+			<div class="row">
+				<div class="col-4">
+					<aui:input disabled="<%= priceOnApplication %>" label="base-price" name="price" suffix="<%= HtmlUtil.escape(commerceCurrencyCode) %>" type="text" value="<%= cpInstanceDisplayContext.getPrice() %>">
+						<aui:validator name="min"><%= CommercePriceConstants.PRICE_VALUE_MIN %></aui:validator>
+						<aui:validator name="max"><%= CommercePriceConstants.PRICE_VALUE_MAX %></aui:validator>
+						<aui:validator name="number" />
+					</aui:input>
+				</div>
+
+				<div class="col-4">
+					<aui:input disabled="<%= priceOnApplication %>" label="promotion-price" name="promoPrice" suffix="<%= HtmlUtil.escape(commerceCurrencyCode) %>" type="text" value="<%= cpInstanceDisplayContext.getPromoPrice() %>">
+						<aui:validator name="min"><%= CommercePriceConstants.PRICE_VALUE_MIN %></aui:validator>
+						<aui:validator name="max"><%= CommercePriceConstants.PRICE_VALUE_MAX %></aui:validator>
+						<aui:validator name="number" />
+					</aui:input>
+				</div>
+
+				<div class="col-4">
+					<aui:input disabled="<%= priceOnApplication %>" name="cost" suffix="<%= HtmlUtil.escape(commerceCurrencyCode) %>" type="text" value="<%= (cpInstance == null) ? StringPool.BLANK : cpInstanceDisplayContext.round(cpInstance.getCost()) %>">
+						<aui:validator name="min"><%= CommercePriceConstants.PRICE_VALUE_MIN %></aui:validator>
+						<aui:validator name="max"><%= CommercePriceConstants.PRICE_VALUE_MAX %></aui:validator>
+						<aui:validator name="number" />
+					</aui:input>
+				</div>
 			</div>
-		</div>
-	</commerce-ui:panel>
+		</commerce-ui:panel>
+	</c:if>
 
 	<c:if test="<%= cpDefinition.isShippable() %>">
 		<commerce-ui:panel
@@ -186,11 +215,11 @@ boolean discontinued = BeanParamUtil.getBoolean(cpInstance, request, "discontinu
 		title='<%= LanguageUtil.get(request, "end-of-life") %>'
 	>
 		<div class="row">
-			<div class="align-items-start col-auto d-flex">
-				<aui:input checked="<%= discontinued %>" label="mark-the-sku-as-discontinued" name="discontinued" type="toggle-switch" />
+			<div class="col-12">
+				<aui:input checked="<%= discontinued %>" inlineLabel="right" label="mark-the-sku-as-discontinued" name="discontinued" type="toggle-switch" />
 			</div>
 
-			<div class="col">
+			<div class="col-12">
 				<div class="form-group input-date-wrapper">
 					<label for="discontinuedDate"><liferay-ui:message key="end-of-life-date" /></label>
 
@@ -277,8 +306,6 @@ boolean discontinued = BeanParamUtil.getBoolean(cpInstance, request, "discontinu
 <liferay-frontend:component
 	context='<%=
 		HashMapBuilder.<String, Object>put(
-			"cpDefinitionId", cpDefinition.getCPDefinitionId()
-		).put(
 			"initialLabel", cpInstanceDisplayContext.getReplacementCPInstanceLabel()
 		).put(
 			"initialValue", cpInstanceDisplayContext.getReplacementCPInstanceId()

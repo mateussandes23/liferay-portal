@@ -1,6 +1,7 @@
 definition {
 
-	macro _addPage {
+	@summary = "Default summary"
+	macro _addPage(categoryId = null, tagField = null, titleField = null, bodyField = null) {
 		var portalURL = JSONCompany.getPortalURL();
 
 		var curl = '''
@@ -15,6 +16,16 @@ definition {
 					"articleBody": "${bodyField}"
 				}'
 		''';
+
+		KoroneikiAccountAPI._tearDownAccountsViaAccountFieldNameAndValue(
+			fieldName = "Code",
+			table = '''
+				| PROKORKORPRO |
+				| PROONEONEPRO |
+				| PROKORONEPRO |
+				| PROKOR       |
+				| PROONE       |
+			''');
 	}
 
 }

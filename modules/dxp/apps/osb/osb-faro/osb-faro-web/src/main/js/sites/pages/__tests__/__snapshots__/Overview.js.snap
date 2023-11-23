@@ -6,13 +6,16 @@ exports[`Sites Dashboard Overview render 1`] = `
     class="sites-dashboard-overview-root overview-root"
   >
     <div
+      aria-hidden="true"
       class="row"
+      data-aria-hidden="true"
     >
       <div
         class="col-xl-12"
       >
         <div
           class="card card-root analytics-metrics-card"
+          id="siteActivityCardRoot"
           style="min-height: 605px;"
         >
           <div
@@ -49,54 +52,38 @@ exports[`Sites Dashboard Overview render 1`] = `
                   M
                 </button>
               </div>
-              <div
-                class="spinner-root spinner-inline"
-              >
-                <span
-                  class="loading-animation loading-animation-dotted"
-                />
-              </div>
+              <span
+                aria-hidden="true"
+                class="loading-root loading-animation"
+              />
             </div>
           </div>
           <div
             class="card-body analytics-metrics"
           >
-            <div
-              class="loading-root"
-              style="min-height: 140px;"
-            >
-              <div
-                class="spinner-root spinner-fade-in"
-              >
-                <span
-                  class="loading-animation loading-animation-dotted"
-                />
-              </div>
-            </div>
-            <div
-              class="loading-root"
-              style="min-height: 375px;"
-            >
-              <div
-                class="spinner-root spinner-fade-in"
-              >
-                <span
-                  class="loading-animation loading-animation-dotted"
-                />
-              </div>
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root spacer loading-animation"
+            />
+            <span
+              aria-hidden="true"
+              class="loading-root center loading-animation"
+            />
           </div>
         </div>
       </div>
     </div>
     <div
+      aria-hidden="true"
       class="row"
+      data-aria-hidden="true"
     >
       <div
         class="col-xl-6"
       >
         <div
           class="card card-root top-pages-card-root table-tabs-root"
+          id="topPagesCardRoot"
         >
           <div
             class="card-header align-items-center d-flex justify-content-between"
@@ -106,13 +93,10 @@ exports[`Sites Dashboard Overview render 1`] = `
             >
               Top Pages
             </h5>
-            <div
-              class="spinner-root spinner-inline"
-            >
-              <span
-                class="loading-animation loading-animation-dotted"
-              />
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root loading-animation"
+            />
           </div>
           <div
             class="card-body w-100 d-flex flex-column flex-grow-1 no-padding"
@@ -169,32 +153,25 @@ exports[`Sites Dashboard Overview render 1`] = `
                 </button>
               </li>
             </ul>
-            <div
-              class="loading-root display-card"
-            >
-              <div
-                class="spinner-root spinner-fade-in"
-              >
-                <span
-                  class="loading-animation loading-animation-dotted"
-                />
-              </div>
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root center loading-animation"
+            />
           </div>
           <div
             class="card-footer"
           >
             <a
-              class="button-root c-link link-secondary text-decoration-underline"
+              class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
               href="/workspace/23/123123/sites/pages?rangeKey=30"
             >
               View Pages
               <svg
-                class="lexicon-icon lexicon-icon-angle-right icon-root ml-2"
+                class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
                 role="presentation"
               >
                 <use
-                  xlink:href="#angle-right"
+                  href="#angle-right-small"
                 />
               </svg>
             </a>
@@ -206,6 +183,7 @@ exports[`Sites Dashboard Overview render 1`] = `
       >
         <div
           class="card card-root acquisitions-card-root table-tabs-root"
+          id="acquisitionsCardRoot"
         >
           <div
             class="card-header align-items-center d-flex justify-content-between"
@@ -215,13 +193,10 @@ exports[`Sites Dashboard Overview render 1`] = `
             >
               Acquisitions
             </h5>
-            <div
-              class="spinner-root spinner-inline"
-            >
-              <span
-                class="loading-animation loading-animation-dotted"
-              />
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root loading-animation"
+            />
           </div>
           <div
             class="card-body w-100 d-flex flex-column flex-grow-1 no-padding"
@@ -278,29 +253,25 @@ exports[`Sites Dashboard Overview render 1`] = `
                 </button>
               </li>
             </ul>
-            <div
-              class="loading-root display-card"
-            >
-              <div
-                class="spinner-root spinner-fade-in"
-              >
-                <span
-                  class="loading-animation loading-animation-dotted"
-                />
-              </div>
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root center loading-animation"
+            />
           </div>
         </div>
       </div>
     </div>
     <div
+      aria-hidden="true"
       class="row"
+      data-aria-hidden="true"
     >
       <div
         class="col-xl-4"
       >
         <div
           class="card card-root visitors-by-time-card"
+          id="visitorsByTimeCardRoot"
         >
           <div
             class="card-header align-items-center d-flex justify-content-between"
@@ -310,24 +281,18 @@ exports[`Sites Dashboard Overview render 1`] = `
             >
               Visitors by Day and Time
             </h5>
-            <div
-              class="spinner-root spinner-inline"
-            >
-              <span
-                class="loading-animation loading-animation-dotted"
-              />
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root loading-animation"
+            />
           </div>
           <div
             class="card-body"
           >
-            <div
-              class="spinner-root spinner-center spinner-spacer"
-            >
-              <span
-                class="loading-animation loading-animation-dotted"
-              />
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root center loading-animation"
+            />
           </div>
         </div>
       </div>
@@ -336,6 +301,7 @@ exports[`Sites Dashboard Overview render 1`] = `
       >
         <div
           class="card card-root search-terms-card-root"
+          id="searchTermsCardRoot"
         >
           <div
             class="card-header align-items-center d-flex justify-content-between"
@@ -345,13 +311,10 @@ exports[`Sites Dashboard Overview render 1`] = `
             >
               Search Terms
             </h5>
-            <div
-              class="spinner-root spinner-inline"
-            >
-              <span
-                class="loading-animation loading-animation-dotted"
-              />
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root loading-animation"
+            />
           </div>
           <div
             class="table-responsive table-root flex-grow-1"
@@ -375,10 +338,11 @@ exports[`Sites Dashboard Overview render 1`] = `
               </thead>
             </table>
             <div
-              class="spinner-root spinner-overlay"
+              class="loading-root overlay"
             >
               <span
-                class="loading-animation loading-animation-dotted"
+                aria-hidden="true"
+                class="loading-root center loading-animation"
               />
             </div>
           </div>
@@ -389,6 +353,7 @@ exports[`Sites Dashboard Overview render 1`] = `
       >
         <div
           class="card card-root interests-card-root"
+          id="interestsCardRoot"
         >
           <div
             class="card-header align-items-center d-flex justify-content-between"
@@ -398,13 +363,10 @@ exports[`Sites Dashboard Overview render 1`] = `
             >
               Interests
             </h5>
-            <div
-              class="spinner-root spinner-inline"
-            >
-              <span
-                class="loading-animation loading-animation-dotted"
-              />
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root loading-animation"
+            />
           </div>
           <div
             class="table-responsive table-root flex-grow-1"
@@ -428,10 +390,11 @@ exports[`Sites Dashboard Overview render 1`] = `
               </thead>
             </table>
             <div
-              class="spinner-root spinner-overlay"
+              class="loading-root overlay"
             >
               <span
-                class="loading-animation loading-animation-dotted"
+                aria-hidden="true"
+                class="loading-root center loading-animation"
               />
             </div>
           </div>
@@ -439,16 +402,16 @@ exports[`Sites Dashboard Overview render 1`] = `
             class="card-footer"
           >
             <a
-              class="button-root"
+              class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
               href="/workspace/23/123123/sites/interests?rangeEnd=null&rangeKey=30&rangeStart=null"
             >
               All Interests
               <svg
-                class="lexicon-icon lexicon-icon-angle-right icon-root ml-2"
+                class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
                 role="presentation"
               >
                 <use
-                  xlink:href="#angle-right"
+                  href="#angle-right-small"
                 />
               </svg>
             </a>
@@ -457,13 +420,16 @@ exports[`Sites Dashboard Overview render 1`] = `
       </div>
     </div>
     <div
+      aria-hidden="true"
       class="row"
+      data-aria-hidden="true"
     >
       <div
         class="col-xl-6"
       >
         <div
           class="card card-root analytics-locations-card"
+          id="sessionsByLocationCardRoot"
           style="min-height: 536px;"
         >
           <div
@@ -477,25 +443,19 @@ exports[`Sites Dashboard Overview render 1`] = `
             <div
               class="d-flex"
             >
-              <div
-                class="spinner-root spinner-inline"
-              >
-                <span
-                  class="loading-animation loading-animation-dotted"
-                />
-              </div>
+              <span
+                aria-hidden="true"
+                class="loading-root loading-animation"
+              />
             </div>
           </div>
           <div
             class="card-body"
           >
-            <div
-              class="spinner-root spinner-center spinner-spacer"
-            >
-              <span
-                class="loading-animation loading-animation-dotted"
-              />
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root center loading-animation"
+            />
           </div>
         </div>
       </div>
@@ -504,6 +464,7 @@ exports[`Sites Dashboard Overview render 1`] = `
       >
         <div
           class="card card-root analytics-devices-card"
+          id="sessionTechnologyCardRoot"
           style="min-height: 536px;"
         >
           <div
@@ -517,25 +478,19 @@ exports[`Sites Dashboard Overview render 1`] = `
             <div
               class="d-flex"
             >
-              <div
-                class="spinner-root spinner-inline"
-              >
-                <span
-                  class="loading-animation loading-animation-dotted"
-                />
-              </div>
+              <span
+                aria-hidden="true"
+                class="loading-root loading-animation"
+              />
             </div>
           </div>
           <div
             class="card-body"
           >
-            <div
-              class="spinner-root spinner-center spinner-spacer"
-            >
-              <span
-                class="loading-animation loading-animation-dotted"
-              />
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root center loading-animation"
+            />
           </div>
         </div>
       </div>
@@ -548,9 +503,12 @@ exports[`Sites Dashboard Overview render 1`] = `
       >
         <div
           class="card card-root cohort-analysis-card-root"
+          id="cohortAnalysisCardRoot"
         >
           <div
+            aria-hidden="true"
             class="card-header"
+            data-aria-hidden="true"
           >
             <h5
               class="card-title"
@@ -567,62 +525,50 @@ exports[`Sites Dashboard Overview render 1`] = `
               <div
                 class="form-group-item form-group-item-shrink"
               >
-                <select
-                  class="form-control visitors-type-select"
+                <button
+                  aria-activedescendant="visitors"
+                  aria-expanded="true"
+                  aria-haspopup="listbox"
+                  aria-owns="clay-id-2"
+                  class="form-control form-control-select form-control-select-secondary visitors-type-select show"
+                  role="combobox"
+                  style=""
+                  tabindex="0"
+                  type="button"
                 >
-                  <option
-                    value="visitors"
-                  >
-                    All Visitors
-                  </option>
-                  <option
-                    value="anonymousVisitors"
-                  >
-                    Anonymous Visitors
-                  </option>
-                  <option
-                    value="knownVisitors"
-                  >
-                    Known Visitors
-                  </option>
-                </select>
+                  All Visitors
+                </button>
               </div>
               <div
+                aria-hidden="true"
                 class="form-group-item form-group-item-label form-group-item-shrink"
+                data-aria-hidden="true"
               >
                 Broken Down By
               </div>
               <div
+                aria-hidden="true"
                 class="form-group-item form-group-item-shrink"
+                data-aria-hidden="true"
               >
-                <select
-                  class="form-control interval-select"
+                <button
+                  aria-activedescendant=""
+                  aria-expanded="false"
+                  aria-haspopup="listbox"
+                  class="form-control form-control-select form-control-select-secondary interval-select"
+                  role="combobox"
+                  tabindex="0"
+                  type="button"
                 >
-                  <option
-                    value="D"
-                  >
-                    Day
-                  </option>
-                  <option
-                    value="W"
-                  >
-                    Week
-                  </option>
-                  <option
-                    value="M"
-                  >
-                    Month
-                  </option>
-                </select>
+                  Day
+                </button>
               </div>
             </div>
-            <div
-              class="spinner-root spinner-center spinner-spacer"
-            >
-              <span
-                class="loading-animation loading-animation-dotted"
-              />
-            </div>
+            <span
+              aria-hidden="true"
+              class="loading-root center loading-animation"
+              data-aria-hidden="true"
+            />
           </div>
         </div>
       </div>

@@ -1,11 +1,22 @@
 definition {
 
-	macro _addResourcePermission {
+	@summary = "Default summary"
+	macro _addResourcePermission(primKey = null, roleId = null, groupId = null, scope = null, name = null, actionId = null, specificURL = null) {
 		Variables.assertDefined(parameterList = "${groupId},${name},${scope},${primKey},${roleId},${actionId}");
 
-		var portalURL = JSONCompany.getPortalURL();
-		var companyId = JSONCompany.getCompanyIdNoSelenium();
-		var userLoginInfo = JSONUtil2.formatJSONUser();
+		if (isSet(specificURL)) {
+			var portalURL = ${specificURL};
+			var portalInstanceName = JSONCompany.parsePortalInstanceURL(portalURL = ${specificURL});
+		}
+		else {
+			var portalURL = JSONCompany.getPortalURL();
+		}
+
+		if (!(isSet(companyId))) {
+			var companyId = JSONCompany.getCompanyIdNoSelenium(portalInstanceName = ${portalInstanceName});
+		}
+
+		var userLoginInfo = JSONUtil2.formatJSONUser(domain = ${specificURL});
 
 		var curl = '''
 			${portalURL}/api/jsonws/resourcepermission/add-resource-permission \
@@ -22,7 +33,8 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _removeResourcePermission {
+	@summary = "Default summary"
+	macro _removeResourcePermission(primKey = null, roleId = null, groupId = null, scope = null, name = null, actionId = null) {
 		Variables.assertDefined(parameterList = "${groupId},${name},${scope},${primKey},${roleId},${actionId}");
 
 		var portalURL = JSONCompany.getPortalURL();

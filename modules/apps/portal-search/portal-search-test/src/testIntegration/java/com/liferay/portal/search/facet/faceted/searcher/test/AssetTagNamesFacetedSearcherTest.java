@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.search.facet.faceted.searcher.test;
@@ -19,6 +10,7 @@ import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.test.util.search.JournalArticleBlueprint;
 import com.liferay.journal.test.util.search.JournalArticleContent;
 import com.liferay.journal.test.util.search.JournalArticleTitle;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Field;
@@ -83,8 +75,13 @@ public class AssetTagNamesFacetedSearcherTest
 			Arrays.asList(JournalArticle.class.getName(), User.class.getName()),
 			hits, searchContext);
 
-		Map<String, Integer> frequencies = Collections.singletonMap(
-			StringUtil.toLowerCase(tag), 1);
+		String tagName = tag;
+
+		if (!FeatureFlagManagerUtil.isEnabled("LPS-194362")) {
+			tagName = StringUtil.toLowerCase(tag);
+		}
+
+		Map<String, Integer> frequencies = Collections.singletonMap(tagName, 1);
 
 		FacetsAssert.assertFrequencies(
 			facet.getFieldName(), searchContext, hits, frequencies);
@@ -143,9 +140,13 @@ public class AssetTagNamesFacetedSearcherTest
 
 		Facet facet = _assetTagNamesFacetFactory.newInstance(searchContext);
 
-		String tagToLowerCase = StringUtil.toLowerCase(tag);
+		String tagName = tag;
 
-		facet.select(tagToLowerCase);
+		if (!FeatureFlagManagerUtil.isEnabled("LPS-194362")) {
+			tagName = StringUtil.toLowerCase(tag);
+		}
+
+		facet.select(tagName);
 
 		searchContext.addFacet(facet);
 
@@ -154,8 +155,7 @@ public class AssetTagNamesFacetedSearcherTest
 		assertEntryClassNames(
 			Arrays.asList(User.class.getName()), hits, searchContext);
 
-		Map<String, Integer> frequencies = Collections.singletonMap(
-			tagToLowerCase, 1);
+		Map<String, Integer> frequencies = Collections.singletonMap(tagName, 1);
 
 		FacetsAssert.assertFrequencies(
 			facet.getFieldName(), searchContext, hits, frequencies);

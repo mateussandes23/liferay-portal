@@ -1,19 +1,12 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
- *
- *
- *
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.saml.opensaml.integration.internal.servlet.profile;
 
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.petra.concurrent.DCLSingleton;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
@@ -36,14 +29,14 @@ import com.liferay.portal.kernel.util.URLCodec;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.saml.constants.SamlWebKeys;
+import com.liferay.saml.helper.RelayStateHelper;
 import com.liferay.saml.opensaml.integration.internal.binding.SamlBinding;
 import com.liferay.saml.opensaml.integration.internal.bootstrap.ParserPoolUtil;
 import com.liferay.saml.opensaml.integration.internal.metadata.MetadataManager;
 import com.liferay.saml.opensaml.integration.internal.resolver.AttributePublisherImpl;
-import com.liferay.saml.opensaml.integration.internal.resolver.AttributeResolverRegistry;
 import com.liferay.saml.opensaml.integration.internal.resolver.AttributeResolverSAMLContextImpl;
 import com.liferay.saml.opensaml.integration.internal.resolver.DecrypterContext;
-import com.liferay.saml.opensaml.integration.internal.resolver.NameIdResolverRegistry;
+import com.liferay.saml.opensaml.integration.internal.resolver.DefaultServiceReferenceMapper;
 import com.liferay.saml.opensaml.integration.internal.resolver.NameIdResolverSAMLContextImpl;
 import com.liferay.saml.opensaml.integration.internal.resolver.SubjectAssertionContext;
 import com.liferay.saml.opensaml.integration.internal.resolver.UserResolverSAMLContextImpl;
@@ -168,8 +161,10 @@ import org.opensaml.xmlsec.keyinfo.KeyInfoCredentialResolver;
 import org.opensaml.xmlsec.signature.Signature;
 import org.opensaml.xmlsec.signature.support.SignatureTrustEngine;
 
+import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferencePolicyOption;
 
@@ -308,9 +303,25 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 	}
 
 	@Activate
-	protected void activate(Map<String, Object> properties) {
+	protected void activate(
+		BundleContext bundleContext, Map<String, Object> properties) {
+
 		_samlConfiguration = ConfigurableUtil.createConfigurable(
 			SamlConfiguration.class, properties);
+		_stringAttributeResolverServiceTrackerMap =
+			ServiceTrackerMapFactory.openSingleValueMap(
+				bundleContext, AttributeResolver.class, "(companyId=*)",
+				new DefaultServiceReferenceMapper(_log));
+		_stringNameIdResolverServiceTrackerMap =
+			ServiceTrackerMapFactory.openSingleValueMap(
+				bundleContext, NameIdResolver.class, "(companyId=*)",
+				new DefaultServiceReferenceMapper(_log));
+	}
+
+	@Deactivate
+	protected void deactivate() {
+		_stringAttributeResolverServiceTrackerMap.close();
+		_stringNameIdResolverServiceTrackerMap.close();
 	}
 
 	protected SamlSsoRequestContext decodeAuthnRequest(
@@ -465,7 +476,6 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 		}
 
 		samlSsoRequestContext.setStage(SamlSsoRequestContext.STAGE_INITIAL);
-
 		samlSsoRequestContext.setUserId(portal.getUserId(httpServletRequest));
 
 		return samlSsoRequestContext;
@@ -502,7 +512,8 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 			outboundMessageContext.getSubcontext(
 				SAMLBindingContext.class, true);
 
-		samlBindingContext.setRelayState(relayState);
+		samlBindingContext.setRelayState(
+			_relayStateHelper.getRelayStateTokenFromRedirect(relayState));
 
 		SAMLSelfEntityContext samlSelfEntityContext =
 			messageContext.getSubcontext(SAMLSelfEntityContext.class);
@@ -862,9 +873,8 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 
 		throw new AssertionException(
 			StringBundler.concat(
-				"Date ", nowDateTime.toString(), " is before ",
-				lowerBoundDateTime.toString(), " including clock skew ",
-				clockSkew));
+				"Date ", nowDateTime, " is before ", lowerBoundDateTime,
+				" including clock skew ", clockSkew));
 	}
 
 	protected void verifyNotOnOrAfterDateTime(
@@ -881,9 +891,8 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 
 		throw new ExpiredException(
 			StringBundler.concat(
-				"Date ", nowDateTime.toString(), " is after ",
-				upperBoundDateTime.toString(), " including clock skew ",
-				clockSkew));
+				"Date ", nowDateTime, " is after ", upperBoundDateTime,
+				" including clock skew ", clockSkew));
 	}
 
 	protected void verifyReplay(
@@ -1139,7 +1148,6 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 
 			samlSsoRequestContext.setStage(
 				SamlSsoRequestContext.STAGE_AUTHENTICATED);
-
 			samlSsoRequestContext.setUserId(
 				portal.getUserId(httpServletRequest));
 
@@ -1253,6 +1261,27 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 		return messageContext;
 	}
 
+	private AttributeResolver _getAttributeResolver(String entityId) {
+		long companyId = CompanyThreadLocal.getCompanyId();
+
+		AttributeResolver attributeResolver =
+			_stringAttributeResolverServiceTrackerMap.getService(
+				companyId + "," + entityId);
+
+		if (attributeResolver == null) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					StringBundler.concat(
+						"No attribute resolver for company ID ", companyId,
+						" and entity ID ", entityId));
+			}
+
+			attributeResolver = _defaultAttributeResolver;
+		}
+
+		return attributeResolver;
+	}
+
 	private String _getAuthRedirectURL(
 			MessageContext<?> messageContext,
 			HttpServletRequest httpServletRequest)
@@ -1272,7 +1301,8 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 			SAMLBindingContext.class);
 
 		String relayState = portal.escapeRedirect(
-			samlBindingContext.getRelayState());
+			_relayStateHelper.getRedirectFromRelayStateToken(
+				samlBindingContext.getRelayState()));
 
 		if (Validator.isNull(relayState)) {
 			relayState = portal.getHomeURL(httpServletRequest);
@@ -1281,6 +1311,27 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 		sb.append(URLCodec.encodeURL(relayState));
 
 		return sb.toString();
+	}
+
+	private NameIdResolver _getNameIdResolver(String entityId) {
+		long companyId = CompanyThreadLocal.getCompanyId();
+
+		NameIdResolver nameIdResolver =
+			_stringNameIdResolverServiceTrackerMap.getService(
+				companyId + "," + entityId);
+
+		if (nameIdResolver == null) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					StringBundler.concat(
+						"No attribute resolver for company ID ", companyId,
+						" and entity ID ", entityId));
+			}
+
+			nameIdResolver = _defaultNameIdResolver;
+		}
+
+		return nameIdResolver;
 	}
 
 	private Assertion _getSuccessAssertion(
@@ -1335,9 +1386,8 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 
 		User user = samlSsoRequestContext.getUser();
 
-		AttributeResolver attributeResolver =
-			_attributeResolverRegistry.getAttributeResolver(
-				samlPeerEntityContext.getEntityId());
+		AttributeResolver attributeResolver = _getAttributeResolver(
+			samlPeerEntityContext.getEntityId());
 
 		AttributePublisherImpl attributePublisherImpl =
 			new AttributePublisherImpl();
@@ -1410,9 +1460,8 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 		SAMLPeerEntityContext samlPeerEntityContext =
 			messageContext.getSubcontext(SAMLPeerEntityContext.class);
 
-		NameIdResolver nameIdResolver =
-			_nameIdResolverRegistry.getNameIdResolver(
-				samlPeerEntityContext.getEntityId());
+		NameIdResolver nameIdResolver = _getNameIdResolver(
+			samlPeerEntityContext.getEntityId());
 
 		boolean allowCreate = false;
 
@@ -2117,17 +2166,24 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 	private static final SAMLSignatureProfileValidator
 		_samlSignatureProfileValidator = new SAMLSignatureProfileValidator();
 
-	@Reference
-	private AttributeResolverRegistry _attributeResolverRegistry;
-
 	private final DCLSingleton<Decrypter> _decrypterDCLSingleton =
 		new DCLSingleton<>();
+
+	@Reference(
+		policyOption = ReferencePolicyOption.GREEDY, target = "(!(companyId=*))"
+	)
+	private AttributeResolver _defaultAttributeResolver;
+
+	@Reference(
+		policyOption = ReferencePolicyOption.GREEDY, target = "(!(companyId=*))"
+	)
+	private NameIdResolver _defaultNameIdResolver;
 
 	@Reference
 	private MetadataManager _metadataManager;
 
 	@Reference
-	private NameIdResolverRegistry _nameIdResolverRegistry;
+	private RelayStateHelper _relayStateHelper;
 
 	private SamlConfiguration _samlConfiguration;
 
@@ -2152,6 +2208,11 @@ public class WebSsoProfileImpl extends BaseProfile implements WebSsoProfile {
 
 	@Reference
 	private SamlSpMessageLocalService _samlSpMessageLocalService;
+
+	private ServiceTrackerMap<String, AttributeResolver>
+		_stringAttributeResolverServiceTrackerMap;
+	private ServiceTrackerMap<String, NameIdResolver>
+		_stringNameIdResolverServiceTrackerMap;
 
 	@Reference
 	private UserLocalService _userLocalService;

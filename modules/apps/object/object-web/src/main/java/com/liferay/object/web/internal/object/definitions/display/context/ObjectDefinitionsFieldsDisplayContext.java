@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.web.internal.object.definitions.display.context;
@@ -22,31 +13,24 @@ import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.field.business.type.ObjectFieldBusinessTypeRegistry;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectField;
-import com.liferay.object.model.ObjectRelationship;
 import com.liferay.object.service.ObjectFieldSettingLocalService;
-import com.liferay.object.service.ObjectRelationshipLocalService;
-import com.liferay.object.web.internal.object.definitions.display.context.util.ObjectCodeEditorUtil;
 import com.liferay.object.web.internal.util.ObjectFieldBusinessTypeUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.util.ListUtil;
-import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeFormatter;
 import com.liferay.portal.util.PropsValues;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -63,15 +47,13 @@ public class ObjectDefinitionsFieldsDisplayContext
 		ModelResourcePermission<ObjectDefinition>
 			objectDefinitionModelResourcePermission,
 		ObjectFieldBusinessTypeRegistry objectFieldBusinessTypeRegistry,
-		ObjectFieldSettingLocalService objectFieldSettingLocalService,
-		ObjectRelationshipLocalService objectRelationshipLocalService) {
+		ObjectFieldSettingLocalService objectFieldSettingLocalService) {
 
 		super(httpServletRequest, objectDefinitionModelResourcePermission);
 
 		_listTypeDefinitionService = listTypeDefinitionService;
 		_objectFieldBusinessTypeRegistry = objectFieldBusinessTypeRegistry;
 		_objectFieldSettingLocalService = objectFieldSettingLocalService;
-		_objectRelationshipLocalService = objectRelationshipLocalService;
 	}
 
 	public CreationMenu getCreationMenu(ObjectDefinition objectDefinition)
@@ -95,27 +77,36 @@ public class ObjectDefinitionsFieldsDisplayContext
 		return creationMenu;
 	}
 
+	public String getEditObjectFieldURL() throws Exception {
+		return PortletURLBuilder.create(
+			getPortletURL()
+		).setMVCRenderCommandName(
+			"/object_definitions/edit_object_field"
+		).setParameter(
+			"objectFieldId", "{id}"
+		).setWindowState(
+			LiferayWindowState.POP_UP
+		).buildString();
+	}
+
 	public List<FDSActionDropdownItem> getFDSActionDropdownItems()
 		throws Exception {
 
+		boolean hasUpdatePermission = hasUpdateObjectDefinitionPermission();
+
 		return Arrays.asList(
 			new FDSActionDropdownItem(
-				PortletURLBuilder.create(
-					getPortletURL()
-				).setMVCRenderCommandName(
-					"/object_definitions/edit_object_field"
-				).setParameter(
-					"objectFieldId", "{id}"
-				).setWindowState(
-					LiferayWindowState.POP_UP
-				).buildString(),
-				"view", "view",
-				LanguageUtil.get(objectRequestHelper.getRequest(), "view"),
+				getEditObjectFieldURL(),
+				hasUpdatePermission ? "pencil" : "view",
+				hasUpdatePermission ? "edit" : "view",
+				LanguageUtil.get(
+					objectRequestHelper.getRequest(),
+					hasUpdatePermission ? "edit" : "view"),
 				"get", null, "sidePanel"),
 			new FDSActionDropdownItem(
-				"/o/object-admin/v1.0/object-fields/{id}", "trash", "delete",
+				null, "trash", "deleteObjectField",
 				LanguageUtil.get(objectRequestHelper.getRequest(), "delete"),
-				"delete", "delete", "async"));
+				"delete", "delete", null));
 	}
 
 	public String[] getForbiddenLastCharacters() {
@@ -138,39 +129,17 @@ public class ObjectDefinitionsFieldsDisplayContext
 	}
 
 	public List<Map<String, String>> getObjectFieldBusinessTypeMaps(
-		boolean includeRelationshipObjectFieldBusinessType, Locale locale) {
+		Locale locale) {
 
 		return ObjectFieldBusinessTypeUtil.getObjectFieldBusinessTypeMaps(
 			locale,
 			ListUtil.filter(
 				_objectFieldBusinessTypeRegistry.getObjectFieldBusinessTypes(),
 				objectFieldBusinessType ->
-					objectFieldBusinessType.isVisible() &&
-					(!StringUtil.equals(
+					objectFieldBusinessType.isVisible(getObjectDefinition()) &&
+					!StringUtil.equals(
 						objectFieldBusinessType.getName(),
-						ObjectFieldConstants.BUSINESS_TYPE_RELATIONSHIP) ||
-					 includeRelationshipObjectFieldBusinessType)));
-	}
-
-	public List<Map<String, Object>> getObjectFieldCodeEditorElements(
-		String businessType) {
-
-		if (StringUtil.equals(
-				businessType, ObjectFieldConstants.BUSINESS_TYPE_FORMULA) &&
-			FeatureFlagManagerUtil.isEnabled("LPS-164948")) {
-
-			return ObjectCodeEditorUtil.getCodeEditorElements(
-				ddmExpressionOperator ->
-					_filterableDDMExpressionOperators.contains(
-						ddmExpressionOperator),
-				objectRequestHelper.getLocale(), getObjectDefinitionId(),
-				objectField -> _filterableObjectFieldBusinessTypes.contains(
-					objectField.getBusinessType()));
-		}
-
-		return ObjectCodeEditorUtil.getCodeEditorElements(
-			true, false, objectRequestHelper.getLocale(),
-			getObjectDefinitionId(), objectField -> !objectField.isSystem());
+						ObjectFieldConstants.BUSINESS_TYPE_RELATIONSHIP)));
 	}
 
 	public JSONObject getObjectFieldJSONObject(ObjectField objectField) {
@@ -179,48 +148,15 @@ public class ObjectDefinitionsFieldsDisplayContext
 			_objectFieldSettingLocalService);
 	}
 
-	public Long getObjectRelationshipId(ObjectField objectField) {
-		if (StringUtil.equals(
-				objectField.getBusinessType(),
-				ObjectFieldConstants.BUSINESS_TYPE_RELATIONSHIP)) {
-
-			ObjectRelationship objectRelationship =
-				_objectRelationshipLocalService.
-					fetchObjectRelationshipByObjectFieldId2(
-						objectField.getObjectFieldId());
-
-			return objectRelationship.getObjectRelationshipId();
-		}
-
-		return null;
-	}
-
 	@Override
 	protected String getAPIURI() {
 		return "/object-fields";
 	}
-
-	private static final Set<ObjectCodeEditorUtil.DDMExpressionOperator>
-		_filterableDDMExpressionOperators = Collections.unmodifiableSet(
-			SetUtil.fromArray(
-				ObjectCodeEditorUtil.DDMExpressionOperator.DIVIDED_BY,
-				ObjectCodeEditorUtil.DDMExpressionOperator.MINUS,
-				ObjectCodeEditorUtil.DDMExpressionOperator.PLUS,
-				ObjectCodeEditorUtil.DDMExpressionOperator.TIMES));
-	private static final Set<String> _filterableObjectFieldBusinessTypes =
-		Collections.unmodifiableSet(
-			SetUtil.fromArray(
-				ObjectFieldConstants.BUSINESS_TYPE_DECIMAL,
-				ObjectFieldConstants.BUSINESS_TYPE_INTEGER,
-				ObjectFieldConstants.BUSINESS_TYPE_LONG_INTEGER,
-				ObjectFieldConstants.BUSINESS_TYPE_PRECISION_DECIMAL));
 
 	private final ListTypeDefinitionService _listTypeDefinitionService;
 	private final ObjectFieldBusinessTypeRegistry
 		_objectFieldBusinessTypeRegistry;
 	private final ObjectFieldSettingLocalService
 		_objectFieldSettingLocalService;
-	private final ObjectRelationshipLocalService
-		_objectRelationshipLocalService;
 
 }

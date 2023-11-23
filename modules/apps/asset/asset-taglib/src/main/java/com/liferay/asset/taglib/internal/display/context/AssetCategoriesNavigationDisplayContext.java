@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.asset.taglib.internal.display.context;
@@ -31,9 +22,12 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.JavaConstants;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portlet.asset.util.comparator.AssetCategoryAssetVocabularyLocalizedTitleComparator;
+import com.liferay.portlet.asset.util.comparator.AssetVocabularyGroupLocalizedTitleComparator;
 import com.liferay.taglib.aui.AUIUtil;
 
 import java.util.ArrayList;
@@ -113,28 +107,31 @@ public class AssetCategoriesNavigationDisplayContext {
 			return _vocabularies;
 		}
 
+		List<AssetVocabulary> vocabularies = new ArrayList<>();
+
 		if (_vocabularyIds == null) {
-			_vocabularies = AssetVocabularyServiceUtil.getGroupVocabularies(
+			vocabularies = AssetVocabularyServiceUtil.getGroupVocabularies(
 				SiteConnectedGroupGroupProviderUtil.
 					getCurrentAndAncestorSiteAndDepotGroupIds(
 						_themeDisplay.getScopeGroupId()),
 				new int[] {AssetVocabularyConstants.VISIBILITY_TYPE_PUBLIC});
-
-			return _vocabularies;
 		}
+		else {
+			for (long vocabularyId : _vocabularyIds) {
+				AssetVocabulary vocabulary =
+					AssetVocabularyServiceUtil.fetchVocabulary(vocabularyId);
 
-		List<AssetVocabulary> vocabularies = new ArrayList<>();
-
-		for (long vocabularyId : _vocabularyIds) {
-			AssetVocabulary vocabulary =
-				AssetVocabularyServiceUtil.fetchVocabulary(vocabularyId);
-
-			if (vocabulary != null) {
-				vocabularies.add(vocabulary);
+				if (vocabulary != null) {
+					vocabularies.add(vocabulary);
+				}
 			}
 		}
 
-		_vocabularies = vocabularies;
+		_vocabularies = ListUtil.sort(
+			vocabularies,
+			new AssetVocabularyGroupLocalizedTitleComparator(
+				_themeDisplay.getScopeGroupId(), _themeDisplay.getLocale(),
+				true));
 
 		return _vocabularies;
 	}
@@ -158,10 +155,12 @@ public class AssetCategoriesNavigationDisplayContext {
 
 		JSONArray categoriesJSONArray = JSONFactoryUtil.createJSONArray();
 
-		List<AssetCategory> categories =
+		List<AssetCategory> categories = ListUtil.sort(
 			AssetCategoryServiceUtil.getVocabularyRootCategories(
 				groupId, vocabularyId, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-				null);
+				null),
+			new AssetCategoryAssetVocabularyLocalizedTitleComparator(
+				vocabularyId, _themeDisplay.getLocale(), true));
 
 		for (AssetCategory category : categories) {
 			categoriesJSONArray.put(_getCategoryJSONObject(category));
@@ -195,8 +194,10 @@ public class AssetCategoriesNavigationDisplayContext {
 
 		JSONArray childCategoriesJSONArray = JSONFactoryUtil.createJSONArray();
 
-		List<AssetCategory> childCategories =
-			AssetCategoryServiceUtil.getChildCategories(categoryId);
+		List<AssetCategory> childCategories = ListUtil.sort(
+			AssetCategoryServiceUtil.getChildCategories(categoryId),
+			new AssetCategoryAssetVocabularyLocalizedTitleComparator(
+				0, _themeDisplay.getLocale(), true));
 
 		for (AssetCategory childCategory : childCategories) {
 			childCategoriesJSONArray.put(_getCategoryJSONObject(childCategory));

@@ -1,6 +1,7 @@
 definition {
 
-	macro addCP {
+	@summary = "Default summary"
+	macro addCP(kbFolderName = null, kbFolderDescription = null, customField = null) {
 		if (isSet(centerPaneButton)) {
 			Button.click(button = "New");
 
@@ -36,7 +37,8 @@ definition {
 		}
 	}
 
-	macro deleteCP {
+	@summary = "Default summary"
+	macro deleteCP(kbFolderName = null) {
 		if (isSet(navigationPane)) {
 			KBFolder.gotoMenuItemViaNavigationPane(
 				kbFolderName = ${kbFolderName},
@@ -53,7 +55,8 @@ definition {
 		Alert.viewSuccessMessage();
 	}
 
-	macro editCP {
+	@summary = "Default summary"
+	macro editCP(kbFolderName = null, kbFolderEditedName = null, kbFolderDescription = null) {
 		if (isSet(navigationPane)) {
 			KBFolder.gotoMenuItemViaNavigationPane(
 				kbFolderName = ${kbFolderName},
@@ -72,7 +75,8 @@ definition {
 		PortletEntry.save();
 	}
 
-	macro gotoCP {
+	@summary = "Default summary"
+	macro gotoCP(kbFolderName = null) {
 		var key_kbFolderName = ${kbFolderName};
 
 		if (isSet(pageTreePanel)) {
@@ -102,7 +106,8 @@ definition {
 			value1 = ${kbFolderName});
 	}
 
-	macro gotoMenuItemViaNavigationPane {
+	@summary = "Default summary"
+	macro gotoMenuItemViaNavigationPane(kbFolderName = null, menuItem = null) {
 		MouseOver(
 			key_itemName = ${kbFolderName},
 			locator1 = "KnowledgeBase#PAGE_TREE_ITEM_NAME");
@@ -121,17 +126,8 @@ definition {
 		}
 	}
 
-	macro goToMoveCPViaNavigationPane {
-		KBFolder.gotoMenuItemViaNavigationPane(
-			kbFolderName = ${kbFolderName},
-			menuItem = "Move");
-
-		AssertClick(
-			locator1 = "Button#SELECT",
-			value1 = "Select");
-	}
-
-	macro gotoViaKBDisplayPG {
+	@summary = "Default summary"
+	macro gotoViaKBDisplayPG(kbFolderName = null) {
 		var key_kbFolderName = ${kbFolderName};
 
 		Select(
@@ -139,37 +135,34 @@ definition {
 			value1 = ${kbFolderName});
 	}
 
-	macro selectParentCP {
-		var key_kbArticleTitle = ${kbFolderName};
-
-		SelectFrame(locator1 = "IFrame#MODAL_BODY");
-
-		if (${kbFolderName} == "Home") {
-			Click(locator1 = "KnowledgeBaseSelectParent#BREADCRUMB_HOME");
-
-			AssertClick(
-				key_text = "Select This Folder",
-				locator1 = "Button#ANY",
-				value1 = "Select This Folder");
+	@summary = "Default summary"
+	macro moveFolder(kbFolderName = null, destinationItem = null) {
+		if (isSet(navigationPane)) {
+			KBFolder.gotoMenuItemViaNavigationPane(
+				kbFolderName = ${kbFolderName},
+				menuItem = "Move");
 		}
 		else {
 			Click(
-				locator1 = "KnowledgeBaseSelectParent#SELECT_BUTTON",
-				value1 = "Select");
+				key_rowEntry = ${kbFolderName},
+				locator1 = "Icon#ROW_VERTICAL_ELLIPSIS");
+
+			MenuItem.click(menuItem = "Move");
 		}
 
-		SelectFrame(value1 = "relative=top");
+		SelectFrame(locator1 = "IFrame#MODAL_BODY");
 
-		AssertTextEquals(
-			locator1 = "KnowledgeBase#MOVE_NEW_PARENT_TITLE_FIELD",
-			value1 = ${kbFolderName});
+		Click(
+			key_nodeName = ${destinationItem},
+			locator1 = "Treeview#NODE_ITEM");
 
-		Click(locator1 = "Button#MOVE");
+		SelectFrameTop();
 
-		Alert.viewSuccessMessage();
+		Button.clickSave();
 	}
 
-	macro tearDownCP {
+	@summary = "Default summary"
+	macro tearDownCP() {
 		KBAdmin.openKBAdmin(siteURLKey = "guest");
 
 		while (IsElementPresent(locator1 = "KnowledgeBase#FOLDER_TABLE_HEADER")) {
@@ -183,7 +176,8 @@ definition {
 		}
 	}
 
-	macro viewFolderInfo {
+	@summary = "Default summary"
+	macro viewFolderInfo(kbFolderName = null, entryDefaultInfo = null, foldersQuantity = null, folderQuantity = null, articleQuantity = null) {
 		VerifyElementPresent(
 			key_entryTitle = ${kbFolderName},
 			key_infoText = ${entryDefaultInfo},
@@ -220,7 +214,8 @@ definition {
 		}
 	}
 
-	macro viewFolderNameCP {
+	@summary = "Default summary"
+	macro viewFolderNameCP(kbFolderName = null) {
 		var key_kbFolderName = ${kbFolderName};
 
 		AssertTextEquals(
@@ -228,7 +223,8 @@ definition {
 			value1 = ${kbFolderName});
 	}
 
-	macro viewFolderThroughPageTreePanel {
+	@summary = "Default summary"
+	macro viewFolderThroughPageTreePanel(kbFolderName = null) {
 		AssertVisible(
 			key_itemName = ${kbFolderName},
 			locator1 = "KnowledgeBase#PAGE_TREE_ITEM_NAME");

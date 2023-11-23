@@ -21,20 +21,18 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
-
-		// It is not possible to delete properties and data source after LRAC-13389. This functionality should return after LRAC-8040
-
-		//ACUtils.tearDownAC();
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		ACUtils.tearDownDXP();
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
 			JSONGroup.deleteGroupByName(groupName = "Site Name");
 		}
+
+		ACUtils.tearDownAC();
 	}
 
 	@description = "Bug: LRAC-8557 | Automation ID: LRAC-11056 | Test Summary: Search using special characters shown in search overview"
@@ -88,8 +86,6 @@ definition {
 	@description = "Feature ID: Legacy | Automation ID: LRAC-8298 | Test Summary: Site overview search terms shows what keywords are being searched for"
 	@priority = 5
 	test ShowsKeywordsBeingSearched {
-		property analytics.cloud.upstream = "false";
-
 		task ("Connect DXP to AC") {
 			var propertyName = ACDXPSettings.connectDXPtoAnalyticsCloud();
 		}

@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
- *
- *
- *
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.saml.internal.scheduler;
@@ -70,14 +61,17 @@ public class SamlMetadataSchedulerJobConfiguration
 
 	@Override
 	public TriggerConfiguration getTriggerConfiguration() {
-		return TriggerConfiguration.createTriggerConfiguration(
-			_samlConfiguration.getMetadataRefreshInterval(), TimeUnit.SECOND);
+		return _triggerConfiguration;
 	}
 
 	@Activate
 	protected void activate(Map<String, Object> properties) {
-		_samlConfiguration = ConfigurableUtil.createConfigurable(
-			SamlConfiguration.class, properties);
+		SamlConfiguration samlConfiguration =
+			ConfigurableUtil.createConfigurable(
+				SamlConfiguration.class, properties);
+
+		_triggerConfiguration = TriggerConfiguration.createTriggerConfiguration(
+			samlConfiguration.getMetadataRefreshInterval(), TimeUnit.SECOND);
 	}
 
 	private void _updateIdpMetadata(long companyId) {
@@ -187,8 +181,6 @@ public class SamlMetadataSchedulerJobConfiguration
 	@Reference
 	private CompanyLocalService _companyLocalService;
 
-	private SamlConfiguration _samlConfiguration;
-
 	@Reference
 	private SamlIdpSpConnectionLocalService _samlIdpSpConnectionLocalService;
 
@@ -197,5 +189,7 @@ public class SamlMetadataSchedulerJobConfiguration
 
 	@Reference
 	private SamlSpIdpConnectionLocalService _samlSpIdpConnectionLocalService;
+
+	private TriggerConfiguration _triggerConfiguration;
 
 }

@@ -15,9 +15,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -31,7 +31,7 @@ definition {
 
 		JSONPublications.selectPublication(publicationName = "Publication Name");
 
-		JSONGroup.addGroup(groupName = "Site Name");
+		HeadlessSite.addSite(siteName = "Site Name");
 
 		Site.openSitesAdmin();
 
@@ -59,6 +59,10 @@ definition {
 
 		PublicationsNavigator.gotoReviewChanges();
 
+		PublicationsChanges.filterChangesByItem(
+			checkboxName = "Site",
+			menuItem = "Types");
+
 		PublicationsChanges.viewChanges(
 			changeCategory = "Site",
 			changeSite = "Site Name",
@@ -66,9 +70,7 @@ definition {
 			changeType = "Added",
 			changeUser = "Test Test");
 
-		JSONPublications.publishPublication(publicationName = "Publication Name");
-
-		Publications.viewPublicationPublished(publicationName = "Publication Name");
+		Publications.publishPublication(publicationName = "Publication Name");
 
 		Navigator.openSitePage(
 			pageName = "Child Site Page",
@@ -83,7 +85,7 @@ definition {
 
 		JSONPublications.selectPublication(publicationName = "Publication Name");
 
-		JSONGroup.addGroup(groupName = "Site Name");
+		HeadlessSite.addSite(siteName = "Site Name");
 
 		JSONLayout.addPublicLayout(
 			groupName = "Site Name",
@@ -95,16 +97,18 @@ definition {
 
 		PublicationsNavigator.gotoReviewChanges();
 
+		PublicationsChanges.filterChangesByItem(
+			checkboxName = "Site",
+			menuItem = "Types");
+
 		PublicationsChanges.viewChanges(
 			changeCategory = "Site",
-			changeSite = "Global",
+			changeSite = "",
 			changeTitle = "Site Name",
 			changeType = "Added",
 			changeUser = "Test Test");
 
-		JSONPublications.publishPublication(publicationName = "Publication Name");
-
-		Publications.viewPublicationPublished(publicationName = "Publication Name");
+		Publications.publishPublication(publicationName = "Publication Name");
 
 		Navigator.openSitePage(
 			pageName = "Site Page",

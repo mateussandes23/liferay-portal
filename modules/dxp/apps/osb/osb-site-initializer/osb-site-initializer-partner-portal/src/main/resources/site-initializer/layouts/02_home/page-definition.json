@@ -190,6 +190,24 @@
 											"id": "link",
 											"value": {
 												"fragmentLink": {
+													"href": {
+														"value_i18n": {
+															"ar_SA": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"ca_ES": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"de_DE": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"en_US": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"es_ES": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"fi_FI": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"fr_FR": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"hu_HU": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"ja_JP": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"nl_NL": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"pt_BR": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"sv_SE": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]",
+															"zh_CN": "[$DOCUMENT_URL:/site-initializer/documents/group/marketing-resources-pdf/partner-marketing-program-guide.pdf$]"
+														}
+													},
+													"target": "Blank"
 												},
 												"text": {
 													"value_i18n": {
@@ -946,19 +964,19 @@
 																},
 																"text": {
 																	"value_i18n": {
-																		"ar_SA": "Deals",
-																		"ca_ES": "Deals",
-																		"de_DE": "Deals",
-																		"en_US": "Deals",
-																		"es_ES": "Deals",
-																		"fi_FI": "Deals",
-																		"fr_FR": "Deals",
-																		"hu_HU": "Deals",
-																		"ja_JP": "Deals",
-																		"nl_NL": "Deals",
-																		"pt_BR": "Deals",
-																		"sv_SE": "Deals",
-																		"zh_CN": "Deals"
+																		"ar_SA": "Deal Registration",
+																		"ca_ES": "Deal Registration",
+																		"de_DE": "Deal Registration",
+																		"en_US": "Deal Registration",
+																		"es_ES": "Deal Registration",
+																		"fi_FI": "Deal Registration",
+																		"fr_FR": "Deal Registration",
+																		"hu_HU": "Deal Registration",
+																		"ja_JP": "Deal Registration",
+																		"nl_NL": "Deal Registration",
+																		"pt_BR": "Deal Registration",
+																		"sv_SE": "Deal Registration",
+																		"zh_CN": "Deal Registration"
 																	}
 																}
 															}
@@ -984,7 +1002,7 @@
 															"fields": [
 																{
 																	"fieldName": "friendlyURL",
-																	"fieldValue": "/sales/renewal-opportunities"
+																	"fieldValue": "/sales/renewals"
 																},
 																{
 																	"fieldName": "privatePage",
@@ -1070,7 +1088,7 @@
 																					"fields": [
 																						{
 																							"fieldName": "friendlyURL",
-																							"fieldValue": "/sales/renewal-opportunities"
+																							"fieldValue": "/sales/renewals"
 																						},
 																						{
 																							"fieldName": "privatePage",
@@ -1121,7 +1139,7 @@
 																					"fields": [
 																						{
 																							"fieldName": "friendlyURL",
-																							"fieldValue": "/sales/renewal-opportunities"
+																							"fieldValue": "/sales/renewals"
 																						},
 																						{
 																							"fieldName": "privatePage",
@@ -1814,6 +1832,7 @@
 										},
 										{
 											"columnViewportDefinition": {
+												"size": 12
 											},
 											"id": "tablet"
 										}
@@ -1825,8 +1844,9 @@
 										"definition": {
 											"widgetInstance": {
 												"widgetConfig": {
+													"properties": "path=revenue-chart"
 												},
-												"widgetName": "[$CLIENT_EXTENSION_ENTRY_ID:PARTNER-PORTAL-REVENUE-CHART$]"
+												"widgetName": "com_liferay_client_extension_web_internal_portlet_ClientExtensionEntryPortlet_[$COMPANY_ID$]_LXC_liferay_partner_custom_element"
 											}
 										},
 										"type": "Widget"
@@ -1850,6 +1870,7 @@
 										},
 										{
 											"columnViewportDefinition": {
+												"size": 12
 											},
 											"id": "tablet"
 										}
@@ -1861,8 +1882,9 @@
 										"definition": {
 											"widgetInstance": {
 												"widgetConfig": {
+													"properties": "path=mdf-requests-chart"
 												},
-												"widgetName": "[$CLIENT_EXTENSION_ENTRY_ID:PARTNER-PORTAL-DEALS-CHART$]"
+												"widgetName": "com_liferay_client_extension_web_internal_portlet_ClientExtensionEntryPortlet_[$COMPANY_ID$]_LXC_liferay_partner_custom_element"
 											}
 										},
 										"type": "Widget"
@@ -1886,6 +1908,55 @@
 										},
 										{
 											"columnViewportDefinition": {
+												"size": 12
+											},
+											"id": "tablet"
+										}
+									],
+									"size": 4
+								},
+								"pageElements": [
+									{
+										"definition": {
+											"indexed": true,
+											"layout": {
+											}
+										},
+										"pageElements": [
+											{
+												"definition": {
+													"widgetInstance": {
+														"widgetConfig": {
+															"properties": "path=level-chart"
+														},
+														"widgetName": "com_liferay_client_extension_web_internal_portlet_ClientExtensionEntryPortlet_[$COMPANY_ID$]_LXC_liferay_partner_custom_element"
+													}
+												},
+												"type": "Widget"
+											}
+										],
+										"type": "Section"
+									}
+								],
+								"type": "Column"
+							},
+							{
+								"definition": {
+									"columnViewports": [
+										{
+											"columnViewportDefinition": {
+												"size": 12
+											},
+											"id": "landscapeMobile"
+										},
+										{
+											"columnViewportDefinition": {
+											},
+											"id": "portraitMobile"
+										},
+										{
+											"columnViewportDefinition": {
+												"size": 12
 											},
 											"id": "tablet"
 										}
@@ -1897,8 +1968,9 @@
 										"definition": {
 											"widgetInstance": {
 												"widgetConfig": {
+													"properties": "path=deals-chart"
 												},
-												"widgetName": "[$CLIENT_EXTENSION_ENTRY_ID:PARTNER-PORTAL-MDF-REQUESTS-CHART$]"
+												"widgetName": "com_liferay_client_extension_web_internal_portlet_ClientExtensionEntryPortlet_[$COMPANY_ID$]_LXC_liferay_partner_custom_element"
 											}
 										},
 										"type": "Widget"
@@ -1922,43 +1994,8 @@
 										},
 										{
 											"columnViewportDefinition": {
-											},
-											"id": "tablet"
-										}
-									],
-									"size": 4
-								},
-								"pageElements": [
-									{
-										"definition": {
-											"widgetInstance": {
-												"widgetConfig": {
-												},
-												"widgetName": "[$CLIENT_EXTENSION_ENTRY_ID:PARTNER-PORTAL-LEVEL-CHART$]"
-											}
-										},
-										"type": "Widget"
-									}
-								],
-								"type": "Column"
-							},
-							{
-								"definition": {
-									"columnViewports": [
-										{
-											"columnViewportDefinition": {
 												"size": 12
 											},
-											"id": "landscapeMobile"
-										},
-										{
-											"columnViewportDefinition": {
-											},
-											"id": "portraitMobile"
-										},
-										{
-											"columnViewportDefinition": {
-											},
 											"id": "tablet"
 										}
 									],
@@ -1969,8 +2006,9 @@
 										"definition": {
 											"widgetInstance": {
 												"widgetConfig": {
+													"properties": "path=renewals-chart"
 												},
-												"widgetName": "[$CLIENT_EXTENSION_ENTRY_ID:PARTNER-PORTAL-RENEWALS-CHART$]"
+												"widgetName": "com_liferay_client_extension_web_internal_portlet_ClientExtensionEntryPortlet_[$COMPANY_ID$]_LXC_liferay_partner_custom_element"
 											}
 										},
 										"type": "Widget"

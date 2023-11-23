@@ -1,22 +1,12 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import 'codemirror/mode/groovy/groovy';
 import ClayTabs from '@clayui/tabs';
 import {
 	API,
-	CustomItem,
 	FormError,
 	SidePanelForm,
 	SidebarCategory,
@@ -38,8 +28,8 @@ interface ActionProps {
 	isApproved?: boolean;
 	objectAction: Partial<ObjectAction>;
 	objectActionCodeEditorElements: SidebarCategory[];
-	objectActionExecutors: CustomItem[];
-	objectActionTriggers: CustomItem[];
+	objectActionExecutors: ObjectActionTriggerExecutorItem[];
+	objectActionTriggers: ObjectActionTriggerExecutorItem[];
 	objectDefinitionExternalReferenceCode: string;
 	objectDefinitionId: number;
 	objectDefinitionsRelationshipsURL: string;
@@ -93,7 +83,7 @@ export default function Action({
 		delete objectAction.objectDefinitionId;
 
 		try {
-			await API.save(url, objectAction, method);
+			await API.save({item: objectAction, method, url});
 			saveAndReload();
 			openToast({message: successMessage});
 		}
@@ -163,7 +153,7 @@ export default function Action({
 			onSubmit={handleSubmit}
 			title={Liferay.Language.get('new-action')}
 		>
-			<ClayTabs className="side-panel-iframe__tabs">
+			<ClayTabs>
 				{TABS.map((label, index) => (
 					<ClayTabs.Item
 						active={activeIndex === index}

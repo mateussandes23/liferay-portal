@@ -58,7 +58,7 @@ exports[`AccountAssociatedSegments should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#caret-bottom"
+                        href="#caret-bottom"
                       />
                     </svg>
                   </button>
@@ -77,7 +77,7 @@ exports[`AccountAssociatedSegments should render 1`] = `
                     role="presentation"
                   >
                     <use
-                      xlink:href="#order-arrow-ascending"
+                      href="#order-arrow-ascending"
                     />
                   </svg>
                 </a>
@@ -102,6 +102,7 @@ exports[`AccountAssociatedSegments should render 1`] = `
                     class="input-group-inset-item input-group-inset-item-after"
                   >
                     <button
+                      aria-label="Search"
                       class="button-root btn btn-unstyled"
                       type="button"
                     >
@@ -110,7 +111,7 @@ exports[`AccountAssociatedSegments should render 1`] = `
                         role="presentation"
                       >
                         <use
-                          xlink:href="#search"
+                          href="#search"
                         />
                       </svg>
                     </button>
@@ -149,7 +150,7 @@ exports[`AccountAssociatedSegments should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#order-arrow-up"
+                        href="#order-arrow-up"
                       />
                     </svg>
                   </span>
@@ -190,14 +191,14 @@ exports[`AccountAssociatedSegments should render 1`] = `
                     class="icon-container"
                   >
                     <div
-                      class="sticker sticker-root sticker-static segment-sticker-root sticker-rounded sticker-light"
+                      class="sticker sticker-root sticker-static segment-sticker-root sticker-rounded sticker-dark"
                     >
                       <svg
                         class="lexicon-icon lexicon-icon-individual-dynamic-segment icon-root"
                         role="presentation"
                       >
                         <use
-                          xlink:href="#individual-dynamic-segment"
+                          href="#individual-dynamic-segment"
                         />
                       </svg>
                     </div>
@@ -250,7 +251,7 @@ exports[`AccountAssociatedSegments should render 1`] = `
                 role="presentation"
               >
                 <use
-                  xlink:href="#caret-bottom"
+                  href="#caret-bottom"
                 />
               </svg>
             </button>
@@ -267,16 +268,16 @@ exports[`AccountAssociatedSegments should render 1`] = `
               class="page-item disabled"
             >
               <a
-                class="button-root page-link btn btn-unstyled"
+                class="button-root btn btn-unstyled page-link"
                 disabled=""
                 href="/?page=0"
               >
                 <svg
-                  class="lexicon-icon lexicon-icon-angle-left icon-root"
+                  class="lexicon-icon lexicon-icon-angle-left-small icon-root"
                   role="presentation"
                 >
                   <use
-                    xlink:href="#angle-left"
+                    href="#angle-left-small"
                   />
                 </svg>
               </a>
@@ -285,7 +286,7 @@ exports[`AccountAssociatedSegments should render 1`] = `
               class="page-item active"
             >
               <a
-                class="button-root page-link btn btn-unstyled"
+                class="button-root btn btn-unstyled page-link"
                 href="/?page=1"
               >
                 1
@@ -295,16 +296,16 @@ exports[`AccountAssociatedSegments should render 1`] = `
               class="page-item disabled"
             >
               <a
-                class="button-root page-link btn btn-unstyled"
+                class="button-root btn btn-unstyled page-link"
                 disabled=""
                 href="/?page=2"
               >
                 <svg
-                  class="lexicon-icon lexicon-icon-angle-right icon-root"
+                  class="lexicon-icon lexicon-icon-angle-right-small icon-root"
                   role="presentation"
                 >
                   <use
-                    xlink:href="#angle-right"
+                    href="#angle-right-small"
                   />
                 </svg>
               </a>

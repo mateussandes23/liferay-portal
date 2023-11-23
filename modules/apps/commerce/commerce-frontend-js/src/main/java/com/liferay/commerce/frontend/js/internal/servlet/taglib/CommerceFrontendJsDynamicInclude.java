@@ -1,31 +1,29 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.commerce.frontend.js.internal.servlet.taglib;
 
 import com.liferay.account.model.AccountEntry;
+import com.liferay.commerce.configuration.CommerceOrderCheckoutConfiguration;
+import com.liferay.commerce.constants.CommerceConstants;
 import com.liferay.commerce.constants.CommerceWebKeys;
 import com.liferay.commerce.context.CommerceContext;
 import com.liferay.commerce.currency.model.CommerceCurrency;
 import com.liferay.commerce.model.CommerceOrder;
+import com.liferay.commerce.product.model.CommerceChannel;
+import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
+import com.liferay.portal.kernel.content.security.policy.ContentSecurityPolicyNonceProviderUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.taglib.BaseDynamicInclude;
 import com.liferay.portal.kernel.servlet.taglib.DynamicInclude;
+import com.liferay.portal.kernel.settings.GroupServiceSettingsLocator;
 import com.liferay.portal.kernel.util.Portal;
 
 import java.io.IOException;
@@ -83,8 +81,11 @@ public class CommerceFrontendJsDynamicInclude extends BaseDynamicInclude {
 		throws PortalException {
 
 		return StringBundler.concat(
-			"<script data-senna-track=\"temporary\">var Liferay = ",
-			"window.Liferay || {}; Liferay.CommerceContext = ",
+			"<script",
+			ContentSecurityPolicyNonceProviderUtil.getNonceAttribute(
+				httpServletRequest),
+			" data-senna-track=\"temporary\">var Liferay = window.Liferay || ",
+			"{}; Liferay.CommerceContext = ",
 			JSONUtil.put(
 				"account",
 				() -> {
@@ -143,6 +144,29 @@ public class CommerceFrontendJsDynamicInclude extends BaseDynamicInclude {
 						"orderType", commerceOrder.getCommerceOrderTypeId()
 					);
 				}
+			).put(
+				"showSeparateOrderItems",
+				() -> {
+					CommerceChannel commerceChannel =
+						_commerceChannelLocalService.fetchCommerceChannel(
+							commerceContext.getCommerceChannelId());
+
+					if (commerceChannel == null) {
+						return false;
+					}
+
+					CommerceOrderCheckoutConfiguration
+						commerceOrderCheckoutConfiguration =
+							_configurationProvider.getConfiguration(
+								CommerceOrderCheckoutConfiguration.class,
+								new GroupServiceSettingsLocator(
+									commerceChannel.getGroupId(),
+									CommerceConstants.
+										SERVICE_NAME_COMMERCE_ORDER));
+
+					return commerceOrderCheckoutConfiguration.
+						showSeparateOrderItems();
+				}
 			),
 			";</script><link href=\"",
 			_portal.getPathProxy() + httpServletRequest.getContextPath(),
@@ -152,6 +176,12 @@ public class CommerceFrontendJsDynamicInclude extends BaseDynamicInclude {
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		CommerceFrontendJsDynamicInclude.class);
+
+	@Reference
+	private CommerceChannelLocalService _commerceChannelLocalService;
+
+	@Reference
+	private ConfigurationProvider _configurationProvider;
 
 	@Reference
 	private Portal _portal;

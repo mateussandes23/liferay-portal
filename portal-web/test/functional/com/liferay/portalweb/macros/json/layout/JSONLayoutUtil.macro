@@ -1,6 +1,7 @@
 definition {
 
-	macro _addWidgetToTypeSettings {
+	@summary = "Default summary"
+	macro _addWidgetToTypeSettings(remoteAppEntryId = null, widgetName = null) {
 
 		// Get column # we want to set to (can only be 1-3), default is 1
 
@@ -30,8 +31,23 @@ definition {
 		return ${typeSettings};
 	}
 
-	@summary = "Generates a Widget to be used in typeSettings"
-	macro _generateWidget {
+	@summary = "Default summary"
+	macro _embeddedLayoutURL(embeddedLayoutURL = null) {
+		if (!(isSet(embeddedLayoutURL))) {
+			fail("embeddedLayoutURL not set.");
+		}
+
+		if (!(isSet(typeSettings))) {
+			fail("layoutTemplateId not set.");
+		}
+
+		var typeSettings = StringUtil.add(${typeSettings}, "embeddedLayoutURL=${embeddedLayoutURL}", "");
+
+		return ${typeSettings};
+	}
+
+	@summary = "Default summary"
+	macro _generateWidget(widgetName = null) {
 		Variables.assertDefined(parameterList = ${widgetName});
 
 		if (${widgetName} == "Alerts") {
@@ -51,6 +67,9 @@ definition {
 		}
 		else if (${widgetName} == "Blogs Aggregator") {
 			var portletId = "com_liferay_blogs_web_portlet_BlogsAgreggatorPortlet";
+		}
+		else if (${widgetName} == "Blueprints Options") {
+			var portletId = "com_liferay_search_experiences_web_internal_blueprint_options_portlet_SXPBlueprintOptionsPortlet";
 		}
 		else if (${widgetName} == "Bookmarks") {
 			var portletId = "com_liferay_bookmarks_web_portlet_BookmarksPortlet";
@@ -96,6 +115,9 @@ definition {
 		}
 		else if (${widgetName} == "Dynamic Data Lists Display") {
 			var portletId = "com_liferay_dynamic_data_lists_web_portlet_DDLDisplayPortlet";
+		}
+		else if (${widgetName} == "Elasticsearch Monitoring") {
+			var portletId = "com_liferay_portal_search_elasticsearch_monitoring_portlet_MonitoringPortlet";
 		}
 		else if (${widgetName} == "Folder Facet") {
 			var portletId = "com_liferay_portal_search_web_folder_facet_portlet_FolderFacetPortlet";
@@ -153,6 +175,9 @@ definition {
 		}
 		else if (${widgetName} == "Microblogs Status Update") {
 			var portletId = "com_liferay_microblogs_web_portlet_MicroblogsStatusUpdatePortlet";
+		}
+		else if (${widgetName} == "Modified Facet") {
+			var portletId = "com_liferay_portal_search_web_modified_facet_portlet_ModifiedFacetPortlet";
 		}
 		else if (${widgetName} == "Most Viewed Assets") {
 			var portletId = "com_liferay_asset_publisher_web_portlet_MostViewedAssetsPortlet";
@@ -217,6 +242,9 @@ definition {
 		else if (${widgetName} == "Sites Directory") {
 			var portletId = "com_liferay_site_navigation_directory_web_portlet_SitesDirectoryPortlet";
 		}
+		else if (${widgetName} == "Suggestions") {
+			var portletId = "com_liferay_portal_search_web_suggestions_portlet_SuggestionsPortlet";
+		}
 		else if (${widgetName} == "Tag Facet") {
 			var portletId = "com_liferay_portal_search_web_tag_facet_portlet_TagFacetPortlet";
 		}
@@ -270,7 +298,8 @@ definition {
 		return ${widget};
 	}
 
-	macro _getLayoutTemplateId {
+	@summary = "Default summary"
+	macro _getLayoutTemplateId(layoutTemplate = null) {
 		if (!(isSet(layoutTemplate))) {
 			fail("layoutTemplate not set.");
 		}
@@ -324,7 +353,8 @@ definition {
 		return ${layoutTemplateId};
 	}
 
-	macro _updateLayoutTemplateId {
+	@summary = "Default summary"
+	macro _updateLayoutTemplateId(layoutTemplate = null) {
 		if (!(isSet(layoutTemplate))) {
 			fail("layoutTemplate not set.");
 		}

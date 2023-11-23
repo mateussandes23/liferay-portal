@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.jenkins.results.parser;
@@ -48,7 +39,9 @@ public class UpstreamFailureUtil {
 		TopLevelBuildReport topLevelBuildReport =
 			getUpstreamTopLevelBuildReport(topLevelBuild);
 
-		if (topLevelBuildReport == null) {
+		if ((topLevelBuildReport == null) ||
+			(topLevelBuildReport.getDownstreamBuildReports() == null)) {
+
 			return upstreamFailures;
 		}
 
@@ -77,6 +70,17 @@ public class UpstreamFailureUtil {
 					String testReportStatus = testReport.getStatus();
 
 					if (!testReportStatus.equals("PASSED")) {
+						upstreamFailures.add(
+							_formatUpstreamTestFailure(
+								batchName, testReport.getTestName()));
+					}
+
+					List<TestClassReport> testClassReports =
+						downstreamBuildReport.getTestClassReports();
+
+					if (testReportStatus.equals("PASSED") &&
+						(testClassReports.size() == 1)) {
+
 						upstreamFailures.add(
 							_formatUpstreamTestFailure(
 								batchName, testReport.getTestName()));
@@ -117,6 +121,8 @@ public class UpstreamFailureUtil {
 			return null;
 		}
 
+		int buildCount = 0;
+
 		String upstreamBranchName = topLevelBuild.getBranchName();
 
 		if (topLevelBuild instanceof PullRequestSubrepositoryTopLevelBuild) {
@@ -134,6 +140,12 @@ public class UpstreamFailureUtil {
 				upstreamBranchName, (File)null, "liferay-portal");
 
 		for (TestrayBuild testrayBuild : testrayRoutine.getTestrayBuilds()) {
+			if (buildCount > 25) {
+				break;
+			}
+
+			buildCount++;
+
 			if (!gitWorkingDirectory.refContainsSHA(
 					"HEAD", testrayBuild.getPortalSHA())) {
 
@@ -146,6 +158,15 @@ public class UpstreamFailureUtil {
 				testrayBuild.getTopLevelBuildReport();
 
 			if (topLevelBuildReport == null) {
+				continue;
+			}
+
+			List<DownstreamBuildReport> downstreamBuildReports =
+				topLevelBuildReport.getDownstreamBuildReports();
+
+			if ((downstreamBuildReports == null) ||
+				downstreamBuildReports.isEmpty()) {
+
 				continue;
 			}
 

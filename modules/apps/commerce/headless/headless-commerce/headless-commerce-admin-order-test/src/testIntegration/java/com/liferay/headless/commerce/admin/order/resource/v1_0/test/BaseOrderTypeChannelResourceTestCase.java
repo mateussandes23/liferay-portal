@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.order.resource.v1_0.test;
@@ -43,6 +34,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -222,7 +214,7 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 				getOrderTypeByExternalReferenceCodeOrderTypeChannelsPage(
 					externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantExternalReferenceCode != null) {
 			OrderTypeChannel irrelevantOrderTypeChannel =
@@ -233,12 +225,13 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 			page =
 				orderTypeChannelResource.
 					getOrderTypeByExternalReferenceCodeOrderTypeChannelsPage(
-						irrelevantExternalReferenceCode, Pagination.of(1, 2));
+						irrelevantExternalReferenceCode,
+						Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantOrderTypeChannel),
+			assertContains(
+				irrelevantOrderTypeChannel,
 				(List<OrderTypeChannel>)page.getItems());
 			assertValid(
 				page,
@@ -259,11 +252,12 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 				getOrderTypeByExternalReferenceCodeOrderTypeChannelsPage(
 					externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(orderTypeChannel1, orderTypeChannel2),
-			(List<OrderTypeChannel>)page.getItems());
+		assertContains(
+			orderTypeChannel1, (List<OrderTypeChannel>)page.getItems());
+		assertContains(
+			orderTypeChannel2, (List<OrderTypeChannel>)page.getItems());
 		assertValid(
 			page,
 			testGetOrderTypeByExternalReferenceCodeOrderTypeChannelsPage_getExpectedActions(
@@ -287,6 +281,14 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 		String externalReferenceCode =
 			testGetOrderTypeByExternalReferenceCodeOrderTypeChannelsPage_getExternalReferenceCode();
 
+		Page<OrderTypeChannel> orderTypeChannelPage =
+			orderTypeChannelResource.
+				getOrderTypeByExternalReferenceCodeOrderTypeChannelsPage(
+					externalReferenceCode, null);
+
+		int totalCount = GetterUtil.getInteger(
+			orderTypeChannelPage.getTotalCount());
+
 		OrderTypeChannel orderTypeChannel1 =
 			testGetOrderTypeByExternalReferenceCodeOrderTypeChannelsPage_addOrderTypeChannel(
 				externalReferenceCode, randomOrderTypeChannel());
@@ -302,20 +304,21 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 		Page<OrderTypeChannel> page1 =
 			orderTypeChannelResource.
 				getOrderTypeByExternalReferenceCodeOrderTypeChannelsPage(
-					externalReferenceCode, Pagination.of(1, 2));
+					externalReferenceCode, Pagination.of(1, totalCount + 2));
 
 		List<OrderTypeChannel> orderTypeChannels1 =
 			(List<OrderTypeChannel>)page1.getItems();
 
 		Assert.assertEquals(
-			orderTypeChannels1.toString(), 2, orderTypeChannels1.size());
+			orderTypeChannels1.toString(), totalCount + 2,
+			orderTypeChannels1.size());
 
 		Page<OrderTypeChannel> page2 =
 			orderTypeChannelResource.
 				getOrderTypeByExternalReferenceCodeOrderTypeChannelsPage(
-					externalReferenceCode, Pagination.of(2, 2));
+					externalReferenceCode, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<OrderTypeChannel> orderTypeChannels2 =
 			(List<OrderTypeChannel>)page2.getItems();
@@ -326,12 +329,15 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 		Page<OrderTypeChannel> page3 =
 			orderTypeChannelResource.
 				getOrderTypeByExternalReferenceCodeOrderTypeChannelsPage(
-					externalReferenceCode, Pagination.of(1, 3));
+					externalReferenceCode,
+					Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				orderTypeChannel1, orderTypeChannel2, orderTypeChannel3),
-			(List<OrderTypeChannel>)page3.getItems());
+		assertContains(
+			orderTypeChannel1, (List<OrderTypeChannel>)page3.getItems());
+		assertContains(
+			orderTypeChannel2, (List<OrderTypeChannel>)page3.getItems());
+		assertContains(
+			orderTypeChannel3, (List<OrderTypeChannel>)page3.getItems());
 	}
 
 	protected OrderTypeChannel
@@ -391,7 +397,7 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 			orderTypeChannelResource.getOrderTypeIdOrderTypeChannelsPage(
 				id, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantId != null) {
 			OrderTypeChannel irrelevantOrderTypeChannel =
@@ -399,12 +405,13 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 					irrelevantId, randomIrrelevantOrderTypeChannel());
 
 			page = orderTypeChannelResource.getOrderTypeIdOrderTypeChannelsPage(
-				irrelevantId, null, Pagination.of(1, 2), null);
+				irrelevantId, null, Pagination.of(1, (int)totalCount + 1),
+				null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantOrderTypeChannel),
+			assertContains(
+				irrelevantOrderTypeChannel,
 				(List<OrderTypeChannel>)page.getItems());
 			assertValid(
 				page,
@@ -423,11 +430,12 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 		page = orderTypeChannelResource.getOrderTypeIdOrderTypeChannelsPage(
 			id, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(orderTypeChannel1, orderTypeChannel2),
-			(List<OrderTypeChannel>)page.getItems());
+		assertContains(
+			orderTypeChannel1, (List<OrderTypeChannel>)page.getItems());
+		assertContains(
+			orderTypeChannel2, (List<OrderTypeChannel>)page.getItems());
 		assertValid(
 			page,
 			testGetOrderTypeIdOrderTypeChannelsPage_getExpectedActions(id));
@@ -448,6 +456,13 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 
 		Long id = testGetOrderTypeIdOrderTypeChannelsPage_getId();
 
+		Page<OrderTypeChannel> orderTypeChannelPage =
+			orderTypeChannelResource.getOrderTypeIdOrderTypeChannelsPage(
+				id, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			orderTypeChannelPage.getTotalCount());
+
 		OrderTypeChannel orderTypeChannel1 =
 			testGetOrderTypeIdOrderTypeChannelsPage_addOrderTypeChannel(
 				id, randomOrderTypeChannel());
@@ -462,19 +477,20 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 
 		Page<OrderTypeChannel> page1 =
 			orderTypeChannelResource.getOrderTypeIdOrderTypeChannelsPage(
-				id, null, Pagination.of(1, 2), null);
+				id, null, Pagination.of(1, totalCount + 2), null);
 
 		List<OrderTypeChannel> orderTypeChannels1 =
 			(List<OrderTypeChannel>)page1.getItems();
 
 		Assert.assertEquals(
-			orderTypeChannels1.toString(), 2, orderTypeChannels1.size());
+			orderTypeChannels1.toString(), totalCount + 2,
+			orderTypeChannels1.size());
 
 		Page<OrderTypeChannel> page2 =
 			orderTypeChannelResource.getOrderTypeIdOrderTypeChannelsPage(
-				id, null, Pagination.of(2, 2), null);
+				id, null, Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<OrderTypeChannel> orderTypeChannels2 =
 			(List<OrderTypeChannel>)page2.getItems();
@@ -484,12 +500,14 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 
 		Page<OrderTypeChannel> page3 =
 			orderTypeChannelResource.getOrderTypeIdOrderTypeChannelsPage(
-				id, null, Pagination.of(1, 3), null);
+				id, null, Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				orderTypeChannel1, orderTypeChannel2, orderTypeChannel3),
-			(List<OrderTypeChannel>)page3.getItems());
+		assertContains(
+			orderTypeChannel1, (List<OrderTypeChannel>)page3.getItems());
+		assertContains(
+			orderTypeChannel2, (List<OrderTypeChannel>)page3.getItems());
+		assertContains(
+			orderTypeChannel3, (List<OrderTypeChannel>)page3.getItems());
 	}
 
 	@Test
@@ -617,24 +635,30 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 			testGetOrderTypeIdOrderTypeChannelsPage_addOrderTypeChannel(
 				id, orderTypeChannel2);
 
+		Page<OrderTypeChannel> page =
+			orderTypeChannelResource.getOrderTypeIdOrderTypeChannelsPage(
+				id, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<OrderTypeChannel> ascPage =
 				orderTypeChannelResource.getOrderTypeIdOrderTypeChannelsPage(
-					id, null, Pagination.of(1, 2),
+					id, null, Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(orderTypeChannel1, orderTypeChannel2),
-				(List<OrderTypeChannel>)ascPage.getItems());
+			assertContains(
+				orderTypeChannel1, (List<OrderTypeChannel>)ascPage.getItems());
+			assertContains(
+				orderTypeChannel2, (List<OrderTypeChannel>)ascPage.getItems());
 
 			Page<OrderTypeChannel> descPage =
 				orderTypeChannelResource.getOrderTypeIdOrderTypeChannelsPage(
-					id, null, Pagination.of(1, 2),
+					id, null, Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(orderTypeChannel2, orderTypeChannel1),
-				(List<OrderTypeChannel>)descPage.getItems());
+			assertContains(
+				orderTypeChannel2, (List<OrderTypeChannel>)descPage.getItems());
+			assertContains(
+				orderTypeChannel1, (List<OrderTypeChannel>)descPage.getItems());
 		}
 	}
 
@@ -864,14 +888,19 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1149,11 +1178,47 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 		}
 
 		if (entityFieldName.equals("channelExternalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					orderTypeChannel.getChannelExternalReferenceCode()));
-			sb.append("'");
+			Object object = orderTypeChannel.getChannelExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1169,11 +1234,48 @@ public abstract class BaseOrderTypeChannelResourceTestCase {
 		}
 
 		if (entityFieldName.equals("orderTypeExternalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					orderTypeChannel.getOrderTypeExternalReferenceCode()));
-			sb.append("'");
+			Object object =
+				orderTypeChannel.getOrderTypeExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

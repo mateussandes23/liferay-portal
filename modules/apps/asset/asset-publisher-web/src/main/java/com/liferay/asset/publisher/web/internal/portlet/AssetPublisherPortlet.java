@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.asset.publisher.web.internal.portlet;
@@ -25,7 +16,6 @@ import com.liferay.asset.list.service.AssetListEntrySegmentsEntryRelLocalService
 import com.liferay.asset.publisher.constants.AssetPublisherPortletKeys;
 import com.liferay.asset.publisher.constants.AssetPublisherWebKeys;
 import com.liferay.asset.publisher.util.AssetPublisherHelper;
-import com.liferay.asset.publisher.web.internal.action.AssetEntryActionRegistry;
 import com.liferay.asset.publisher.web.internal.configuration.AssetPublisherWebConfiguration;
 import com.liferay.asset.publisher.web.internal.display.context.AssetPublisherDisplayContext;
 import com.liferay.asset.publisher.web.internal.helper.AssetPublisherWebHelper;
@@ -286,8 +276,7 @@ public class AssetPublisherPortlet extends MVCPortlet {
 
 			AssetPublisherDisplayContext assetPublisherDisplayContext =
 				new AssetPublisherDisplayContext(
-					assetEntryActionRegistry, assetHelper,
-					assetListAssetEntryProvider,
+					assetHelper, assetListAssetEntryProvider,
 					assetListEntrySegmentsEntryRelLocalService,
 					assetPublisherCustomizerRegistry.
 						getAssetPublisherCustomizer(rootPortletId),
@@ -401,13 +390,12 @@ public class AssetPublisherPortlet extends MVCPortlet {
 			PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
 
 			if (portletDisplay != null) {
-				portletPreferences = portletDisplay.getPortletSetup();
+				portletPreferences = portletDisplay.getPortletPreferences();
 			}
 
 			AssetPublisherDisplayContext assetPublisherDisplayContext =
 				new AssetPublisherDisplayContext(
-					assetEntryActionRegistry, assetHelper,
-					assetListAssetEntryProvider,
+					assetHelper, assetListAssetEntryProvider,
 					assetListEntrySegmentsEntryRelLocalService,
 					assetPublisherCustomizerRegistry.
 						getAssetPublisherCustomizer(rootPortletId),
@@ -453,9 +441,6 @@ public class AssetPublisherPortlet extends MVCPortlet {
 
 		return false;
 	}
-
-	@Reference
-	protected AssetEntryActionRegistry assetEntryActionRegistry;
 
 	@Reference
 	protected AssetHelper assetHelper;

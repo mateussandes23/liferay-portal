@@ -1,7 +1,10 @@
 definition {
 
-	macro changeDisplayStyle {
-		WaitForPageLoad();
+	@summary = "Default summary"
+	macro changeDisplayStyle(displayStyle = null) {
+		if (IsElementNotPresent(locator1 = "//body[contains(@class,'dialog-iframe-popup')]")) {
+			WaitForPageLoad();
+		}
 
 		Click(locator1 = "Icon#CURRENT_DISPLAY_STYLE");
 
@@ -10,7 +13,13 @@ definition {
 		ManagementBar.viewDisplayStyle(displayStyle = ${displayStyle});
 	}
 
-	macro clickInfo {
+	@summary = "Default summary"
+	macro clearFilter() {
+		Click(locator1 = "ManagementBar#CLEAR_FILTER");
+	}
+
+	@summary = "Default summary"
+	macro clickInfo() {
 		if (IsElementPresent(locator1 = "Icon#INFO_DM")) {
 			Click.clickNoMouseOver(locator1 = "Icon#INFO_DM");
 		}
@@ -19,13 +28,15 @@ definition {
 		}
 	}
 
-	macro clickSelectAllCheckbox {
+	@summary = "Default summary"
+	macro clickSelectAllCheckbox() {
 		Click(locator1 = "Checkbox#LEXICON_SELECT_ALL_CONTAINER");
 
 		AssertChecked.assertCheckedNotVisible(locator1 = "Checkbox#LEXICON_SELECT_ALL_INPUT");
 	}
 
-	macro setFilterAndOrder {
+	@summary = "Default summary"
+	macro setFilterAndOrder(orderBy = null, filterBy = null) {
 		if (isSet(filterBy)) {
 			var menuItem = ${filterBy};
 		}
@@ -46,7 +57,37 @@ definition {
 		MenuItem.click(menuItem = ${menuItem});
 	}
 
-	macro toggleViewOrder {
+	@summary = "Default summary"
+	macro sortAssets(sortDirection = null) {
+		WaitForLiferayEvent.initializeLiferayEventLog();
+
+		WaitForVisible(
+			key_text = "order-list",
+			locator1 = "ManagementBar#ANY_ICON");
+
+		if (${sortDirection} == "Ascending") {
+			Click(
+				key_text = "order-list-down",
+				locator1 = "ManagementBar#ANY_ICON");
+
+			VerifyVisible(
+				key_text = "order-list-up",
+				locator1 = "ManagementBar#ANY_ICON");
+		}
+
+		if (${sortDirection} == "Descending") {
+			Click(
+				key_text = "order-list-up",
+				locator1 = "ManagementBar#ANY_ICON");
+
+			VerifyVisible(
+				key_text = "order-list-down",
+				locator1 = "ManagementBar#ANY_ICON");
+		}
+	}
+
+	@summary = "Default summary"
+	macro toggleViewOrder(order = null) {
 		if (isSet(order)) {
 			Click.clickNoMouseOver(
 				key_order = ${order},
@@ -61,7 +102,8 @@ definition {
 		}
 	}
 
-	macro viewDisplayStyle {
+	@summary = "Default summary"
+	macro viewDisplayStyle(displayStyle = null) {
 		var displayStyleKey = StringUtil.lowerCaseFirstLetter(${displayStyle});
 
 		AssertVisible(
@@ -69,7 +111,8 @@ definition {
 			locator1 = "Icon#CURRENT_DISPLAY_STYLE_ACTIVE");
 	}
 
-	macro viewFilterAndOrder {
+	@summary = "Default summary"
+	macro viewFilterAndOrder(menuItem = null) {
 		Click(locator1 = "ManagementBar#FILTER_AND_ORDER");
 
 		AssertElementPresent(
@@ -77,7 +120,8 @@ definition {
 			locator1 = "ManagementBar#FILTER_AND_ORDER_ACTIVE_ITEM");
 	}
 
-	macro viewFilterAndOrderItem {
+	@summary = "Default summary"
+	macro viewFilterAndOrderItem(menuItem = null) {
 		Click(locator1 = "ManagementBar#FILTER_AND_ORDER");
 
 		AssertElementPresent(
@@ -85,7 +129,8 @@ definition {
 			locator1 = "ManagementBar#FILTER_AND_ORDER_ITEM");
 	}
 
-	macro viewFilterAndOrderNoItem {
+	@summary = "Default summary"
+	macro viewFilterAndOrderNoItem(menuItem = null) {
 		Click(locator1 = "ManagementBar#FILTER_AND_ORDER");
 
 		AssertElementNotPresent(
@@ -93,7 +138,8 @@ definition {
 			locator1 = "ManagementBar#FILTER_AND_ORDER_ITEM");
 	}
 
-	macro viewFilterAndOrderSelectedItem {
+	@summary = "Default summary"
+	macro viewFilterAndOrderSelectedItem(menuItem = null) {
 		Click(locator1 = "ManagementBar#FILTER_AND_ORDER");
 
 		AssertElementPresent(
@@ -101,7 +147,8 @@ definition {
 			locator1 = "ManagementBar#FILTER_AND_ORDER_ITEM_SELECTED");
 	}
 
-	macro viewItemsDisabled {
+	@summary = "Default summary"
+	macro viewItemsDisabled(textList = null) {
 		for (var text : list ${textList}) {
 			AssertElementPresent(
 				key_text = ${text},
@@ -109,7 +156,8 @@ definition {
 		}
 	}
 
-	macro viewNoItems {
+	@summary = "Default summary"
+	macro viewNoItems(textList = null) {
 		for (var text : list ${textList}) {
 			AssertElementNotPresent(
 				key_text = ${text},
@@ -117,7 +165,8 @@ definition {
 		}
 	}
 
-	macro viewNoSubheaderInFilterAndOrder {
+	@summary = "Default summary"
+	macro viewNoSubheaderInFilterAndOrder(subheaderItem = null) {
 		Click(locator1 = "ManagementBar#FILTER_AND_ORDER");
 
 		AssertElementNotPresent(
@@ -125,7 +174,8 @@ definition {
 			locator1 = "ManagementBar#FILTER_AND_ORDER_SUBHEADER");
 	}
 
-	macro viewNumberOfSelectedItems {
+	@summary = "Default summary"
+	macro viewNumberOfSelectedItems(text = null) {
 		AssertTextEquals(
 			locator1 = "ManagementBar#NAVBAR_TEXT",
 			value1 = ${text});

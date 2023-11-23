@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.roles.service.test;
@@ -108,11 +99,27 @@ public class RoleLocalServiceTest {
 			_resourcePermission);
 	}
 
-	@Test(expected = RoleNameException.class)
-	public void testAddRoleWithPlaceholderName() throws Exception {
-		RoleTestUtil.addRole(
-			RoleConstants.PLACEHOLDER_DEFAULT_GROUP_ROLE,
-			RoleConstants.TYPE_REGULAR);
+	@Test
+	public void testAddRole() throws Exception {
+		try {
+			RoleTestUtil.addRole(
+				RoleConstants.PLACEHOLDER_DEFAULT_GROUP_ROLE,
+				RoleConstants.TYPE_REGULAR);
+
+			Assert.fail();
+		}
+		catch (RoleNameException roleNameException) {
+			Assert.assertNotNull(roleNameException);
+		}
+
+		_role = _roleLocalService.addRole(
+			TestPropsValues.getUserId(), null, 0, RandomTestUtil.randomString(),
+			null,
+			Collections.singletonMap(
+				LocaleUtil.US, RandomTestUtil.randomString(4001)),
+			RoleConstants.TYPE_REGULAR, null, null);
+
+		Assert.assertNotNull(_role);
 	}
 
 	@Test
@@ -126,7 +133,7 @@ public class RoleLocalServiceTest {
 		typeSettingsUnicodeProperties.setProperty(
 			"defaultSiteRoleIds", String.valueOf(_role.getRoleId()));
 
-		_groupLocalService.updateGroup(_group);
+		_group = _groupLocalService.updateGroup(_group);
 
 		_roleLocalService.deleteRole(_role);
 
@@ -276,6 +283,7 @@ public class RoleLocalServiceTest {
 				if (excludedRoleNames.contains(role.getName()) ||
 					(role.getType() == RoleConstants.TYPE_ACCOUNT) ||
 					(role.getType() == RoleConstants.TYPE_DEPOT) ||
+					(role.getType() == RoleConstants.TYPE_PUBLICATIONS) ||
 					(role.getType() == RoleConstants.TYPE_SITE)) {
 
 					return false;

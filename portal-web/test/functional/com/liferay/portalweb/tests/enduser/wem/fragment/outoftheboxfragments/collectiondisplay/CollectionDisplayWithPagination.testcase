@@ -1,6 +1,7 @@
 @component-name = "portal-wcm"
 definition {
 
+	property ci.retries.disabled = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Fragments";
@@ -21,17 +22,6 @@ definition {
 				groupName = "Test Site Name",
 				layoutName = "Test Page Name",
 				type = "content");
-		}
-	}
-
-	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
-
-		if (${testPortalInstance} == "true") {
-			PortalInstances.tearDownCP();
-		}
-		else {
-			JSONGroup.deleteGroupByName(groupName = "Test Site Name");
 		}
 	}
 
@@ -336,11 +326,13 @@ definition {
 	test NavigateToPagesInCollectionDisplayWithNumericPagination {
 		property portal.acceptance = "true";
 
+		var groupId = JSONGroupSetter.setGroupId(groupName = "Test Site Name");
+
 		task ("Add 5 web contents") {
 			for (var i : list "1,2,3,4,5") {
-				JSONWebcontent.addWebContent(
+				HeadlessWebcontent.addBasicWebContent(
 					content = "Web Content Content ${i}",
-					groupName = "Test Site Name",
+					groupId = ${groupId},
 					title = "Web Content Title ${i}");
 			}
 		}
@@ -349,26 +341,26 @@ definition {
 			for (var i : list "1,2,3,4,5") {
 				HeadlessBlog.addBlogEntry(
 					content = "Blogs Entry Content ${i}",
-					groupName = "Test Site Name",
+					groupId = ${groupId},
 					title = "Blogs Entry Title ${i}");
 			}
 		}
 
 		task ("Add 5 document entries") {
 			for (var i : list "1,2,3,4,5") {
-				JSONDocument.addFileWithUploadedFile(
+				DocumentAPI.addDocumentWithFileInSite(
 					dmDocumentTitle = "Document Title ${i}",
-					groupName = "Test Site Name",
-					mimeType = "text/plain",
+					siteId = ${groupId},
 					sourceFileName = "Document_${i}.txt");
 			}
 		}
 
 		task ("Add a dynamic collection for All Types") {
-			JSONAssetlist.addDynamicAssetListEntryWithItemType(
-				groupName = "Test Site Name",
-				itemType = "All Types",
-				title = "Dynamic Collection");
+			AssetListsAdmin.openAssetListsAdmin(siteURLKey = "test-site-name");
+
+			AssetListsAdmin.addDynamicSelection(assetListTitle = "Dynamic Collection");
+
+			AssetListsAdmin.configureItemTypeInDynamicCollection(itemType = "All Types");
 		}
 
 		task ("Add a Collection Display to page") {
@@ -404,34 +396,22 @@ definition {
 		}
 
 		task ("View all assets shown in Collection Display") {
-			var n = 1;
-
 			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewCollectionItem(
-					assetTitle = "Document Title ${i}",
-					row = ${n});
-
-				var n = ${n} + 1;
+				AssertVisible(
+					key_entryTitle = "Document Title ${i}",
+					locator1 = "PageEditor#COLLECTION_CELL");
 			}
 
-			var n = 6;
-
 			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewCollectionItem(
-					assetTitle = "Blogs Entry Title ${i}",
-					row = ${n});
-
-				var n = ${n} + 1;
+				AssertVisible(
+					key_entryTitle = "Blogs Entry Title ${i}",
+					locator1 = "PageEditor#COLLECTION_CELL");
 			}
 
-			var n = 11;
-
 			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewCollectionItem(
-					assetTitle = "Web Content Title ${i}",
-					row = ${n});
-
-				var n = ${n} + 1;
+				AssertVisible(
+					key_entryTitle = "Web Content Title ${i}",
+					locator1 = "PageEditor#COLLECTION_CELL");
 			}
 		}
 
@@ -464,21 +444,14 @@ definition {
 		}
 
 		task ("View only the 5 documents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewCollectionItem(
-					assetTitle = "Document Title ${i}",
-					row = ${n});
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_entryTitle = "Document Title",
+				locator1 = "PageEditor#COLLECTION_CELL");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
-				key_fragmentName = "heading",
 				key_rowPosition = 6,
-				locator1 = "Fragment#CONTRIBUTED_FRAGMENT_INLINE_CONTENT_IN_COLLECTION_DISPLAY");
+				locator1 = "PageEditor#COLLECTION_ITEM");
 		}
 
 		task ("Add a Heading fragment into Collection Display") {
@@ -496,23 +469,15 @@ definition {
 		}
 
 		task ("Navigate to page 3 in Collection Display") {
-			Click(
+			Click.waitForMenuToggleJSClick(
 				key_pageNumber = 3,
 				locator1 = "Pagination#ANY_PAGE");
 		}
 
 		task ("View only the 5 web contents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewFragmentEditableText(
-					editableText = "Web Content Title ${i}",
-					fragmentName = "Heading",
-					id = "element-text",
-					position = ${n});
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Web Content Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -522,23 +487,15 @@ definition {
 		}
 
 		task ("Navigate to previous page in Collection Display") {
-			Click(
+			Click.waitForMenuToggleJSClick(
 				locator1 = "Pagination#ICON",
 				type = "angle-left");
 		}
 
 		task ("View only the 5 blogs entries shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewFragmentEditableText(
-					editableText = "Blogs Entry Title ${i}",
-					fragmentName = "Heading",
-					id = "element-text",
-					position = ${n});
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Blogs Entry Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -552,17 +509,9 @@ definition {
 		}
 
 		task ("View only the 5 documents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Document Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Document Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -572,23 +521,15 @@ definition {
 		}
 
 		task ("Navigate to page 2 in Collection Display") {
-			Click(
+			Click.waitForMenuToggleJSClick(
 				key_pageNumber = 2,
 				locator1 = "Pagination#ANY_PAGE");
 		}
 
 		task ("View only the 5 blogs entries shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Blogs Entry Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Blogs Entry Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -598,23 +539,15 @@ definition {
 		}
 
 		task ("Navigate to next page in Collection Display") {
-			Click(
+			Click.waitForMenuToggleJSClick(
 				locator1 = "Pagination#ICON",
 				type = "angle-right");
 		}
 
 		task ("View only the 5 web contents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Web Content Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Web Content Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -634,17 +567,9 @@ definition {
 		}
 
 		task ("View only the 5 documents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Document Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Document Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -654,23 +579,15 @@ definition {
 		}
 
 		task ("Navigate to page 3 in Collection Display") {
-			Click(
+			Click.waitForMenuToggleJSClick(
 				key_pageNumber = 3,
 				locator1 = "Pagination#ANY_PAGE");
 		}
 
 		task ("View only the 5 web contents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Web Content Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Web Content Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -680,23 +597,15 @@ definition {
 		}
 
 		task ("Navigate to previous page in Collection Display") {
-			Click(
+			Click.waitForMenuToggleJSClick(
 				locator1 = "Pagination#ICON",
 				type = "angle-left");
 		}
 
 		task ("View only the 5 blogs entries shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Blogs Entry Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Blogs Entry Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -712,11 +621,13 @@ definition {
 	test NavigateToPagesInCollectionDisplayWithSimplePagination {
 		property portal.acceptance = "true";
 
+		var groupId = JSONGroupSetter.setGroupId(groupName = "Test Site Name");
+
 		task ("Add 5 web contents") {
 			for (var i : list "1,2,3,4,5") {
-				JSONWebcontent.addWebContent(
+				HeadlessWebcontent.addBasicWebContent(
 					content = "Web Content Content ${i}",
-					groupName = "Test Site Name",
+					groupId = ${groupId},
 					title = "Web Content Title ${i}");
 			}
 		}
@@ -725,26 +636,26 @@ definition {
 			for (var i : list "1,2,3,4,5") {
 				HeadlessBlog.addBlogEntry(
 					content = "Blogs Entry Content ${i}",
-					groupName = "Test Site Name",
+					groupId = ${groupId},
 					title = "Blogs Entry Title ${i}");
 			}
 		}
 
 		task ("Add 5 document entries") {
 			for (var i : list "1,2,3,4,5") {
-				JSONDocument.addFileWithUploadedFile(
+				DocumentAPI.addDocumentWithFileInSite(
 					dmDocumentTitle = "Document Title ${i}",
-					groupName = "Test Site Name",
-					mimeType = "text/plain",
+					siteId = ${groupId},
 					sourceFileName = "Document_${i}.txt");
 			}
 		}
 
 		task ("Add a dynamic collection for All Types") {
-			JSONAssetlist.addDynamicAssetListEntryWithItemType(
-				groupName = "Test Site Name",
-				itemType = "All Types",
-				title = "Dynamic Collection");
+			AssetListsAdmin.openAssetListsAdmin(siteURLKey = "test-site-name");
+
+			AssetListsAdmin.addDynamicSelection(assetListTitle = "Dynamic Collection");
+
+			AssetListsAdmin.configureItemTypeInDynamicCollection(itemType = "All Types");
 		}
 
 		task ("Add a Collection Display to page") {
@@ -805,40 +716,22 @@ definition {
 		}
 
 		task ("View all assets shown in Collection Display") {
-			var n = 1;
-
 			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewFragmentEditableText(
-					editableText = "Document Title ${i}",
-					fragmentName = "Heading",
-					id = "element-text",
-					position = ${n});
-
-				var n = ${n} + 1;
+				AssertVisible(
+					key_text = "Document Title ${i}",
+					locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 			}
 
-			var n = 6;
-
 			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewFragmentEditableText(
-					editableText = "Blogs Entry Title ${i}",
-					fragmentName = "Heading",
-					id = "element-text",
-					position = ${n});
-
-				var n = ${n} + 1;
+				AssertVisible(
+					key_text = "Blogs Entry Title ${i}",
+					locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 			}
 
-			var n = 11;
-
 			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewFragmentEditableText(
-					editableText = "Web Content Title ${i}",
-					fragmentName = "Heading",
-					id = "element-text",
-					position = ${n});
-
-				var n = ${n} + 1;
+				AssertVisible(
+					key_text = "Web Content Title ${i}",
+					locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 			}
 		}
 
@@ -859,17 +752,9 @@ definition {
 		}
 
 		task ("View only the 5 documents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewFragmentEditableText(
-					editableText = "Document Title ${i}",
-					fragmentName = "Heading",
-					id = "element-text",
-					position = ${n});
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Document Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -885,17 +770,9 @@ definition {
 		}
 
 		task ("View only the 5 blogs entries shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewFragmentEditableText(
-					editableText = "Blogs Entry Title ${i}",
-					fragmentName = "Heading",
-					id = "element-text",
-					position = ${n});
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Blogs Entry Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -911,17 +788,9 @@ definition {
 		}
 
 		task ("View only the 5 web contents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				PageEditor.viewFragmentEditableText(
-					editableText = "Web Content Title ${i}",
-					fragmentName = "Heading",
-					id = "element-text",
-					position = ${n});
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Web Content Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -935,17 +804,9 @@ definition {
 		}
 
 		task ("View only the 5 documents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Document Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Document Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -961,17 +822,9 @@ definition {
 		}
 
 		task ("View only the 5 blogs entries shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Blogs Entry Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Blogs Entry Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -987,17 +840,9 @@ definition {
 		}
 
 		task ("View only the 5 web contents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Web Content Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Web Content Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -1017,17 +862,9 @@ definition {
 		}
 
 		task ("View only the 5 documents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Document Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Document Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -1043,17 +880,9 @@ definition {
 		}
 
 		task ("View only the 5 blogs entries shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Blogs Entry Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Blogs Entry Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -1069,17 +898,9 @@ definition {
 		}
 
 		task ("View only the 5 web contents shown in current page of Collection Display") {
-			var n = 1;
-
-			for (var i : list "5,4,3,2,1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = "Web Content Title ${i}");
-
-				var n = ${n} + 1;
-			}
+			AssertVisible(
+				key_text = "Web Content Title",
+				locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 
 			AssertElementNotPresent(
 				key_colPosition = 1,
@@ -1242,8 +1063,8 @@ definition {
 			task ("View warning message shown below the Maximum Number of Items to Display field") {
 				AssertTextEquals(
 					fieldLabel = "Maximum Number of Items to Display",
-					locator1 = "Message#SUBTITLE_WITH_LABEL",
-					value1 = "Setting a value above 200 can affect page performance severely.");
+					locator1 = "Message#WARNING_WITH_LABEL",
+					value1 = "This collection has 1 items.");
 			}
 		}
 	}

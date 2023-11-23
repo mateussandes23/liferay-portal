@@ -3,7 +3,7 @@
 		{
 			"DBType": "String",
 			"businessType": "Picklist",
-			"defaultValue": "awaitingApprovalOnEvp",
+			"defaultValue": "awaitingApprovalOnEVP",
 			"externalReferenceCode": "EVP-ORGANIZATION-STATUS-DEFAULT",
 			"indexed": true,
 			"indexedAsKeyword": false,
@@ -22,27 +22,10 @@
 								"key": "rejected",
 								"objectStateTransitions": [
 									{
-										"key": "awaitingApprovalOnEvp"
+										"key": "awaitingApprovalOnEVP"
 									},
 									{
-										"key": "awaitingFinanceReview"
-									},
-									{
-										"key": "awaitingMoreInfoFromEmployee"
-									},
-									{
-										"key": "verified"
-									}
-								]
-							},
-							{
-								"key": "awaitingApprovalOnEvp",
-								"objectStateTransitions": [
-									{
-										"key": "rejected"
-									},
-									{
-										"key": "awaitingFinanceReview"
+										"key": "awaitingFinanceApproval"
 									},
 									{
 										"key": "awaitingMoreInfoFromEmployee"
@@ -53,13 +36,30 @@
 								]
 							},
 							{
-								"key": "awaitingFinanceReview",
+								"key": "awaitingApprovalOnEVP",
 								"objectStateTransitions": [
 									{
 										"key": "rejected"
 									},
 									{
-										"key": "awaitingApprovalOnEvp"
+										"key": "awaitingFinanceApproval"
+									},
+									{
+										"key": "awaitingMoreInfoFromEmployee"
+									},
+									{
+										"key": "verified"
+									}
+								]
+							},
+							{
+								"key": "awaitingFinanceApproval",
+								"objectStateTransitions": [
+									{
+										"key": "rejected"
+									},
+									{
+										"key": "awaitingApprovalOnEVP"
 									},
 									{
 										"key": "awaitingMoreInfoFromEmployee"
@@ -76,10 +76,10 @@
 										"key": "rejected"
 									},
 									{
-										"key": "awaitingApprovalOnEvp"
+										"key": "awaitingApprovalOnEVP"
 									},
 									{
-										"key": "awaitingFinanceReview"
+										"key": "awaitingFinanceApproval"
 									},
 									{
 										"key": "verified"
@@ -93,10 +93,10 @@
 										"key": "rejected"
 									},
 									{
-										"key": "awaitingApprovalOnEvp"
+										"key": "awaitingApprovalOnEVP"
 									},
 									{
-										"key": "awaitingFinanceReview"
+										"key": "awaitingFinanceApproval"
 									},
 									{
 										"key": "awaitingMoreInfoFromEmployee"

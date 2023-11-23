@@ -20,7 +20,7 @@ exports[`Workspaces should render a list of projects if there is only one projec
             role="presentation"
           >
             <use
-              xlink:href="#liferay-logo"
+              href="#liferay-logo"
             />
           </svg>
         </a>
@@ -47,7 +47,7 @@ exports[`Workspaces should render a list of projects if there is only one projec
                 role="presentation"
               >
                 <use
-                  xlink:href="#caret-bottom"
+                  href="#caret-bottom"
                 />
               </svg>
             </div>
@@ -71,7 +71,7 @@ exports[`Workspaces should render a list of projects if there is only one projec
                 role="presentation"
               >
                 <use
-                  xlink:href="#ac-logo"
+                  href="#ac-logo"
                 />
               </svg>
               <span
@@ -138,11 +138,11 @@ exports[`Workspaces should render a list of projects if there is only one projec
                         </div>
                       </div>
                       <svg
-                        class="lexicon-icon lexicon-icon-angle-right icon-root"
+                        class="lexicon-icon lexicon-icon-angle-right-small icon-root"
                         role="presentation"
                       >
                         <use
-                          xlink:href="#angle-right"
+                          href="#angle-right-small"
                         />
                       </svg>
                     </div>
@@ -194,7 +194,7 @@ exports[`Workspaces should render empty state 1`] = `
             role="presentation"
           >
             <use
-              xlink:href="#liferay-logo"
+              href="#liferay-logo"
             />
           </svg>
         </a>
@@ -221,7 +221,7 @@ exports[`Workspaces should render empty state 1`] = `
                 role="presentation"
               >
                 <use
-                  xlink:href="#caret-bottom"
+                  href="#caret-bottom"
                 />
               </svg>
             </div>
@@ -245,7 +245,7 @@ exports[`Workspaces should render empty state 1`] = `
                 role="presentation"
               >
                 <use
-                  xlink:href="#ac-logo"
+                  href="#ac-logo"
                 />
               </svg>
               <span
@@ -281,14 +281,14 @@ exports[`Workspaces should render empty state 1`] = `
                   role="presentation"
                 >
                   <use
-                    xlink:href="#ac-integration"
+                    href="#ac-integration"
                   />
                 </svg>
                 <p>
                   Do more with our Business & Enterprise Plans
                 </p>
                 <button
-                  class="btn btn-secondary"
+                  class="btn btn-primary"
                   type="button"
                 >
                   Contact Sales
@@ -306,19 +306,18 @@ exports[`Workspaces should render empty state 1`] = `
                   role="presentation"
                 >
                   <use
-                    xlink:href="#ac-page-analytics"
+                    href="#ac-page-analytics"
                   />
                 </svg>
                 <p>
                   90 Day Full Feature Trial
                 </p>
-                <button
+                <a
                   class="btn btn-secondary"
                   href="/workspace/add/trial"
-                  type="button"
                 >
                   Start Free Trial
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -349,7 +348,7 @@ exports[`Workspaces should render with a message that all basic tier plans have 
             role="presentation"
           >
             <use
-              xlink:href="#liferay-logo"
+              href="#liferay-logo"
             />
           </svg>
         </a>
@@ -376,7 +375,7 @@ exports[`Workspaces should render with a message that all basic tier plans have 
                 role="presentation"
               >
                 <use
-                  xlink:href="#caret-bottom"
+                  href="#caret-bottom"
                 />
               </svg>
             </div>
@@ -400,7 +399,7 @@ exports[`Workspaces should render with a message that all basic tier plans have 
                 role="presentation"
               >
                 <use
-                  xlink:href="#ac-logo"
+                  href="#ac-logo"
                 />
               </svg>
               <span
@@ -467,11 +466,11 @@ exports[`Workspaces should render with a message that all basic tier plans have 
                         </div>
                       </div>
                       <svg
-                        class="lexicon-icon lexicon-icon-angle-right icon-root"
+                        class="lexicon-icon lexicon-icon-angle-right-small icon-root"
                         role="presentation"
                       >
                         <use
-                          xlink:href="#angle-right"
+                          href="#angle-right-small"
                         />
                       </svg>
                     </div>
@@ -517,11 +516,11 @@ exports[`Workspaces should render with a message that all basic tier plans have 
                         </div>
                       </div>
                       <svg
-                        class="lexicon-icon lexicon-icon-angle-right icon-root"
+                        class="lexicon-icon lexicon-icon-angle-right-small icon-root"
                         role="presentation"
                       >
                         <use
-                          xlink:href="#angle-right"
+                          href="#angle-right-small"
                         />
                       </svg>
                     </div>
@@ -573,7 +572,7 @@ exports[`Workspaces should render with a message that one or more basic tier wor
             role="presentation"
           >
             <use
-              xlink:href="#liferay-logo"
+              href="#liferay-logo"
             />
           </svg>
         </a>
@@ -600,7 +599,7 @@ exports[`Workspaces should render with a message that one or more basic tier wor
                 role="presentation"
               >
                 <use
-                  xlink:href="#caret-bottom"
+                  href="#caret-bottom"
                 />
               </svg>
             </div>
@@ -624,7 +623,7 @@ exports[`Workspaces should render with a message that one or more basic tier wor
                 role="presentation"
               >
                 <use
-                  xlink:href="#ac-logo"
+                  href="#ac-logo"
                 />
               </svg>
               <span
@@ -691,11 +690,11 @@ exports[`Workspaces should render with a message that one or more basic tier wor
                         </div>
                       </div>
                       <svg
-                        class="lexicon-icon lexicon-icon-angle-right icon-root"
+                        class="lexicon-icon lexicon-icon-angle-right-small icon-root"
                         role="presentation"
                       >
                         <use
-                          xlink:href="#angle-right"
+                          href="#angle-right-small"
                         />
                       </svg>
                     </div>
@@ -741,11 +740,11 @@ exports[`Workspaces should render with a message that one or more basic tier wor
                         </div>
                       </div>
                       <svg
-                        class="lexicon-icon lexicon-icon-angle-right icon-root"
+                        class="lexicon-icon lexicon-icon-angle-right-small icon-root"
                         role="presentation"
                       >
                         <use
-                          xlink:href="#angle-right"
+                          href="#angle-right-small"
                         />
                       </svg>
                     </div>

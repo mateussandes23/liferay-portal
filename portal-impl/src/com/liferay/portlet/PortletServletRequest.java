@@ -1,24 +1,18 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portlet;
 
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.portlet.LiferayPortletRequest;
 import com.liferay.portal.kernel.servlet.HttpMethods;
 import com.liferay.portal.kernel.servlet.ServletInputStreamAdapter;
+import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
+import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portlet.internal.PortletRequestDispatcherImpl;
 
@@ -28,6 +22,7 @@ import java.io.UnsupportedEncodingException;
 
 import java.security.Principal;
 
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
@@ -188,7 +183,25 @@ public class PortletServletRequest extends HttpServletRequestWrapper {
 			return -1;
 		}
 
-		return GetterUtil.getLongStrict(getHeader(name));
+		long result = GetterUtil.getLong(header, -1);
+
+		if (result > 0) {
+			return result;
+		}
+
+		Date date = GetterUtil.getDate(
+			header,
+			DateFormatFactoryUtil.getSimpleDateFormat(Time.RFC822_FORMAT),
+			null);
+
+		if (date == null) {
+			throw new IllegalArgumentException(
+				StringBundler.concat(
+					"Unable to convert \"", name, "\" header value \"", header,
+					"\" to a date"));
+		}
+
+		return date.getTime();
 	}
 
 	@Override

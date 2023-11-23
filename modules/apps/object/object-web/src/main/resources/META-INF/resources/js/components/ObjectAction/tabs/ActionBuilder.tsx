@@ -1,38 +1,32 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayAlert from '@clayui/alert';
+import {Option, Text} from '@clayui/core';
 import {
 	Card,
-	CustomItem,
-	InputLocalized,
 	SidebarCategory,
 	SingleSelect,
 	invalidateRequired,
 } from '@liferay/object-js-components-web';
+import {InputLocalized} from 'frontend-js-components-web';
 import React, {useEffect, useMemo, useState} from 'react';
 
 import {defaultLanguageId} from '../../../utils/constants';
 import {ActionError} from '../index';
 import {ActionContainer} from './ActionContainer/ActionContainer';
 import {ConditionContainer} from './ConditionContainer';
+
+import './ActionBuilder.scss';
+
 interface ActionBuilderProps {
 	errors: ActionError;
 	isApproved: boolean;
 	objectActionCodeEditorElements: SidebarCategory[];
-	objectActionExecutors: CustomItem[];
-	objectActionTriggers: CustomItem[];
+	objectActionExecutors: ObjectActionTriggerExecutorItem[];
+	objectActionTriggers: ObjectActionTriggerExecutorItem[];
 	objectDefinitionExternalReferenceCode: string;
 	objectDefinitionId: number;
 	objectDefinitionsRelationshipsURL: string;
@@ -53,6 +47,7 @@ const triggerKeys = [
 	'onAfterAdd',
 	'onAfterAttachmentDownload',
 	'onAfterDelete',
+	'onAfterRootUpdate',
 	'onAfterUpdate',
 ];
 
@@ -71,7 +66,7 @@ export default function ActionBuilder({
 	values,
 }: ActionBuilderProps) {
 	const [newObjectActionExecutors, setNewObjectActionExecutors] = useState<
-		CustomItem[]
+		ObjectActionTriggerExecutorItem[]
 	>(objectActionExecutors);
 
 	const [infoAlert, setInfoAlert] = useState(true);
@@ -87,16 +82,6 @@ export default function ActionBuilder({
 	] = useState<ObjectField[]>([]);
 
 	const [errorAlert, setErrorAlert] = useState(false);
-
-	const actionTriggers = useMemo(() => {
-		const triggers = new Map<string, string>();
-
-		objectActionTriggers.forEach(({label, value}) => {
-			value && triggers.set(value, label);
-		});
-
-		return triggers;
-	}, [objectActionTriggers]);
 
 	const objectFieldsMap = useMemo(() => {
 		const fields = new Map<string, ObjectField>();
@@ -252,20 +237,36 @@ export default function ActionBuilder({
 					viewMode="inline"
 				>
 					<SingleSelect
-						disabled={isApproved}
+						disabled={isApproved || values.system}
 						error={errors.objectActionTriggerKey}
-						onChange={({value}) =>
+						items={objectActionTriggers}
+						onSelectionChange={(value) =>
 							setValues({
 								conditionExpression: undefined,
-								objectActionTriggerKey: value,
+								objectActionTriggerKey: value as string,
 							})
 						}
-						options={objectActionTriggers}
 						placeholder={Liferay.Language.get('choose-a-trigger')}
-						value={actionTriggers.get(
-							values.objectActionTriggerKey ?? ''
+						selectedKey={values.objectActionTriggerKey}
+					>
+						{(item) => (
+							<Option key={item.value} textValue={item.label}>
+								<div className="lfr-objects__object-action-builder-when-option">
+									<Text size={3} weight="semi-bold">
+										{item.label}
+									</Text>
+
+									<Text
+										aria-hidden
+										color="secondary"
+										size={2}
+									>
+										{item.description}
+									</Text>
+								</div>
+							</Option>
 						)}
-					/>
+					</SingleSelect>
 				</Card>
 			</Card>
 
@@ -331,6 +332,7 @@ export default function ActionBuilder({
 			{values.objectActionTriggerKey === 'standalone' && (
 				<Card title={Liferay.Language.get('error-message')}>
 					<InputLocalized
+						disabled={values.system}
 						error={errors.errorMessage}
 						label={Liferay.Language.get('message')}
 						name="label"

@@ -31,9 +31,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -43,7 +43,7 @@ definition {
 		}
 	}
 
-	@description = "Assert alignment options with an image"
+	@description = "LPS-121553. Assert alignment options with an image"
 	@priority = 4
 	@refactordone
 	test CanAlignImage {
@@ -57,9 +57,9 @@ definition {
 			AssertElementPresent(locator1 = "CKEditorBalloonEditorSample#IMAGE");
 
 			AssertAttributeValue(
-				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#IMAGE",
-				value1 = "float: right;");
+				value1 = "style",
+				value2 = "float: right;");
 
 			takeScreenshot();
 		}
@@ -68,9 +68,9 @@ definition {
 			Click(locator1 = "CKEditor#ALIGN_IMG_LEFT_BUTTON");
 
 			AssertAttributeValue(
-				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#IMAGE",
-				value1 = "float: left;");
+				value1 = "style",
+				value2 = "float: left;");
 
 			takeScreenshot();
 		}
@@ -79,15 +79,15 @@ definition {
 			Click(locator1 = "CKEditor#ALIGN_IMG_CENTER_BUTTON");
 
 			AssertAttributeValue(
-				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#IMAGE_PARAGRAPH",
-				value1 = "text-align: center;");
+				value1 = "style",
+				value2 = "text-align: center;");
 
 			takeScreenshot();
 		}
 	}
 
-	@description = "Assert alignment options with a video"
+	@description = "LPS-121553. Assert alignment options with a video"
 	@priority = 4
 	@refactordone
 	test CanAlignVideo {
@@ -107,9 +107,9 @@ definition {
 			Click(locator1 = "CKEditor#ALIGN_IMG_RIGHT_BUTTON");
 
 			AssertAttributeValue(
-				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#VIDEO",
-				value1 = "width: 100%; float: right;");
+				value1 = "style",
+				value2 = "width: 100%; float: right;");
 
 			takeScreenshot();
 		}
@@ -118,9 +118,9 @@ definition {
 			Click(locator1 = "CKEditor#ALIGN_IMG_LEFT_BUTTON");
 
 			AssertAttributeValue(
-				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#VIDEO",
-				value1 = "width: 100%; float: left;");
+				value1 = "style",
+				value2 = "width: 100%; float: left;");
 
 			takeScreenshot();
 		}
@@ -129,15 +129,15 @@ definition {
 			Click(locator1 = "CKEditor#ALIGN_IMG_CENTER_BUTTON");
 
 			AssertAttributeValue(
-				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#VIDEO",
-				value1 = "width: 100%; display: block; margin-left: auto; margin-right: auto;");
+				value1 = "style",
+				value2 = "width: 100%; display: block; margin-left: auto; margin-right: auto;");
 
 			takeScreenshot();
 		}
 	}
 
-	@description = "Assert toolbar with hyperlink icon is present"
+	@description = "LPS-121553. Assert toolbar with hyperlink icon is present"
 	@priority = 4
 	@refactordone
 	test CanEditHyperlink {
@@ -182,7 +182,7 @@ definition {
 		}
 	}
 
-	@description = "Assert table option enabled in the toolbar"
+	@description = "LPS-121553. Assert table option enabled in the toolbar"
 	@priority = 4
 	@refactordone
 	test CanEditTable {
@@ -227,7 +227,7 @@ definition {
 		}
 	}
 
-	@description = "Assert text edition enabled in the table"
+	@description = "LPS-121553. Assert text edition enabled in the table"
 	@priority = 4
 	@refactordone
 	test CanEditTextInTable {
@@ -254,7 +254,7 @@ definition {
 		}
 	}
 
-	@description = "Assert text edit function (bold, italic, underline, numbered/bulleted list, block styles)"
+	@description = "LPS-121553. Assert text edit function (bold, italic, underline, numbered/bulleted list, block styles)"
 	@priority = 5
 	@refactordone
 	test CanFormatText {
@@ -351,10 +351,10 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Center");
 
 			AssertAttributeValue(
-				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
 				paragraph_number = 1,
-				value1 = "text-align: center;");
+				value1 = "style",
+				value2 = "text-align: center;");
 
 			takeScreenshot();
 		}
@@ -365,10 +365,10 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Align Right");
 
 			AssertAttributeValue(
-				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
 				paragraph_number = 1,
-				value1 = "text-align: right;");
+				value1 = "style",
+				value2 = "text-align: right;");
 
 			takeScreenshot();
 		}
@@ -379,10 +379,10 @@ definition {
 			BalloonEditor.toggleBalloonEditorContentStyle(optionTool = "Justify");
 
 			AssertAttributeValue(
-				attribute1 = "style",
 				locator1 = "CKEditorBalloonEditorSample#BODY_TEXT",
 				paragraph_number = 1,
-				value1 = "text-align: justify;");
+				value1 = "style",
+				value2 = "text-align: justify;");
 
 			takeScreenshot();
 		}

@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.analytics.settings.rest.resource.v1_0.test;
@@ -235,10 +226,11 @@ public abstract class BaseContactUserGroupResourceTestCase {
 
 	@Test
 	public void testGetContactUserGroupsPageWithPagination() throws Exception {
-		Page<ContactUserGroup> totalPage =
+		Page<ContactUserGroup> contactUserGroupPage =
 			contactUserGroupResource.getContactUserGroupsPage(null, null, null);
 
-		int totalCount = GetterUtil.getInteger(totalPage.getTotalCount());
+		int totalCount = GetterUtil.getInteger(
+			contactUserGroupPage.getTotalCount());
 
 		ContactUserGroup contactUserGroup1 =
 			testGetContactUserGroupsPage_addContactUserGroup(
@@ -277,7 +269,7 @@ public abstract class BaseContactUserGroupResourceTestCase {
 
 		Page<ContactUserGroup> page3 =
 			contactUserGroupResource.getContactUserGroupsPage(
-				null, Pagination.of(1, totalCount + 3), null);
+				null, Pagination.of(1, (int)totalCount + 3), null);
 
 		assertContains(
 			contactUserGroup1, (List<ContactUserGroup>)page3.getItems());
@@ -402,22 +394,29 @@ public abstract class BaseContactUserGroupResourceTestCase {
 		contactUserGroup2 = testGetContactUserGroupsPage_addContactUserGroup(
 			contactUserGroup2);
 
+		Page<ContactUserGroup> page =
+			contactUserGroupResource.getContactUserGroupsPage(null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<ContactUserGroup> ascPage =
 				contactUserGroupResource.getContactUserGroupsPage(
-					null, Pagination.of(1, 2), entityField.getName() + ":asc");
+					null, Pagination.of(1, (int)page.getTotalCount() + 1),
+					entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(contactUserGroup1, contactUserGroup2),
-				(List<ContactUserGroup>)ascPage.getItems());
+			assertContains(
+				contactUserGroup1, (List<ContactUserGroup>)ascPage.getItems());
+			assertContains(
+				contactUserGroup2, (List<ContactUserGroup>)ascPage.getItems());
 
 			Page<ContactUserGroup> descPage =
 				contactUserGroupResource.getContactUserGroupsPage(
-					null, Pagination.of(1, 2), entityField.getName() + ":desc");
+					null, Pagination.of(1, (int)page.getTotalCount() + 1),
+					entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(contactUserGroup2, contactUserGroup1),
-				(List<ContactUserGroup>)descPage.getItems());
+			assertContains(
+				contactUserGroup2, (List<ContactUserGroup>)descPage.getItems());
+			assertContains(
+				contactUserGroup1, (List<ContactUserGroup>)descPage.getItems());
 		}
 	}
 
@@ -621,14 +620,19 @@ public abstract class BaseContactUserGroupResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -847,9 +851,47 @@ public abstract class BaseContactUserGroupResourceTestCase {
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(contactUserGroup.getName()));
-			sb.append("'");
+			Object object = contactUserGroup.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

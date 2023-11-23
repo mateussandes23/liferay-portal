@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.delivery.internal.resource.v1_0;
@@ -23,6 +14,7 @@ import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.exception.NoSuchModelException;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.GroupedModel;
 import com.liferay.portal.kernel.model.Resource;
@@ -38,6 +30,7 @@ import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourceLocalServiceUtil;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
+import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.GroupThreadLocal;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -45,6 +38,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.odata.filter.ExpressionConvert;
 import com.liferay.portal.odata.filter.FilterParser;
@@ -272,7 +266,7 @@ public abstract class BaseStructuredContentResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/asset-libraries/{assetLibraryId}/structured-contents' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "priority": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/asset-libraries/{assetLibraryId}/structured-contents' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "permissions": ___, "priority": ___, "relatedContents": ___, "structuredContentFolderId": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Parameters(
 		value = {
@@ -460,7 +454,7 @@ public abstract class BaseStructuredContentResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/asset-libraries/{assetLibraryId}/structured-contents/by-external-reference-code/{externalReferenceCode}' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "priority": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/asset-libraries/{assetLibraryId}/structured-contents/by-external-reference-code/{externalReferenceCode}' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "permissions": ___, "priority": ___, "relatedContents": ___, "structuredContentFolderId": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Operation(
 		description = "Updates the asset library's structured content with the given external reference code, or creates it if it not exists."
@@ -596,6 +590,7 @@ public abstract class BaseStructuredContentResourceImpl
 			@io.swagger.v3.oas.annotations.tags.Tag(name = "StructuredContent")
 		}
 	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
 	@javax.ws.rs.Path(
 		"/asset-libraries/{assetLibraryId}/structured-contents/permissions"
 	)
@@ -989,7 +984,7 @@ public abstract class BaseStructuredContentResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/sites/{siteId}/structured-contents' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "priority": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/sites/{siteId}/structured-contents' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "permissions": ___, "priority": ___, "relatedContents": ___, "structuredContentFolderId": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Operation(
 		description = "Creates a new structured content."
@@ -1180,7 +1175,7 @@ public abstract class BaseStructuredContentResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/sites/{siteId}/structured-contents/by-external-reference-code/{externalReferenceCode}' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "priority": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/sites/{siteId}/structured-contents/by-external-reference-code/{externalReferenceCode}' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "permissions": ___, "priority": ___, "relatedContents": ___, "structuredContentFolderId": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Operation(
 		description = "Updates the site's structured content with the given external reference code, or creates it if it not exists."
@@ -1421,6 +1416,7 @@ public abstract class BaseStructuredContentResourceImpl
 			@io.swagger.v3.oas.annotations.tags.Tag(name = "StructuredContent")
 		}
 	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
 	@javax.ws.rs.Path("/sites/{siteId}/structured-contents/permissions")
 	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@javax.ws.rs.PUT
@@ -1648,7 +1644,7 @@ public abstract class BaseStructuredContentResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/structured-content-folders/{structuredContentFolderId}/structured-contents' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "priority": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/structured-content-folders/{structuredContentFolderId}/structured-contents' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "permissions": ___, "priority": ___, "relatedContents": ___, "structuredContentFolderId": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Operation(
 		description = "Creates a new structured content in the folder."
@@ -1869,7 +1865,7 @@ public abstract class BaseStructuredContentResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'PATCH' 'http://localhost:8080/o/headless-delivery/v1.0/structured-contents/{structuredContentId}' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "priority": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'PATCH' 'http://localhost:8080/o/headless-delivery/v1.0/structured-contents/{structuredContentId}' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "permissions": ___, "priority": ___, "relatedContents": ___, "structuredContentFolderId": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Operation(
 		description = "Updates only the fields received in the request body, leaving any other fields untouched."
@@ -1946,9 +1942,19 @@ public abstract class BaseStructuredContentResourceImpl
 				structuredContent.getKeywords());
 		}
 
+		if (structuredContent.getPermissions() != null) {
+			existingStructuredContent.setPermissions(
+				structuredContent.getPermissions());
+		}
+
 		if (structuredContent.getPriority() != null) {
 			existingStructuredContent.setPriority(
 				structuredContent.getPriority());
+		}
+
+		if (structuredContent.getStructuredContentFolderId() != null) {
+			existingStructuredContent.setStructuredContentFolderId(
+				structuredContent.getStructuredContentFolderId());
 		}
 
 		if (structuredContent.getTaxonomyCategoryIds() != null) {
@@ -1979,7 +1985,7 @@ public abstract class BaseStructuredContentResourceImpl
 	/**
 	 * Invoke this method with the command line:
 	 *
-	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/structured-contents/{structuredContentId}' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "priority": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
+	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/structured-contents/{structuredContentId}' -d $'{"contentFields": ___, "contentStructureId": ___, "customFields": ___, "datePublished": ___, "description": ___, "description_i18n": ___, "externalReferenceCode": ___, "friendlyUrlPath": ___, "friendlyUrlPath_i18n": ___, "keywords": ___, "permissions": ___, "priority": ___, "relatedContents": ___, "structuredContentFolderId": ___, "taxonomyCategoryIds": ___, "title": ___, "title_i18n": ___, "viewableBy": ___}' --header 'Content-Type: application/json' -u 'test@liferay.com:test'
 	 */
 	@io.swagger.v3.oas.annotations.Operation(
 		description = "Replaces the structured content with the information sent in the request body. Any missing fields are deleted, unless they are required."
@@ -2300,6 +2306,7 @@ public abstract class BaseStructuredContentResourceImpl
 			@io.swagger.v3.oas.annotations.tags.Tag(name = "StructuredContent")
 		}
 	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
 	@javax.ws.rs.Path("/structured-contents/{structuredContentId}/permissions")
 	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@javax.ws.rs.PUT
@@ -2528,15 +2535,15 @@ public abstract class BaseStructuredContentResourceImpl
 			Map<String, Serializable> parameters)
 		throws Exception {
 
-		UnsafeConsumer<StructuredContent, Exception>
-			structuredContentUnsafeConsumer = null;
+		UnsafeFunction<StructuredContent, StructuredContent, Exception>
+			structuredContentUnsafeFunction = null;
 
 		String createStrategy = (String)parameters.getOrDefault(
 			"createStrategy", "INSERT");
 
-		if ("INSERT".equalsIgnoreCase(createStrategy)) {
+		if (StringUtil.equalsIgnoreCase(createStrategy, "INSERT")) {
 			if (parameters.containsKey("structuredContentFolderId")) {
-				structuredContentUnsafeConsumer = structuredContent ->
+				structuredContentUnsafeFunction = structuredContent ->
 					postStructuredContentFolderStructuredContent(
 						_parseLong(
 							(String)parameters.get(
@@ -2544,13 +2551,13 @@ public abstract class BaseStructuredContentResourceImpl
 						structuredContent);
 			}
 			else if (parameters.containsKey("assetLibraryId")) {
-				structuredContentUnsafeConsumer =
+				structuredContentUnsafeFunction =
 					structuredContent -> postAssetLibraryStructuredContent(
 						(Long)parameters.get("assetLibraryId"),
 						structuredContent);
 			}
 			else if (parameters.containsKey("siteId")) {
-				structuredContentUnsafeConsumer =
+				structuredContentUnsafeFunction =
 					structuredContent -> postSiteStructuredContent(
 						(Long)parameters.get("siteId"), structuredContent);
 			}
@@ -2560,29 +2567,91 @@ public abstract class BaseStructuredContentResourceImpl
 			}
 		}
 
-		if ("UPSERT".equalsIgnoreCase(createStrategy)) {
-			structuredContentUnsafeConsumer = structuredContent ->
-				putSiteStructuredContentByExternalReferenceCode(
-					structuredContent.getSiteId() != null ?
-						structuredContent.getSiteId() :
-							(Long)parameters.get("siteId"),
-					structuredContent.getExternalReferenceCode(),
-					structuredContent);
+		if (StringUtil.equalsIgnoreCase(createStrategy, "UPSERT")) {
+			String updateStrategy = (String)parameters.getOrDefault(
+				"updateStrategy", "UPDATE");
+
+			if (StringUtil.equalsIgnoreCase(updateStrategy, "UPDATE")) {
+				structuredContentUnsafeFunction = structuredContent ->
+					putSiteStructuredContentByExternalReferenceCode(
+						structuredContent.getSiteId() != null ?
+							structuredContent.getSiteId() :
+								(Long)parameters.get("siteId"),
+						structuredContent.getExternalReferenceCode(),
+						structuredContent);
+			}
+
+			if (StringUtil.equalsIgnoreCase(updateStrategy, "PARTIAL_UPDATE")) {
+				structuredContentUnsafeFunction = structuredContent -> {
+					StructuredContent persistedStructuredContent = null;
+
+					try {
+						StructuredContent getStructuredContent =
+							getSiteStructuredContentByExternalReferenceCode(
+								structuredContent.getSiteId() != null ?
+									structuredContent.getSiteId() :
+										(Long)parameters.get("siteId"),
+								structuredContent.getExternalReferenceCode());
+
+						persistedStructuredContent = patchStructuredContent(
+							getStructuredContent.getId() != null ?
+								getStructuredContent.getId() :
+									_parseLong(
+										(String)parameters.get(
+											"structuredContentId")),
+							structuredContent);
+					}
+					catch (NoSuchModelException noSuchModelException) {
+						if (parameters.containsKey(
+								"structuredContentFolderId")) {
+
+							persistedStructuredContent =
+								postStructuredContentFolderStructuredContent(
+									_parseLong(
+										(String)parameters.get(
+											"structuredContentFolderId")),
+									structuredContent);
+						}
+						else if (parameters.containsKey("assetLibraryId")) {
+							persistedStructuredContent =
+								postAssetLibraryStructuredContent(
+									(Long)parameters.get("assetLibraryId"),
+									structuredContent);
+						}
+						else if (parameters.containsKey("siteId")) {
+							persistedStructuredContent =
+								postSiteStructuredContent(
+									(Long)parameters.get("siteId"),
+									structuredContent);
+						}
+						else {
+							throw new NotSupportedException(
+								"One of the following parameters must be specified: [structuredContentFolderId, assetLibraryId]");
+						}
+					}
+
+					return persistedStructuredContent;
+				};
+			}
 		}
 
-		if (structuredContentUnsafeConsumer == null) {
+		if (structuredContentUnsafeFunction == null) {
 			throw new NotSupportedException(
 				"Create strategy \"" + createStrategy +
 					"\" is not supported for StructuredContent");
 		}
 
-		if (contextBatchUnsafeConsumer != null) {
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(
+				structuredContents, structuredContentUnsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
 			contextBatchUnsafeConsumer.accept(
-				structuredContents, structuredContentUnsafeConsumer);
+				structuredContents, structuredContentUnsafeFunction::apply);
 		}
 		else {
 			for (StructuredContent structuredContent : structuredContents) {
-				structuredContentUnsafeConsumer.accept(structuredContent);
+				structuredContentUnsafeFunction.apply(structuredContent);
 			}
 		}
 	}
@@ -2688,14 +2757,14 @@ public abstract class BaseStructuredContentResourceImpl
 			Map<String, Serializable> parameters)
 		throws Exception {
 
-		UnsafeConsumer<StructuredContent, Exception>
-			structuredContentUnsafeConsumer = null;
+		UnsafeFunction<StructuredContent, StructuredContent, Exception>
+			structuredContentUnsafeFunction = null;
 
 		String updateStrategy = (String)parameters.getOrDefault(
 			"updateStrategy", "UPDATE");
 
-		if ("PARTIAL_UPDATE".equalsIgnoreCase(updateStrategy)) {
-			structuredContentUnsafeConsumer =
+		if (StringUtil.equalsIgnoreCase(updateStrategy, "PARTIAL_UPDATE")) {
+			structuredContentUnsafeFunction =
 				structuredContent -> patchStructuredContent(
 					structuredContent.getId() != null ?
 						structuredContent.getId() :
@@ -2704,8 +2773,8 @@ public abstract class BaseStructuredContentResourceImpl
 					structuredContent);
 		}
 
-		if ("UPDATE".equalsIgnoreCase(updateStrategy)) {
-			structuredContentUnsafeConsumer =
+		if (StringUtil.equalsIgnoreCase(updateStrategy, "UPDATE")) {
+			structuredContentUnsafeFunction =
 				structuredContent -> putStructuredContent(
 					structuredContent.getId() != null ?
 						structuredContent.getId() :
@@ -2714,19 +2783,23 @@ public abstract class BaseStructuredContentResourceImpl
 					structuredContent);
 		}
 
-		if (structuredContentUnsafeConsumer == null) {
+		if (structuredContentUnsafeFunction == null) {
 			throw new NotSupportedException(
 				"Update strategy \"" + updateStrategy +
 					"\" is not supported for StructuredContent");
 		}
 
-		if (contextBatchUnsafeConsumer != null) {
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(
+				structuredContents, structuredContentUnsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
 			contextBatchUnsafeConsumer.accept(
-				structuredContents, structuredContentUnsafeConsumer);
+				structuredContents, structuredContentUnsafeFunction::apply);
 		}
 		else {
 			for (StructuredContent structuredContent : structuredContents) {
-				structuredContentUnsafeConsumer.accept(structuredContent);
+				structuredContentUnsafeFunction.apply(structuredContent);
 			}
 		}
 	}
@@ -2914,6 +2987,15 @@ public abstract class BaseStructuredContentResourceImpl
 		this.contextAcceptLanguage = contextAcceptLanguage;
 	}
 
+	public void setContextBatchUnsafeBiConsumer(
+		UnsafeBiConsumer
+			<Collection<StructuredContent>,
+			 UnsafeFunction<StructuredContent, StructuredContent, Exception>,
+			 Exception> contextBatchUnsafeBiConsumer) {
+
+		this.contextBatchUnsafeBiConsumer = contextBatchUnsafeBiConsumer;
+	}
+
 	public void setContextBatchUnsafeConsumer(
 		UnsafeBiConsumer
 			<Collection<StructuredContent>,
@@ -2931,6 +3013,13 @@ public abstract class BaseStructuredContentResourceImpl
 
 	public void setContextHttpServletRequest(
 		HttpServletRequest contextHttpServletRequest) {
+
+		if ((contextHttpServletRequest != null) &&
+			(contextHttpServletRequest.getAttribute(WebKeys.CTX) == null)) {
+
+			contextHttpServletRequest.setAttribute(
+				WebKeys.CTX, ServletContextPool.get(StringPool.BLANK));
+		}
 
 		this.contextHttpServletRequest = contextHttpServletRequest;
 	}
@@ -3178,6 +3267,10 @@ public abstract class BaseStructuredContentResourceImpl
 	}
 
 	protected AcceptLanguage contextAcceptLanguage;
+	protected UnsafeBiConsumer
+		<Collection<StructuredContent>,
+		 UnsafeFunction<StructuredContent, StructuredContent, Exception>,
+		 Exception> contextBatchUnsafeBiConsumer;
 	protected UnsafeBiConsumer
 		<Collection<StructuredContent>,
 		 UnsafeConsumer<StructuredContent, Exception>, Exception>

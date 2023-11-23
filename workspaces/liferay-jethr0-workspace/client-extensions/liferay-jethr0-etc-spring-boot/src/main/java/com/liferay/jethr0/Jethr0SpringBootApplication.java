@@ -1,26 +1,18 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.jethr0;
 
 import com.liferay.client.extension.util.spring.boot.ClientExtensionUtilSpringBootComponentScan;
-import com.liferay.client.extension.util.spring.boot.LiferayOAuth2Util;
-import com.liferay.jethr0.build.queue.BuildQueue;
-import com.liferay.jethr0.entity.repository.EntityRepository;
+import com.liferay.jethr0.bui1d.queue.BuildQueue;
+import com.liferay.jethr0.entity.EntityInitializer;
+import com.liferay.jethr0.event.EventHandlerContext;
+import com.liferay.jethr0.event.jenkins.JenkinsEventProcessor;
+import com.liferay.jethr0.event.jrp.JRPEventProcessor;
 import com.liferay.jethr0.jenkins.JenkinsQueue;
-import com.liferay.jethr0.jms.JMSEventHandler;
-import com.liferay.jethr0.project.queue.ProjectQueue;
+import com.liferay.jethr0.job.queue.JobQueue;
 
 import javax.jms.ConnectionFactory;
 
@@ -34,9 +26,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.config.JmsListenerContainerFactory;
+import org.springframework.jms.config.JmsListenerEndpointRegistry;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
 
 /**
  * @author Michael Hashimoto
@@ -49,34 +40,42 @@ public class Jethr0SpringBootApplication {
 		ConfigurableApplicationContext configurableApplicationContext =
 			SpringApplication.run(Jethr0SpringBootApplication.class, args);
 
-		for (String beanDefinitionName :
-				configurableApplicationContext.getBeanDefinitionNames()) {
+		EventHandlerContext eventHandlerContext =
+			configurableApplicationContext.getBean(EventHandlerContext.class);
 
-			Object bean = configurableApplicationContext.getBean(
-				beanDefinitionName);
+		eventHandlerContext.setJenkinsEventProcessor(
+			configurableApplicationContext.getBean(
+				JenkinsEventProcessor.class));
+		eventHandlerContext.setJRPEventProcessor(
+			configurableApplicationContext.getBean(JRPEventProcessor.class));
 
-			if (bean instanceof EntityRepository) {
-				EntityRepository entityRepository = (EntityRepository)bean;
+		EntityInitializer entityInitializer =
+			configurableApplicationContext.getBean(EntityInitializer.class);
 
-				entityRepository.initialize();
-			}
-		}
+		entityInitializer.initialize();
 
-		ProjectQueue projectQueue = configurableApplicationContext.getBean(
-			ProjectQueue.class);
+		JobQueue jobQueue = configurableApplicationContext.getBean(
+			JobQueue.class);
 
-		projectQueue.initialize();
+		jobQueue.initialize();
 
 		BuildQueue buildQueue = configurableApplicationContext.getBean(
 			BuildQueue.class);
 
 		buildQueue.initialize();
 
+		JmsListenerEndpointRegistry jmsListenerEndpointRegistry =
+			configurableApplicationContext.getBean(
+				JmsListenerEndpointRegistry.class);
+
+		jmsListenerEndpointRegistry.start();
+
 		JenkinsQueue jenkinsQueue = configurableApplicationContext.getBean(
 			JenkinsQueue.class);
 
-		jenkinsQueue.setJmsEventHandler(
-			configurableApplicationContext.getBean(JMSEventHandler.class));
+		jenkinsQueue.setJenkinsEventProcessor(
+			configurableApplicationContext.getBean(
+				JenkinsEventProcessor.class));
 
 		jenkinsQueue.initialize();
 	}
@@ -111,34 +110,18 @@ public class Jethr0SpringBootApplication {
 		JmsTemplate jmsTemplate = new JmsTemplate();
 
 		jmsTemplate.setConnectionFactory(connectionFactory);
-		jmsTemplate.setDefaultDestinationName(_jmsJenkinsBuildQueue);
+		jmsTemplate.setDefaultDestinationName("default");
 
 		return jmsTemplate;
 	}
 
-	@Bean
-	public OAuth2AccessToken getOAuth2AccessToken(
-		AuthorizedClientServiceOAuth2AuthorizedClientManager
-			authorizedClientServiceOAuth2AuthorizedClientManager) {
-
-		return LiferayOAuth2Util.getOAuth2AccessToken(
-			authorizedClientServiceOAuth2AuthorizedClientManager,
-			_liferayOAuthApplicationExternalReferenceCodes);
-	}
-
-	@Value("${jms.broker.url}")
+	@Value("${JETHR0_JMS_BROKER_URL:tcp://localhost:61616}")
 	private String _jmsBrokerURL;
 
-	@Value("${jms.jenkins.build.queue}")
-	private String _jmsJenkinsBuildQueue;
-
-	@Value("${jms.user.name}")
+	@Value("${JETHR0_JMS_USER_NAME:admin}")
 	private String _jmsUserName;
 
-	@Value("${jms.user.password}")
+	@Value("${JETHR0_JMS_USER_PASSWORD:admin}")
 	private String _jmsUserPassword;
-
-	@Value("${liferay.oauth.application.external.reference.codes}")
-	private String _liferayOAuthApplicationExternalReferenceCodes;
 
 }

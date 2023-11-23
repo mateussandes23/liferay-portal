@@ -14,6 +14,7 @@ import StatesRenderer from 'shared/components/states-renderer/StatesRenderer';
 import Table from 'shared/components/table';
 import URLConstants from 'shared/util/url-constants';
 import {ApolloError} from 'apollo-client';
+import {Containers} from 'shared/components/download-report/DownloadPDFReport';
 import {ENTRANCES_METRIC, EXIT_RATE_METRIC} from 'shared/util/pagination';
 import {getSafeRangeSelectors} from 'shared/util/util';
 import {metricsListColumns} from 'shared/util/table-columns';
@@ -103,6 +104,7 @@ const TopPagesCard: React.FC<ITopPagesCardProps> = ({
 }) => (
 	<CardWithRangeKey
 		className={className}
+		id={Containers.TopPagesCard}
 		label={label}
 		legacyDropdownRangeKey={legacyDropdownRangeKey}
 	>
@@ -178,6 +180,8 @@ const TopPagesCardWithData: React.FC<ITopPageCardWithData> = ({
 			{!!Object.keys(footer).length && (
 				<Card.Footer>
 					<ClayLink
+						borderless
+						button
 						className='button-root'
 						displayType='secondary'
 						href={setUriQueryValues(
@@ -190,7 +194,7 @@ const TopPagesCardWithData: React.FC<ITopPageCardWithData> = ({
 
 						<ClayIcon
 							className='icon-root ml-2'
-							symbol='angle-right'
+							symbol='angle-right-small'
 						/>
 					</ClayLink>
 				</Card.Footer>
@@ -213,7 +217,7 @@ const TopPagesCardWithStatesRenderer: React.FC<ITopPagesCardWithStatesRendererPr
 	loading
 }) => (
 	<StatesRenderer empty={empty} error={!!error} loading={loading}>
-		<StatesRenderer.Loading displayCard />
+		<StatesRenderer.Loading />
 		<StatesRenderer.Empty
 			description={
 				<>

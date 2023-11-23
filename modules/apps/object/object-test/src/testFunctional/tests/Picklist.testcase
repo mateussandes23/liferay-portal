@@ -16,9 +16,9 @@ definition {
 
 		Picklist.deleteAllPicklistsViaAPI();
 
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 	}
@@ -134,9 +134,10 @@ definition {
 
 			FormFields.viewRequiredAsterisk();
 
-			AssertElementPresent(
-				key_selectField = "Picklist Item Test",
-				locator1 = "Picklist#SELECT_FIELD_RELATIONSHIP_OBJECT");
+			AssertTextEquals(
+				key_labelName = "Field Picklist",
+				locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
+				value1 = "Picklist Item Test");
 
 			PortletEntry.save();
 		}
@@ -264,11 +265,11 @@ definition {
 
 			ObjectAdmin.goToFieldsDetails(label = "Field Picklist");
 
-			Click(locator1 = "ObjectAdmin#DROPDOWN_DEFAULT_VALUE");
+			Form.gotoAdvancedTab();
 
-			Click(
-				key_dropdownItem = "Picklist Item Test 2",
-				locator1 = "ObjectAdmin#SELECT_DROPDOWN_ITEM_DEFAULT_VALUE");
+			ObjectAdmin.selectDropdownItem(
+				labelName = "Input as Value",
+				optionName = "Picklist Item Test 2");
 
 			PortletEntry.save();
 		}
@@ -292,9 +293,10 @@ definition {
 
 			FormFields.viewRequiredAsterisk();
 
-			AssertElementPresent(
-				key_selectField = "Picklist Item Test 2",
-				locator1 = "Picklist#SELECT_FIELD_RELATIONSHIP_OBJECT");
+			AssertTextEquals(
+				key_labelName = "Field Picklist",
+				locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
+				value1 = "Picklist Item Test 2");
 
 			PortletEntry.save();
 		}
@@ -712,7 +714,8 @@ definition {
 	@description = "LPS-136595 - Verify that the translated Picklist item's name will be displayed on Forms"
 	@priority = 3
 	test ViewTranslatedPicklistItemNameOnForms {
-		property test.name.skip.portal.instance = "Picklist#ViewTranslatedPicklistItemNameOnForms";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Add a Custom Picklist and a Item (via API)") {
 			Picklist.addPicklistViaAPI(picklistName = "Picklist Test");
@@ -780,9 +783,7 @@ definition {
 		}
 
 		task ("Go to Forms and add") {
-			PopulateObjectFormsConfiguration.openForm();
-
-			FormsAdminNavigator.gotoAddForm();
+			FormsAdmin.addForm();
 
 			Form.editName(formName = "Form 1");
 		}
@@ -790,9 +791,15 @@ definition {
 		task ("Mapped the Form with Custom Object") {
 			PopulateObjectFormsConfiguration.openFormSettings();
 
-			PopulateObjectFormsConfiguration.selectObject(label = "Objeto");
+			ObjectAdmin.selectDropdownItem(
+				labelName = "Selecionar um tipo de armazenamento",
+				optionName = "Objeto");
 
-			PopulateObjectFormsConfiguration.selectCustomObject(label = "Custom Object 147730");
+			ObjectAdmin.selectDropdownItem(
+				labelName = "Selecionar objetos",
+				optionName = "Custom Object 147730");
+
+			Click(locator1 = "PopulateObjectFormsConfiguration#BUTTON_SETTINGS_FORM");
 		}
 
 		task ("Add field type and select object field") {
@@ -801,14 +808,9 @@ definition {
 				localeBasic = "Avançado",
 				localeFields = "Campos");
 
-			AssertClick(
-				key_formObjectField = "Escolha uma Opção",
-				locator1 = "PopulateObjectFormsConfiguration#FORM_OBJECT_FIELD",
-				value1 = "Escolha uma Opção");
-
-			Click(
-				key_fieldLabelName = "Field Picklist",
-				locator1 = "PopulateObjectFormsConfiguration#MAP_OBJECT_FIELD");
+			ObjectAdmin.selectDropdownItem(
+				labelName = "Campo de objeto",
+				optionName = "Field Picklist");
 		}
 
 		task ("Publish and go to published form") {
@@ -818,11 +820,13 @@ definition {
 		}
 
 		task ("Assert that Picklist Item is translated") {
-			Click(locator1 = "PopulateObjectFormsConfiguration#OBJECT_FIELD_TAB");
+			Click(
+				key_labelName = "Selecionar da lista",
+				locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON");
 
 			AssertElementPresent(
-				key_label = "Teste de entrada",
-				locator1 = "PopulateObjectFormsConfiguration#DISPLAY_SELECT_OBJECT");
+				key_optionName = "Teste de entrada",
+				locator1 = "ObjectAdmin#CLAY_GENERIC_DROPDOWN_ITEM");
 		}
 	}
 
@@ -874,7 +878,9 @@ definition {
 
 		ObjectAdmin.goToCustomObject(objectName = "CustomObject298");
 
-		ObjectAdmin.addObjectPicklistFieldEntryViaUI(picklistOption = "Entry Test");
+		ObjectAdmin.addObjectPicklistFieldEntryViaUI(
+			labelName = "Field Picklist",
+			picklistOption = "Teste de entrada");
 
 		User.openUsersAdmin();
 
@@ -954,6 +960,7 @@ definition {
 		ObjectAdmin.goToCustomObject(objectName = "CustomObject147729");
 
 		ObjectAdmin.addObjectPicklistFieldEntryViaUI(
+			labelName = "Field Picklist",
 			picklistOption = "Teste de entrada",
 			saveName = "Salvar");
 
@@ -965,7 +972,8 @@ definition {
 	@description = "LPS-136595 - Verify that the translated Picklist name will be displayed on the Object Admin"
 	@priority = 3
 	test ViewTranslatedPicklistNameOnObjectAdmin {
-		property test.name.skip.portal.instance = "Picklist#ViewTranslatedPicklistNameOnObjectAdmin";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Add a Custom Picklist (via API)") {
 			Picklist.addPicklistViaAPI(picklistName = "Picklist Test");
@@ -1017,11 +1025,13 @@ definition {
 				locator1 = "ObjectField#LABEL_INPUT",
 				value1 = "Lista de itens");
 
-			ObjectField.selectType(fieldType = "Lista de seleção");
+			ObjectAdmin.selectDropdownItem(
+				labelName = "Tipo",
+				optionName = "Lista de seleção");
 
-			ObjectField.selectPicklist(
-				dropdownLabel = "Lista de seleção",
-				picklistName = "Teste na lista");
+			ObjectAdmin.selectDropdownItem(
+				labelName = "Lista de seleção",
+				optionName = "Teste na lista");
 
 			Button.click(button = "Salvar");
 		}

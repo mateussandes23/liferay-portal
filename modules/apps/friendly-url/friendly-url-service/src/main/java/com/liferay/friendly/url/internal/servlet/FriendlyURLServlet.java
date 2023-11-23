@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.friendly.url.internal.servlet;
@@ -38,6 +29,7 @@ import com.liferay.portal.kernel.model.LayoutConstants;
 import com.liferay.portal.kernel.model.LayoutFriendlyURL;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.model.VirtualLayoutConstants;
+import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.kernel.portlet.LayoutFriendlyURLSeparatorComposite;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
@@ -71,6 +63,7 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.AsyncPortletServletRequest;
+import com.liferay.portlet.documentlibrary.constants.DLFriendlyURLConstants;
 import com.liferay.redirect.provider.RedirectProvider;
 import com.liferay.redirect.tracker.RedirectNotFoundTracker;
 import com.liferay.site.model.SiteFriendlyURL;
@@ -94,9 +87,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * @author Brian Wing Shun Chan
@@ -120,7 +110,20 @@ public class FriendlyURLServlet extends HttpServlet {
 		int pos = path.indexOf(CharPool.SLASH, 1);
 
 		if (pos != -1) {
-			groupFriendlyURL = path.substring(0, pos);
+			String friendlyURL = path.substring(pos);
+
+			if (friendlyURL.startsWith(
+					DLFriendlyURLConstants.PATH_PREFIX_DOCUMENT)) {
+
+				String fileEntryFriendlyURL = friendlyURL.substring(
+					DLFriendlyURLConstants.PATH_PREFIX_DOCUMENT.length() - 1);
+
+				groupFriendlyURL = fileEntryFriendlyURL.substring(
+					0, fileEntryFriendlyURL.indexOf(CharPool.SLASH, 1));
+			}
+			else {
+				groupFriendlyURL = path.substring(0, pos);
+			}
 		}
 
 		long companyId = PortalInstances.getCompanyId(httpServletRequest);
@@ -145,8 +148,7 @@ public class FriendlyURLServlet extends HttpServlet {
 			}
 
 			redirectProviderRedirect = _getRedirectProviderRedirect(
-				group.getGroupId(), httpServletRequest, layoutFriendlyURL,
-				redirectProvider);
+				group.getGroupId(), httpServletRequest, layoutFriendlyURL);
 
 			if ((redirectProviderRedirect != null) &&
 				!_isSkipRedirect(httpServletRequest)) {
@@ -182,29 +184,31 @@ public class FriendlyURLServlet extends HttpServlet {
 					layoutFriendlyURLSeparatorComposite.getURLSeparator());
 
 				if (pos != 1) {
-					HttpServletRequest originalHttpServletRequest =
-						portal.getOriginalServletRequest(httpServletRequest);
-
-					String requestURL = HttpComponentsUtil.getRequestURL(
-						originalHttpServletRequest);
+					String requestURL = portal.getCurrentCompleteURL(
+						httpServletRequest);
 
 					int friendlyURLPos = requestURL.indexOf(layoutFriendlyURL);
 
 					String friendlyURL =
 						layoutFriendlyURLSeparatorComposite.getFriendlyURL();
 
-					String redirectURL =
-						PropsValues.LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING +
-							path.substring(0, pos) + friendlyURL;
+					String redirectURL = null;
 
 					if (friendlyURLPos > 0) {
 						redirectURL =
 							requestURL.substring(0, friendlyURLPos) +
 								friendlyURL;
 					}
+					else {
+						redirectURL = StringBundler.concat(
+							portal.getPathContext(),
+							PropsValues.
+								LAYOUT_FRIENDLY_URL_PUBLIC_SERVLET_MAPPING,
+							path.substring(0, pos), friendlyURL);
+					}
 
 					String queryString = HttpComponentsUtil.getQueryString(
-						originalHttpServletRequest);
+						portal.getOriginalServletRequest(httpServletRequest));
 
 					if (Validator.isNotNull(queryString)) {
 						redirectURL += StringPool.QUESTION + queryString;
@@ -307,7 +311,7 @@ public class FriendlyURLServlet extends HttpServlet {
 						locale)) {
 
 					Locale originalLocale = _setAlternativeLayoutFriendlyURL(
-						httpServletRequest, layout,
+						companyId, httpServletRequest, layout,
 						layoutFriendlyURLSeparatorCompositeFriendlyURL,
 						alternativeSiteFriendlyURL);
 
@@ -344,19 +348,17 @@ public class FriendlyURLServlet extends HttpServlet {
 		catch (LayoutPermissionException | NoSuchLayoutException exception) {
 			Layout redirectLayout = null;
 
-			if (layoutFriendlyURL == null) {
-				if (exception instanceof LayoutPermissionException) {
-					List<Layout> layouts = layoutService.getLayouts(
-						group.getGroupId(), _private,
-						LayoutConstants.DEFAULT_PARENT_LAYOUT_ID, 0, 1);
+			if (exception instanceof LayoutPermissionException) {
+				List<Layout> layouts = layoutService.getLayouts(
+					group.getGroupId(), _private,
+					LayoutConstants.DEFAULT_PARENT_LAYOUT_ID, 0, 1);
 
-					if (!layouts.isEmpty()) {
-						redirectLayout = layouts.get(0);
-					}
+				if (!layouts.isEmpty()) {
+					redirectLayout = layouts.get(0);
 				}
-				else {
-					redirectLayout = defaultLayout;
-				}
+			}
+			else if (layoutFriendlyURL == null) {
+				redirectLayout = defaultLayout;
 			}
 			else {
 				List<Layout> layouts = layoutLocalService.getLayouts(
@@ -380,25 +382,27 @@ public class FriendlyURLServlet extends HttpServlet {
 			}
 
 			RedirectNotFoundTracker currentRedirectNotFoundTracker =
-				redirectNotFoundTracker;
+				_redirectNotFoundTrackerSnapshot.get();
 
 			if (currentRedirectNotFoundTracker != null) {
 				currentRedirectNotFoundTracker.trackURL(
 					group, _normalizeFriendlyURL(layoutFriendlyURL));
 			}
 
-			if (exception instanceof NoSuchLayoutException) {
-				if (Validator.isNotNull(
-						PropsValues.LAYOUT_FRIENDLY_URL_PAGE_NOT_FOUND)) {
+			if (Validator.isNotNull(
+					PropsValues.LAYOUT_FRIENDLY_URL_PAGE_NOT_FOUND)) {
 
+				if (exception instanceof NoSuchLayoutException) {
 					throw exception;
 				}
 
-				httpServletResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
-
-				httpServletRequest.setAttribute(
-					NoSuchLayoutException.class.getName(), Boolean.TRUE);
+				throw new NoSuchLayoutException(exception);
 			}
+
+			httpServletResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
+
+			httpServletRequest.setAttribute(
+				NoSuchLayoutException.class.getName(), Boolean.TRUE);
 
 			layoutFriendlyURL = null;
 		}
@@ -704,20 +708,6 @@ public class FriendlyURLServlet extends HttpServlet {
 	@Reference
 	protected Portal portal;
 
-	@Reference(
-		cardinality = ReferenceCardinality.OPTIONAL,
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY
-	)
-	protected volatile RedirectNotFoundTracker redirectNotFoundTracker;
-
-	@Reference(
-		cardinality = ReferenceCardinality.OPTIONAL,
-		policy = ReferencePolicy.DYNAMIC,
-		policyOption = ReferencePolicyOption.GREEDY
-	)
-	protected volatile RedirectProvider redirectProvider;
-
 	@Reference
 	protected SiteFriendlyURLLocalService siteFriendlyURLLocalService;
 
@@ -847,7 +837,9 @@ public class FriendlyURLServlet extends HttpServlet {
 
 	private Redirect _getRedirectProviderRedirect(
 		long groupId, HttpServletRequest httpServletRequest,
-		String layoutFriendlyURL, RedirectProvider redirectProvider) {
+		String layoutFriendlyURL) {
+
+		RedirectProvider redirectProvider = _redirectProviderSnapshot.get();
 
 		if ((redirectProvider == null) ||
 			LiferayWindowState.isExclusive(httpServletRequest) ||
@@ -931,6 +923,16 @@ public class FriendlyURLServlet extends HttpServlet {
 		return false;
 	}
 
+	private boolean _isShowAlternativeLayoutFriendlyURLMessage(long companyId) {
+		FriendlyURLRedirectionConfiguration
+			friendlyURLRedirectionConfiguration =
+				friendlyURLRedirectionConfigurationProvider.
+					getCompanyFriendlyURLRedirectionConfiguration(companyId);
+
+		return friendlyURLRedirectionConfiguration.
+			showAlternativeLayoutFriendlyURLMessage();
+	}
+
 	private boolean _isSkipRedirect(HttpServletRequest httpServletRequest) {
 		String refererURL = httpServletRequest.getHeader(HttpHeaders.REFERER);
 
@@ -968,7 +970,7 @@ public class FriendlyURLServlet extends HttpServlet {
 	}
 
 	private Locale _setAlternativeLayoutFriendlyURL(
-		HttpServletRequest httpServletRequest, Layout layout,
+		long companyId, HttpServletRequest httpServletRequest, Layout layout,
 		String friendlyURL, SiteFriendlyURL siteFriendlyURL) {
 
 		List<LayoutFriendlyURL> layoutFriendlyURLs =
@@ -1000,19 +1002,29 @@ public class FriendlyURLServlet extends HttpServlet {
 		String alternativeLayoutFriendlyURL = portal.getLocalizedFriendlyURL(
 			httpServletRequest, layout, groupLocale, locale);
 
-		SessionMessages.add(
-			httpServletRequest, "alternativeLayoutFriendlyURL",
-			alternativeLayoutFriendlyURL);
+		if (_isShowAlternativeLayoutFriendlyURLMessage(companyId)) {
+			SessionMessages.add(
+				httpServletRequest, "alternativeLayoutFriendlyURL",
+				alternativeLayoutFriendlyURL);
 
-		PortalMessages.add(
-			httpServletRequest, PortalMessages.KEY_JSP_PATH,
-			"/html/common/themes/layout_friendly_url_redirect.jsp");
+			PortalMessages.add(
+				httpServletRequest, PortalMessages.KEY_JSP_PATH,
+				"/html/common/themes/layout_friendly_url_redirect.jsp");
+		}
 
 		return groupLocale;
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		FriendlyURLServlet.class);
+
+	private static final Snapshot<RedirectNotFoundTracker>
+		_redirectNotFoundTrackerSnapshot = new Snapshot<>(
+			FriendlyURLServlet.class, RedirectNotFoundTracker.class, null,
+			true);
+	private static final Snapshot<RedirectProvider> _redirectProviderSnapshot =
+		new Snapshot<>(
+			FriendlyURLServlet.class, RedirectProvider.class, null, true);
 
 	private String _friendlyURLPathPrefix;
 	private int _pathInfoOffset;

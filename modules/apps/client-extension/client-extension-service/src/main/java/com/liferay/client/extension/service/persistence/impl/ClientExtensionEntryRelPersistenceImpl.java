@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.client.extension.service.persistence.impl;
@@ -48,11 +39,10 @@ import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.ProxyUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.Validator;
-import com.liferay.portal.kernel.uuid.PortalUUID;
+import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
 import java.io.Serializable;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 
 import java.util.ArrayList;
@@ -733,21 +723,21 @@ public class ClientExtensionEntryRelPersistenceImpl
 
 		uuid = Objects.toString(uuid, "");
 
-		boolean productionMode = ctPersistenceHelper.isProductionMode(
-			ClientExtensionEntryRel.class);
-
 		Object[] finderArgs = null;
 
-		if (useFinderCache && productionMode) {
+		if (useFinderCache) {
 			finderArgs = new Object[] {uuid, groupId};
 		}
 
 		Object result = null;
 
-		if (useFinderCache && productionMode) {
+		if (useFinderCache) {
 			result = finderCache.getResult(
 				_finderPathFetchByUUID_G, finderArgs, this);
 		}
+
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			ClientExtensionEntryRel.class);
 
 		if (result instanceof ClientExtensionEntryRel) {
 			ClientExtensionEntryRel clientExtensionEntryRel =
@@ -758,6 +748,15 @@ public class ClientExtensionEntryRelPersistenceImpl
 
 				result = null;
 			}
+			else if (!ctPersistenceHelper.isProductionMode(
+						ClientExtensionEntryRel.class,
+						clientExtensionEntryRel.getPrimaryKey())) {
+
+				result = null;
+			}
+		}
+		else if (!productionMode && (result instanceof List<?>)) {
+			result = null;
 		}
 
 		if (result == null) {
@@ -3423,21 +3422,21 @@ public class ClientExtensionEntryRelPersistenceImpl
 
 		externalReferenceCode = Objects.toString(externalReferenceCode, "");
 
-		boolean productionMode = ctPersistenceHelper.isProductionMode(
-			ClientExtensionEntryRel.class);
-
 		Object[] finderArgs = null;
 
-		if (useFinderCache && productionMode) {
+		if (useFinderCache) {
 			finderArgs = new Object[] {externalReferenceCode, groupId};
 		}
 
 		Object result = null;
 
-		if (useFinderCache && productionMode) {
+		if (useFinderCache) {
 			result = finderCache.getResult(
 				_finderPathFetchByERC_G, finderArgs, this);
 		}
+
+		boolean productionMode = ctPersistenceHelper.isProductionMode(
+			ClientExtensionEntryRel.class);
 
 		if (result instanceof ClientExtensionEntryRel) {
 			ClientExtensionEntryRel clientExtensionEntryRel =
@@ -3450,6 +3449,15 @@ public class ClientExtensionEntryRelPersistenceImpl
 
 				result = null;
 			}
+			else if (!ctPersistenceHelper.isProductionMode(
+						ClientExtensionEntryRel.class,
+						clientExtensionEntryRel.getPrimaryKey())) {
+
+				result = null;
+			}
+		}
+		else if (!productionMode && (result instanceof List<?>)) {
+			result = null;
 		}
 
 		if (result == null) {
@@ -3794,7 +3802,7 @@ public class ClientExtensionEntryRelPersistenceImpl
 		clientExtensionEntryRel.setNew(true);
 		clientExtensionEntryRel.setPrimaryKey(clientExtensionEntryRelId);
 
-		String uuid = _portalUUID.generate();
+		String uuid = PortalUUIDUtil.generate();
 
 		clientExtensionEntryRel.setUuid(uuid);
 
@@ -3923,7 +3931,7 @@ public class ClientExtensionEntryRelPersistenceImpl
 			(ClientExtensionEntryRelModelImpl)clientExtensionEntryRel;
 
 		if (Validator.isNull(clientExtensionEntryRel.getUuid())) {
-			String uuid = _portalUUID.generate();
+			String uuid = PortalUUIDUtil.generate();
 
 			clientExtensionEntryRel.setUuid(uuid);
 		}
@@ -4659,30 +4667,14 @@ public class ClientExtensionEntryRelPersistenceImpl
 			new String[] {String.class.getName(), Long.class.getName()},
 			new String[] {"externalReferenceCode", "groupId"}, false);
 
-		_setClientExtensionEntryRelUtilPersistence(this);
+		ClientExtensionEntryRelUtil.setPersistence(this);
 	}
 
 	@Deactivate
 	public void deactivate() {
-		_setClientExtensionEntryRelUtilPersistence(null);
+		ClientExtensionEntryRelUtil.setPersistence(null);
 
 		entityCache.removeCache(ClientExtensionEntryRelImpl.class.getName());
-	}
-
-	private void _setClientExtensionEntryRelUtilPersistence(
-		ClientExtensionEntryRelPersistence clientExtensionEntryRelPersistence) {
-
-		try {
-			Field field = ClientExtensionEntryRelUtil.class.getDeclaredField(
-				"_persistence");
-
-			field.setAccessible(true);
-
-			field.set(null, clientExtensionEntryRelPersistence);
-		}
-		catch (ReflectiveOperationException reflectiveOperationException) {
-			throw new RuntimeException(reflectiveOperationException);
-		}
 	}
 
 	@Override
@@ -4751,8 +4743,5 @@ public class ClientExtensionEntryRelPersistenceImpl
 	protected FinderCache getFinderCache() {
 		return finderCache;
 	}
-
-	@Reference
-	private PortalUUID _portalUUID;
 
 }

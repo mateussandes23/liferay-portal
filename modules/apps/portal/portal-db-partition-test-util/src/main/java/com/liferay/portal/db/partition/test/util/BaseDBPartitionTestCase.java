@@ -1,19 +1,11 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.db.partition.test.util;
 
+import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -29,18 +21,26 @@ import com.liferay.portal.kernel.dao.db.DBType;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnection;
 import com.liferay.portal.kernel.dao.jdbc.CurrentConnectionUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.db.partition.DBPartition;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.UserConstants;
+import com.liferay.portal.kernel.module.util.BundleUtil;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
+import com.liferay.portal.kernel.service.ClassNameLocalServiceUtil;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.AssumeTestRule;
-import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.portal.util.PortalInstances;
+import com.liferay.portal.util.PropsUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -53,6 +53,10 @@ import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Rule;
 
+import org.osgi.framework.Bundle;
+import org.osgi.service.component.runtime.ServiceComponentRuntime;
+import org.osgi.util.promise.Promise;
+
 import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
 
 /**
@@ -64,7 +68,8 @@ public abstract class BaseDBPartitionTestCase {
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
 		new AggregateTestRule(
-			new AssumeTestRule("assume"), new LiferayIntegrationTestRule());
+			new AssumeTestRule("assume"), new LiferayIntegrationTestRule(),
+			PermissionCheckerMethodTestRule.INSTANCE);
 
 	public static void assume() {
 		db = DBManagerUtil.getDB();
@@ -127,22 +132,38 @@ public abstract class BaseDBPartitionTestCase {
 
 					statement.execute(
 						"delete from User_ where companyId = " + companyId);
+
+					statement.execute(
+						"delete from VirtualHost where companyId = " +
+							companyId);
 				}
 			}
 		}
 	}
 
-	protected static void disableDBPartition() {
+	protected static void disableDBPartition() throws Exception {
 		DataAccess.cleanUp(connection);
 
 		if (_dbPartitionEnabled) {
 			return;
 		}
 
+		_disableComponents(
+			"com.liferay.portal.db.partition",
+			StringBundler.concat(
+				"com.liferay.portal.db.partition.internal.configuration.",
+				"persistence.listener.DBPartitionVirtualInstanceExtraction",
+				"ConfigurationModelListener"),
+			StringBundler.concat(
+				"com.liferay.portal.db.partition.internal.configuration.",
+				"persistence.listener.DBPartitionVirtualInstanceInsertion",
+				"ConfigurationModelListener"));
+
+		PropsUtil.set(
+			"database.partition.enabled", _originalDatabasePartitionEnabled);
+
 		ReflectionTestUtil.setFieldValue(
 			DBInitUtil.class, "_dataSource", _currentDataSource);
-		ReflectionTestUtil.setFieldValue(
-			DBPartitionUtil.class, "_DATABASE_PARTITION_ENABLED", false);
 		ReflectionTestUtil.setFieldValue(
 			DBPartitionUtil.class, "_DATABASE_PARTITION_SCHEMA_NAME_PREFIX",
 			StringPool.BLANK);
@@ -173,18 +194,24 @@ public abstract class BaseDBPartitionTestCase {
 	protected static void enableDBPartition() throws Exception {
 		CompanyThreadLocal.setCompanyId(PortalInstances.getDefaultCompanyId());
 
-		_dbPartitionEnabled = GetterUtil.getBoolean(
-			_props.get("database.partition.enabled"));
+		_dbPartitionEnabled = DBPartition.isPartitionEnabled();
 
 		if (_dbPartitionEnabled) {
+			connection = DataAccess.getConnection();
+
+			dbInspector = new DBInspector(connection);
+
 			return;
 		}
 
-		ReflectionTestUtil.setFieldValue(
-			DBPartitionUtil.class, "_DATABASE_PARTITION_ENABLED", true);
+		_originalDatabasePartitionEnabled = PropsUtil.get(
+			"database.partition.enabled");
+
+		PropsUtil.set("database.partition.enabled", "true");
+
 		ReflectionTestUtil.setFieldValue(
 			DBPartitionUtil.class, "_DATABASE_PARTITION_SCHEMA_NAME_PREFIX",
-			_DB_PARTITION_SCHEMA_NAME_PREFIX);
+			_DATABASE_PARTITION_SCHEMA_NAME_PREFIX);
 		ReflectionTestUtil.setFieldValue(
 			DBPartitionUtil.class, "_DATABASE_PARTITION_THREAD_POOL_ENABLED",
 			true);
@@ -207,9 +234,24 @@ public abstract class BaseDBPartitionTestCase {
 			InfrastructureUtil.class, "_dataSource",
 			_lazyConnectionDataSourceProxy);
 
+		_restartComponent(
+			"com.liferay.portal.db.partition",
+			"com.liferay.portal.db.partition.internal.component.enabler." +
+				"DBPartitionComponentEnabler");
+
 		connection = DataAccess.getConnection();
 
 		dbInspector = new DBInspector(connection);
+	}
+
+	protected static void extractDBPartitions() throws Exception {
+		extractDBPartitions(COMPANY_IDS);
+	}
+
+	protected static void extractDBPartitions(long[] companyIds)
+		throws Exception {
+
+		_executeOnDBPartitions(companyIds, DBPartitionUtil::extractDBPartition);
 	}
 
 	protected static String getCreateIndexSQL(String tableName) {
@@ -230,7 +272,95 @@ public abstract class BaseDBPartitionTestCase {
 				"_DATABASE_PARTITION_SCHEMA_NAME_PREFIX") + companyId;
 		}
 
-		return _DB_PARTITION_SCHEMA_NAME_PREFIX + companyId;
+		return _DATABASE_PARTITION_SCHEMA_NAME_PREFIX + companyId;
+	}
+
+	protected static void insertDBPartitions() throws Exception {
+		CurrentConnection defaultCurrentConnection =
+			CurrentConnectionUtil.getCurrentConnection();
+
+		try {
+			CurrentConnection currentConnection = dataSource -> connection;
+
+			ReflectionTestUtil.setFieldValue(
+				CurrentConnectionUtil.class, "_currentConnection",
+				currentConnection);
+
+			for (long companyId : COMPANY_IDS) {
+				DBPartitionUtil.insertDBPartition(companyId);
+			}
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(
+				CurrentConnectionUtil.class, "_currentConnection",
+				defaultCurrentConnection);
+		}
+	}
+
+	protected static void insertPartitionData() throws Exception {
+		for (long companyId : COMPANY_IDS) {
+			try (SafeCloseable safeCloseable =
+					CompanyThreadLocal.setWithSafeCloseable(companyId);
+				PreparedStatement preparedStatement1 =
+					connection.prepareStatement(
+						"insert into Group_ (mvccVersion, ctCollectionId, " +
+							"companyId, groupId, classNameId, classPK) " +
+								"values (?, ?, ?, ?, ?, ?)");
+				PreparedStatement preparedStatement2 =
+					connection.prepareStatement(
+						"insert into PasswordPolicy (mvccVersion, " +
+							"passwordPolicyId, companyId, defaultPolicy) " +
+								"values (?, ?, ?, ?)");
+				PreparedStatement preparedStatement3 =
+					connection.prepareStatement(
+						"insert into Role_ (mvccVersion, ctCollectionId, " +
+							"roleId, companyId, name, type_) values (?, ?, " +
+								"?, ?, ?, ?)");
+				PreparedStatement preparedStatement4 =
+					connection.prepareStatement(
+						"insert into User_ (userId, companyId, screenName, " +
+							"emailAddress, languageId, timeZoneId, type_) " +
+								"values (?, ?, ?, ?, ?, ?, ?)")) {
+
+				preparedStatement1.setLong(1, 0);
+				preparedStatement1.setLong(2, 0);
+				preparedStatement1.setLong(3, companyId);
+				preparedStatement1.setInt(4, 1);
+				preparedStatement1.setLong(
+					5, ClassNameLocalServiceUtil.getClassNameId(Company.class));
+				preparedStatement1.setLong(6, companyId);
+
+				preparedStatement1.executeUpdate();
+
+				preparedStatement2.setLong(1, 0);
+				preparedStatement2.setLong(2, 1);
+				preparedStatement2.setLong(3, companyId);
+				preparedStatement2.setInt(4, 1);
+
+				preparedStatement2.executeUpdate();
+
+				for (int i = 0; i < ROLE_NAMES.length; i++) {
+					preparedStatement3.setLong(1, 0);
+					preparedStatement3.setLong(2, 0);
+					preparedStatement3.setLong(3, i + 1);
+					preparedStatement3.setLong(4, companyId);
+					preparedStatement3.setString(5, ROLE_NAMES[i]);
+					preparedStatement3.setLong(6, 1);
+
+					preparedStatement3.executeUpdate();
+				}
+
+				preparedStatement4.setLong(1, 1);
+				preparedStatement4.setLong(2, companyId);
+				preparedStatement4.setString(3, "Test");
+				preparedStatement4.setString(4, "test@test.com");
+				preparedStatement4.setString(5, "en_US");
+				preparedStatement4.setString(6, "UTC");
+				preparedStatement4.setInt(7, UserConstants.TYPE_GUEST);
+
+				preparedStatement4.executeUpdate();
+			}
+		}
 	}
 
 	protected static void insertPartitionRequiredData() throws Exception {
@@ -239,54 +369,41 @@ public abstract class BaseDBPartitionTestCase {
 					CompanyThreadLocal.setWithSafeCloseable(companyId);
 				PreparedStatement preparedStatement1 =
 					connection.prepareStatement(
-						"insert into Company (companyId, webId) values (?, ?)");
+						"insert into Company (companyId, mx, webId) values " +
+							"(?, ?, ?)");
 				PreparedStatement preparedStatement2 =
 					connection.prepareStatement(
-						"insert into User_ (userId, companyId, screenName, " +
-							"emailAddress, languageId, timeZoneId, type_) " +
-								"values (?, ?, ?, ?, ?, ?, ?)")) {
+						StringBundler.concat(
+							"insert into VirtualHost (ctCollectionId, ",
+							"virtualHostId, companyId, layoutSetId, hostname, ",
+							"defaultVirtualHost) values (?, ?, ?, ?, ?, ?)"))) {
 
 				preparedStatement1.setLong(1, companyId);
-				preparedStatement1.setString(2, "Test" + companyId);
+				preparedStatement1.setString(2, "liferay.com");
+				preparedStatement1.setString(3, "Test" + companyId);
 
 				preparedStatement1.executeUpdate();
 
-				preparedStatement2.setLong(1, 1);
-				preparedStatement2.setLong(2, companyId);
-				preparedStatement2.setString(3, "Test");
-				preparedStatement2.setString(4, "test@test.com");
-				preparedStatement2.setString(5, "en_US");
-				preparedStatement2.setString(6, "UTC");
-				preparedStatement2.setInt(7, UserConstants.TYPE_GUEST);
+				preparedStatement2.setLong(1, 0L);
+				preparedStatement2.setLong(2, RandomTestUtil.nextLong());
+				preparedStatement2.setLong(3, companyId);
+				preparedStatement2.setLong(4, 0L);
+				preparedStatement2.setString(5, "test" + companyId);
+				preparedStatement2.setBoolean(6, true);
 
 				preparedStatement2.executeUpdate();
 			}
 		}
 	}
 
-	protected static void removeDBPartitions(boolean migrate) throws Exception {
-		CurrentConnection defaultCurrentConnection =
-			CurrentConnectionUtil.getCurrentConnection();
+	protected static void removeDBPartitions() throws Exception {
+		removeDBPartitions(COMPANY_IDS);
+	}
 
-		try {
-			CurrentConnection currentConnection = dataSource -> connection;
+	protected static void removeDBPartitions(long[] companyIds)
+		throws Exception {
 
-			ReflectionTestUtil.setFieldValue(
-				DBPartitionUtil.class, "_DATABASE_PARTITION_MIGRATE_ENABLED",
-				migrate);
-			ReflectionTestUtil.setFieldValue(
-				CurrentConnectionUtil.class, "_currentConnection",
-				currentConnection);
-
-			for (long companyId : COMPANY_IDS) {
-				DBPartitionUtil.removeDBPartition(companyId);
-			}
-		}
-		finally {
-			ReflectionTestUtil.setFieldValue(
-				CurrentConnectionUtil.class, "_currentConnection",
-				defaultCurrentConnection);
-		}
+		_executeOnDBPartitions(companyIds, DBPartitionUtil::removeDBPartition);
 	}
 
 	protected void createAndPopulateControlTable(String tableName)
@@ -314,6 +431,10 @@ public abstract class BaseDBPartitionTestCase {
 
 	protected static final long[] COMPANY_IDS = {123456789L, 987654321L};
 
+	protected static final String[] ROLE_NAMES = {
+		"Administrator", "Owner", "User"
+	};
+
 	protected static final String TEST_CONTROL_TABLE_NAME = "TestControlTable";
 
 	protected static final String TEST_CONTROL_TABLE_NEW_COLUMN =
@@ -329,6 +450,68 @@ public abstract class BaseDBPartitionTestCase {
 
 	@Inject
 	protected static Portal portal;
+
+	private static void _disableComponents(
+			String bundleSymbolicName, String... components)
+		throws Exception {
+
+		Bundle bundle = BundleUtil.getBundle(
+			SystemBundleUtil.getBundleContext(), bundleSymbolicName);
+
+		for (String component : components) {
+			Promise<?> promise = _serviceComponentRuntime.disableComponent(
+				_serviceComponentRuntime.getComponentDescriptionDTO(
+					bundle, component));
+
+			promise.getValue();
+		}
+	}
+
+	private static void _executeOnDBPartitions(
+			long[] companyIds,
+			UnsafeFunction<Long, Boolean, PortalException> unsafeFunction)
+		throws Exception {
+
+		CurrentConnection defaultCurrentConnection =
+			CurrentConnectionUtil.getCurrentConnection();
+
+		try {
+			CurrentConnection currentConnection = dataSource -> connection;
+
+			ReflectionTestUtil.setFieldValue(
+				CurrentConnectionUtil.class, "_currentConnection",
+				currentConnection);
+
+			for (long companyId : companyIds) {
+				unsafeFunction.apply(companyId);
+			}
+		}
+		finally {
+			ReflectionTestUtil.setFieldValue(
+				CurrentConnectionUtil.class, "_currentConnection",
+				defaultCurrentConnection);
+		}
+	}
+
+	private static void _restartComponent(
+			String bundleSymbolicName, String component)
+		throws Exception {
+
+		Bundle bundle = BundleUtil.getBundle(
+			SystemBundleUtil.getBundleContext(), bundleSymbolicName);
+
+		Promise<?> promise = _serviceComponentRuntime.disableComponent(
+			_serviceComponentRuntime.getComponentDescriptionDTO(
+				bundle, component));
+
+		promise.getValue();
+
+		promise = _serviceComponentRuntime.enableComponent(
+			_serviceComponentRuntime.getComponentDescriptionDTO(
+				bundle, component));
+
+		promise.getValue();
+	}
 
 	private static DataSource _wrapDataSource(DataSource dataSource) {
 		return new DataSourceWrapper(dataSource) {
@@ -365,15 +548,19 @@ public abstract class BaseDBPartitionTestCase {
 		};
 	}
 
-	private static final String _DB_PARTITION_SCHEMA_NAME_PREFIX =
+	private static final String _DATABASE_PARTITION_SCHEMA_NAME_PREFIX =
 		"lpartitiontest_";
 
 	private static final DataSource _currentDataSource =
 		ReflectionTestUtil.getFieldValue(DBInitUtil.class, "_dataSource");
 	private static boolean _dbPartitionEnabled;
 	private static LazyConnectionDataSourceProxy _lazyConnectionDataSourceProxy;
+	private static String _originalDatabasePartitionEnabled;
 
 	@Inject
 	private static Props _props;
+
+	@Inject
+	private static ServiceComponentRuntime _serviceComponentRuntime;
 
 }

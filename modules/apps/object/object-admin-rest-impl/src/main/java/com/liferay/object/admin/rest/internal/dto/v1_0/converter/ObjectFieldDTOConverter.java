@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.admin.rest.internal.dto.v1_0.converter;
@@ -24,7 +15,6 @@ import com.liferay.object.constants.ObjectFieldSettingConstants;
 import com.liferay.object.service.ObjectFieldSettingLocalService;
 import com.liferay.object.service.ObjectStateFlowLocalService;
 import com.liferay.petra.function.transform.TransformUtil;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
@@ -77,23 +67,27 @@ public class ObjectFieldDTOConverter
 				label = LocalizedMapUtil.getLanguageIdMap(
 					objectField.getLabelMap());
 				listTypeDefinitionId = objectField.getListTypeDefinitionId();
-
-				if (FeatureFlagManagerUtil.isEnabled("LPS-146755")) {
-					localized = objectField.getLocalized();
-				}
-
+				localized = objectField.getLocalized();
 				name = objectField.getName();
 				objectFieldSettings = TransformUtil.transformToArray(
 					objectField.getObjectFieldSettings(),
 					objectFieldSetting -> _toObjectFieldSetting(
 						objectFieldSetting),
 					ObjectFieldSetting.class);
+				readOnly = ObjectField.ReadOnly.create(
+					objectField.getReadOnly());
+				readOnlyConditionExpression =
+					objectField.getReadOnlyConditionExpression();
 				relationshipType = ObjectField.RelationshipType.create(
 					objectField.getRelationshipType());
 				required = objectField.isRequired();
 				state = objectField.isState();
 				system = objectField.getSystem();
 				type = ObjectField.Type.create(objectField.getDBType());
+				unique =
+					com.liferay.object.field.setting.util.
+						ObjectFieldSettingUtil.isUnique(
+							objectField.getObjectFieldSettings());
 
 				setListTypeDefinitionExternalReferenceCode(
 					() -> {
@@ -116,13 +110,7 @@ public class ObjectFieldDTOConverter
 		com.liferay.object.model.ObjectFieldSetting
 			serviceBuilderObjectFieldSetting) {
 
-		if ((serviceBuilderObjectFieldSetting == null) ||
-			(!FeatureFlagManagerUtil.isEnabled("LPS-163716") &&
-			 (serviceBuilderObjectFieldSetting.compareName(
-				 ObjectFieldSettingConstants.NAME_DEFAULT_VALUE) ||
-			  serviceBuilderObjectFieldSetting.compareName(
-				  ObjectFieldSettingConstants.NAME_DEFAULT_VALUE_TYPE)))) {
-
+		if (serviceBuilderObjectFieldSetting == null) {
 			return null;
 		}
 

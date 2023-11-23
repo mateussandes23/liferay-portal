@@ -3,7 +3,6 @@ import ClayDropDown from '@clayui/drop-down';
 import ClayIcon from '@clayui/icon';
 import getCN from 'classnames';
 import Modal from 'shared/components/modal';
-import Promise from 'metal-promise';
 import React, {useEffect, useState} from 'react';
 import Table, {Column} from 'shared/components/table';
 import {
@@ -99,11 +98,9 @@ const BatchActionModal: React.FC<IBatchActionModalProps> = ({
 						trigger={
 							<ClayButton
 								className='button-root'
-								displayType='unstyled'
+								displayType='secondary'
 							>
-								<span className='text-truncate'>
-									{selectedKey}
-								</span>
+								<span>{selectedKey}</span>
 
 								<ClayIcon
 									className='icon-root ml-2'

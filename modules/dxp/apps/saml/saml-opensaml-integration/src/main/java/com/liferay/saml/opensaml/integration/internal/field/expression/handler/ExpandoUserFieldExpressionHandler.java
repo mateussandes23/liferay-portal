@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
- *
- *
- *
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.saml.opensaml.integration.internal.field.expression.handler;
@@ -32,6 +23,7 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.security.ldap.LDAPSettings;
+import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -298,19 +290,21 @@ public class ExpandoUserFieldExpressionHandler
 		}
 
 		if (expandoValue == null) {
+			ExpandoColumn column = null;
+
 			ExpandoTable table = null;
 
 			try {
 				table = _expandoTableLocalService.getTable(
 					user.getCompanyId(), User.class.getName(),
 					ExpandoTableConstants.DEFAULT_TABLE_NAME);
+
+				column = _expandoColumnLocalService.getColumn(
+					table.getTableId(), validUserFieldExpression);
 			}
 			catch (PortalException portalException) {
 				throw new SystemException(portalException);
 			}
-
-			ExpandoColumn column = _expandoColumnLocalService.getColumn(
-				table.getTableId(), validUserFieldExpression);
 
 			expandoValue = _expandoValueLocalService.createExpandoValue(0);
 
@@ -457,7 +451,8 @@ public class ExpandoUserFieldExpressionHandler
 			_expandoValueLocalService.createExpandoValue(0);
 
 		ExpandoColumn expandoColumn = _expandoColumnLocalService.getColumn(
-			companyId, User.class.getName(),
+			companyId,
+			_classNameLocalService.getClassNameId(User.class.getName()),
 			ExpandoTableConstants.DEFAULT_TABLE_NAME, columnName);
 
 		expandoValue.setColumnId(expandoColumn.getColumnId());
@@ -620,6 +615,9 @@ public class ExpandoUserFieldExpressionHandler
 			ExpandoColumnConstants.STRING_ARRAY,
 			_getValueConsumer(Function.identity(), ExpandoValue::setStringArray)
 		).build();
+
+	@Reference
+	private ClassNameLocalService _classNameLocalService;
 
 	@Reference
 	private ExpandoColumnLocalService _expandoColumnLocalService;

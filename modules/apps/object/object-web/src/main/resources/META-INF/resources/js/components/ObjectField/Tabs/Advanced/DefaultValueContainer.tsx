@@ -1,28 +1,20 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 /* eslint-disable react/jsx-curly-brace-presence */
 
 import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
-import {ClayToggle} from '@clayui/form';
+import ClayForm from '@clayui/form';
 import {
-	Card,
 	ExpressionBuilder,
 	SidebarCategory,
+	Toggle,
 } from '@liferay/object-js-components-web';
 import classNames from 'classnames';
+import {LearnMessage, LearnResourcesContext} from 'frontend-js-components-web';
 import React, {useEffect, useState} from 'react';
 
 import {
@@ -31,15 +23,14 @@ import {
 	getUpdatedDefaultValueType,
 } from '../../../../utils/defaultValues';
 import {removeFieldSettings} from '../../../../utils/fieldSettings';
-import PicklistDefaultValueSelect from '../../DefaultValueFields/PicklistDefaultValueSelect';
+import ListTypeDefaultValueSelect from '../../DefaultValueFields/ListTypeDefaultValueSelect';
 import {ObjectFieldErrors} from '../../ObjectFieldFormBase';
-
 interface DefaultValueContainerProps {
 	creationLanguageId: Liferay.Language.Locale;
-	disabled?: boolean;
 	errors: ObjectFieldErrors;
-	objectFieldBusinessType: ObjectFieldBusinessType;
-	objectFieldSettings: ObjectFieldSetting[];
+	learnResources: ObjectWebLearnResources;
+	modelBuilder?: boolean;
+	onSubmit?: (values?: Partial<ObjectField>) => void;
 	setValues: (value: Partial<ObjectField>) => void;
 	sidebarElements: SidebarCategory[];
 	values: Partial<ObjectField>;
@@ -50,6 +41,7 @@ export interface InputAsValueFieldComponentProps {
 	defaultValue?: ObjectFieldSettingValue;
 	error?: string;
 	label: string;
+	onSubmit?: (values?: Partial<ObjectField>) => void;
 	placeholder?: string;
 	required?: boolean;
 	setValues: (values: Partial<ObjectField>) => void;
@@ -61,12 +53,15 @@ type InputAsValueFieldComponents = {
 };
 
 const InputAsValueFieldComponents: Partial<InputAsValueFieldComponents> = {
-	Picklist: PicklistDefaultValueSelect,
+	Picklist: ListTypeDefaultValueSelect,
 };
 
 export function DefaultValueContainer({
 	creationLanguageId,
 	errors,
+	learnResources,
+	modelBuilder = false,
+	onSubmit,
 	setValues,
 	sidebarElements,
 	values,
@@ -100,6 +95,16 @@ export function DefaultValueContainer({
 					values
 				),
 			});
+
+			if (onSubmit) {
+				onSubmit({
+					...values,
+					objectFieldSettings: removeFieldSettings(
+						['defaultValueType', 'defaultValue'],
+						values
+					),
+				});
+			}
 		}
 		else {
 			setValues({
@@ -118,23 +123,38 @@ export function DefaultValueContainer({
 		];
 
 	return (
-		<Card disabled={false} title={Liferay.Language.get('default-value')}>
+		<div
+			className={classNames({
+				'lfr-objects__edit-object-field-card-content': !modelBuilder,
+				'lfr-objects__edit-object-field-model-builder-panel': modelBuilder,
+			})}
+		>
 			{!values.state && (
 				<ClayAlert displayType="info" title="Info">
 					{Liferay.Language.get(
 						'enter-a-value-or-use-expressions-to-set-default-values'
 					)}
+					&nbsp;
+					<LearnResourcesContext.Provider value={learnResources}>
+						<LearnMessage
+							className="alert-link"
+							resource="object-web"
+							resourceKey="general"
+						/>
+					</LearnResourcesContext.Provider>
 				</ClayAlert>
 			)}
 
 			{!values.state && (
-				<ClayToggle
-					label={Liferay.Language.get('use-default-value')}
-					onToggle={(toggled) => {
-						handleToggle(toggled);
-					}}
-					toggled={defaultValueToggleEnabled}
-				/>
+				<ClayForm.Group>
+					<Toggle
+						label={Liferay.Language.get('use-default-value')}
+						onToggle={(toggled) => {
+							handleToggle(toggled);
+						}}
+						toggled={defaultValueToggleEnabled}
+					/>
+				</ClayForm.Group>
 			)}
 
 			{defaultValueToggleEnabled && !values.state && (
@@ -196,6 +216,7 @@ export function DefaultValueContainer({
 								? Liferay.Language.get('default-value')
 								: Liferay.Language.get('input-as-value')
 						}
+						onSubmit={onSubmit}
 						required
 						setValues={setValues}
 						values={values}
@@ -210,6 +231,13 @@ export function DefaultValueContainer({
 							'use-expressions-to-create-a-condition'
 						)}
 						label={Liferay.Language.get('default-value')}
+						onBlur={(event) => {
+							event.stopPropagation();
+
+							if (onSubmit) {
+								onSubmit();
+							}
+						}}
 						onChange={({target: {value}}) => {
 							setValues({
 								objectFieldSettings: getUpdatedDefaultValueFieldSettings(
@@ -234,6 +262,17 @@ export function DefaultValueContainer({
 												'expressionBuilder'
 											),
 										});
+
+										if (onSubmit) {
+											onSubmit({
+												...values,
+												objectFieldSettings: getUpdatedDefaultValueFieldSettings(
+													values,
+													script,
+													'expressionBuilder'
+												),
+											});
+										}
 									},
 									placeholder: `<#-- ${Liferay.Language.get(
 										'create-a-condition-to-set-the-default-value'
@@ -256,6 +295,6 @@ export function DefaultValueContainer({
 						}
 					/>
 				)}
-		</Card>
+		</div>
 	);
 }

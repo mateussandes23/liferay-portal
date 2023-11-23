@@ -1,20 +1,10 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.upgrade.internal.report;
 
-import com.liferay.osgi.util.service.Snapshot;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.db.DB;
@@ -25,6 +15,7 @@ import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.ReleaseConstants;
+import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.kernel.upgrade.ReleaseManager;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.util.FileUtil;
@@ -36,6 +27,7 @@ import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.tools.DBUpgrader;
 import com.liferay.portal.upgrade.PortalUpgradeProcess;
 import com.liferay.portal.upgrade.internal.recorder.UpgradeRecorder;
@@ -43,6 +35,8 @@ import com.liferay.portal.util.PropsValues;
 
 import java.io.File;
 import java.io.IOException;
+
+import java.nio.file.Files;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -89,16 +83,8 @@ public class UpgradeReport {
 	}
 
 	private int _getBuildNumber() {
-		try (Connection connection = DataAccess.getConnection();
-			PreparedStatement preparedStatement = connection.prepareStatement(
-				"select buildNumber from Release_ where releaseId = " +
-					ReleaseConstants.DEFAULT_ID)) {
-
-			ResultSet resultSet = preparedStatement.executeQuery();
-
-			if (resultSet.next()) {
-				return resultSet.getInt("buildNumber");
-			}
+		try (Connection connection = DataAccess.getConnection()) {
+			return PortalUpgradeProcess.getCurrentBuildNumber(connection);
 		}
 		catch (Exception exception) {
 			if (_log.isWarnEnabled()) {
@@ -469,17 +455,35 @@ public class UpgradeReport {
 	}
 
 	private File _getReportFile() {
-		File reportsDir;
+		File reportsDir = null;
 
-		if (DBUpgrader.isUpgradeClient()) {
-			reportsDir = new File(".", "reports");
-		}
-		else {
-			reportsDir = new File(PropsValues.LIFERAY_HOME, "reports");
+		if (!Validator.isBlank(PropsValues.UPGRADE_REPORT_DIR)) {
+			reportsDir = new File(PropsValues.UPGRADE_REPORT_DIR);
+
+			if ((!reportsDir.exists() && !reportsDir.mkdir()) ||
+				!Files.isWritable(reportsDir.toPath())) {
+
+				reportsDir = null;
+
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						"Unable to generate the upgrade report at " +
+							PropsValues.UPGRADE_REPORT_DIR);
+				}
+			}
 		}
 
-		if ((reportsDir != null) && !reportsDir.exists()) {
-			reportsDir.mkdirs();
+		if (reportsDir == null) {
+			if (DBUpgrader.isUpgradeClient()) {
+				reportsDir = new File(".", "reports");
+			}
+			else {
+				reportsDir = new File(PropsValues.LIFERAY_HOME, "reports");
+			}
+
+			if (!reportsDir.exists()) {
+				reportsDir.mkdirs();
+			}
 		}
 
 		File reportFile = new File(reportsDir, "upgrade_report.info");
@@ -516,8 +520,7 @@ public class UpgradeReport {
 
 	private String _getReportLine(String key, Object value) {
 		return StringBundler.concat(
-			_getReportHeader(key), StringPool.COLON, StringPool.SPACE,
-			value.toString());
+			_getReportHeader(key), StringPool.COLON, StringPool.SPACE, value);
 	}
 
 	private String _getRootDir(String dlStoreConfigurationPid) {

@@ -8,8 +8,8 @@ definition {
 	property release.feature.flags.disable.DISABLE_PRIVATE_LAYOUTS = "true";
 	property testray.main.component.name = "Site Initializer Testray";
 
-	var testSiteName = "Testray 2";
 	var projectName = "Project 1";
+	var testSiteName = "Testray 2";
 
 	setUp {
 		task ("Set up instance and sign in") {
@@ -19,7 +19,10 @@ definition {
 		}
 
 		task ("Create a new Testray Site") {
-			Testray.addTestraySite(siteName = ${testSiteName});
+			HeadlessSite.addSite(
+				siteName = ${testSiteName},
+				templateName = "Testray",
+				templateType = "Site Initializer");
 		}
 
 		task ("Create a Project via API") {
@@ -30,7 +33,7 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		task ("Logout And Login with test user") {
 			User.logoutAndLoginPG(
@@ -38,13 +41,13 @@ definition {
 				userLoginFullName = "test test");
 		}
 
-		task ("Delete all objects, Testray Site and Client Extensions") {
+		task ("Delete project, Testray Site and Client Extensions") {
 			JSONTestrayAPI.deleteProject(projectName = ${projectName});
 
 			Testray.testrayApisTearDown();
 		}
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 	}
@@ -61,15 +64,11 @@ definition {
 		}
 
 		task ("When go to the project page") {
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 		}
 
 		task ("Then can see the project in the table") {
-			AssertElementPresent(
-				key_projectName = ${projectName},
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = ${projectName});
 		}
 
 		task ("And can not see add button") {
@@ -78,22 +77,18 @@ definition {
 
 		task ("When right click in project") {
 			RightClick.rightClick(
-				key_projectName = ${projectName},
-				locator1 = "Testray#ITEM_NAME");
+				key_tableEntry = ${projectName},
+				locator1 = "Testray#TABLE_ENTRY");
 		}
 
 		task ("Then can not see the 'Edit, Delete' options in right click") {
-			AssertElementNotPresent(
-				item = "Edit",
-				locator1 = "TestrayContextMenu#CONTEXT_MENU_PROJECTS_ITEMS");
+			MenuItem.viewNotPresent(menuItem = "Edit");
 
-			AssertElementNotPresent(
-				item = "Delete",
-				locator1 = "TestrayContextMenu#CONTEXT_MENU_PROJECTS_ITEMS");
+			MenuItem.viewNotPresent(menuItem = "Delete");
 		}
 
 		task ("And when click kebab in project") {
-			Testray.goToProjectPage(projectName = ${projectName});
+			Testray.clickTableEntry(tableEntry = ${projectName});
 
 			Click(locator1 = "ObjectAdmin#KEBAB_MENU");
 		}
@@ -121,15 +116,11 @@ definition {
 		}
 
 		task ("When go to the project page") {
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 		}
 
 		task ("Then can see the project in the table") {
-			AssertElementPresent(
-				key_projectName = ${projectName},
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = ${projectName});
 		}
 
 		task ("And can not see add button") {
@@ -138,22 +129,18 @@ definition {
 
 		task ("When right click in project") {
 			RightClick.rightClick(
-				key_projectName = ${projectName},
-				locator1 = "Testray#ITEM_NAME");
+				key_tableEntry = ${projectName},
+				locator1 = "Testray#TABLE_ENTRY");
 		}
 
 		task ("Then can not see the 'Edit, Delete' options in right click") {
-			AssertElementNotPresent(
-				item = "Edit",
-				locator1 = "TestrayContextMenu#CONTEXT_MENU_PROJECTS_ITEMS");
+			MenuItem.viewNotPresent(menuItem = "Edit");
 
-			AssertElementNotPresent(
-				item = "Delete",
-				locator1 = "TestrayContextMenu#CONTEXT_MENU_PROJECTS_ITEMS");
+			MenuItem.viewNotPresent(menuItem = "Delete");
 		}
 
 		task ("And when click kebab in project") {
-			Testray.goToProjectPage(projectName = ${projectName});
+			Testray.clickTableEntry(tableEntry = ${projectName});
 
 			Click(locator1 = "ObjectAdmin#KEBAB_MENU");
 		}
@@ -181,15 +168,11 @@ definition {
 		}
 
 		task ("When go to the project page") {
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 		}
 
 		task ("Then can see the project in the table") {
-			AssertElementPresent(
-				key_projectName = ${projectName},
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = ${projectName});
 		}
 
 		task ("And can not see add button") {
@@ -198,22 +181,18 @@ definition {
 
 		task ("When right click in project") {
 			RightClick.rightClick(
-				key_projectName = ${projectName},
-				locator1 = "Testray#ITEM_NAME");
+				key_tableEntry = ${projectName},
+				locator1 = "Testray#TABLE_ENTRY");
 		}
 
 		task ("Then can not see the 'Edit, Delete' options in right click") {
-			AssertElementNotPresent(
-				item = "Edit",
-				locator1 = "TestrayContextMenu#CONTEXT_MENU_PROJECTS_ITEMS");
+			MenuItem.viewNotPresent(menuItem = "Edit");
 
-			AssertElementNotPresent(
-				item = "Delete",
-				locator1 = "TestrayContextMenu#CONTEXT_MENU_PROJECTS_ITEMS");
+			MenuItem.viewNotPresent(menuItem = "Delete");
 		}
 
 		task ("And when click kebab in project") {
-			Testray.goToProjectPage(projectName = ${projectName});
+			Testray.clickTableEntry(tableEntry = ${projectName});
 
 			Click(locator1 = "ObjectAdmin#KEBAB_MENU");
 		}

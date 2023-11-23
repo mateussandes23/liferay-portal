@@ -4,7 +4,6 @@ import ClayButton from '@clayui/button';
 import ClayLink from '@clayui/link';
 import Form, {validateRequired} from 'shared/components/form';
 import NavigationWarning from 'shared/components/NavigationWarning';
-import Promise from 'metal-promise';
 import React from 'react';
 import SegmentEditStatic from 'segment/segment-editor/static/SegmentEditStatic';
 import Sheet from 'shared/components/Sheet';
@@ -40,7 +39,7 @@ export class StaticSegmentEdit extends React.Component {
 	createStaticSegment(form) {
 		return this.updateSegment({
 			changeset: this.state.changeset,
-			name: form.name,
+			name: form.name.trim(),
 			segmentType: SegmentTypes.Static
 		});
 	}

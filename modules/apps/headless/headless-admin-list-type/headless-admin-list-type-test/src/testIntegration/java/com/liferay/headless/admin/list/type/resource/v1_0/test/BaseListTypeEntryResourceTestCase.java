@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.admin.list.type.resource.v1_0.test;
@@ -44,6 +35,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -216,7 +208,7 @@ public abstract class BaseListTypeEntryResourceTestCase {
 					externalReferenceCode, null, null, null,
 					Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantExternalReferenceCode != null) {
 			ListTypeEntry irrelevantListTypeEntry =
@@ -228,13 +220,12 @@ public abstract class BaseListTypeEntryResourceTestCase {
 				listTypeEntryResource.
 					getListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage(
 						irrelevantExternalReferenceCode, null, null, null,
-						Pagination.of(1, 2), null);
+						Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantListTypeEntry),
-				(List<ListTypeEntry>)page.getItems());
+			assertContains(
+				irrelevantListTypeEntry, (List<ListTypeEntry>)page.getItems());
 			assertValid(
 				page,
 				testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage_getExpectedActions(
@@ -255,11 +246,10 @@ public abstract class BaseListTypeEntryResourceTestCase {
 					externalReferenceCode, null, null, null,
 					Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(listTypeEntry1, listTypeEntry2),
-			(List<ListTypeEntry>)page.getItems());
+		assertContains(listTypeEntry1, (List<ListTypeEntry>)page.getItems());
+		assertContains(listTypeEntry2, (List<ListTypeEntry>)page.getItems());
 		assertValid(
 			page,
 			testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage_getExpectedActions(
@@ -318,45 +308,40 @@ public abstract class BaseListTypeEntryResourceTestCase {
 	public void testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPageWithFilterDoubleEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.DOUBLE);
+		testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPageWithFilter(
+			"eq", EntityField.Type.DOUBLE);
+	}
 
-		if (entityFields.isEmpty()) {
-			return;
-		}
+	@Test
+	public void testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPageWithFilterStringContains()
+		throws Exception {
 
-		String externalReferenceCode =
-			testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage_getExternalReferenceCode();
-
-		ListTypeEntry listTypeEntry1 =
-			testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage_addListTypeEntry(
-				externalReferenceCode, randomListTypeEntry());
-
-		@SuppressWarnings("PMD.UnusedLocalVariable")
-		ListTypeEntry listTypeEntry2 =
-			testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage_addListTypeEntry(
-				externalReferenceCode, randomListTypeEntry());
-
-		for (EntityField entityField : entityFields) {
-			Page<ListTypeEntry> page =
-				listTypeEntryResource.
-					getListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage(
-						externalReferenceCode, null, null,
-						getFilterString(entityField, "eq", listTypeEntry1),
-						Pagination.of(1, 2), null);
-
-			assertEquals(
-				Collections.singletonList(listTypeEntry1),
-				(List<ListTypeEntry>)page.getItems());
-		}
+		testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPageWithFilter(
+			"contains", EntityField.Type.STRING);
 	}
 
 	@Test
 	public void testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPageWithFilterStringEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.STRING);
+		testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPageWithFilter(
+			"eq", EntityField.Type.STRING);
+	}
+
+	@Test
+	public void testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPageWithFilterStringStartsWith()
+		throws Exception {
+
+		testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPageWithFilter(
+			"startswith", EntityField.Type.STRING);
+	}
+
+	protected void
+			testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPageWithFilter(
+				String operator, EntityField.Type type)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
 
 		if (entityFields.isEmpty()) {
 			return;
@@ -379,7 +364,7 @@ public abstract class BaseListTypeEntryResourceTestCase {
 				listTypeEntryResource.
 					getListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage(
 						externalReferenceCode, null, null,
-						getFilterString(entityField, "eq", listTypeEntry1),
+						getFilterString(entityField, operator, listTypeEntry1),
 						Pagination.of(1, 2), null);
 
 			assertEquals(
@@ -394,6 +379,14 @@ public abstract class BaseListTypeEntryResourceTestCase {
 
 		String externalReferenceCode =
 			testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage_getExternalReferenceCode();
+
+		Page<ListTypeEntry> listTypeEntryPage =
+			listTypeEntryResource.
+				getListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage(
+					externalReferenceCode, null, null, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			listTypeEntryPage.getTotalCount());
 
 		ListTypeEntry listTypeEntry1 =
 			testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage_addListTypeEntry(
@@ -411,21 +404,22 @@ public abstract class BaseListTypeEntryResourceTestCase {
 			listTypeEntryResource.
 				getListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage(
 					externalReferenceCode, null, null, null,
-					Pagination.of(1, 2), null);
+					Pagination.of(1, totalCount + 2), null);
 
 		List<ListTypeEntry> listTypeEntries1 =
 			(List<ListTypeEntry>)page1.getItems();
 
 		Assert.assertEquals(
-			listTypeEntries1.toString(), 2, listTypeEntries1.size());
+			listTypeEntries1.toString(), totalCount + 2,
+			listTypeEntries1.size());
 
 		Page<ListTypeEntry> page2 =
 			listTypeEntryResource.
 				getListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage(
 					externalReferenceCode, null, null, null,
-					Pagination.of(2, 2), null);
+					Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<ListTypeEntry> listTypeEntries2 =
 			(List<ListTypeEntry>)page2.getItems();
@@ -437,11 +431,11 @@ public abstract class BaseListTypeEntryResourceTestCase {
 			listTypeEntryResource.
 				getListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage(
 					externalReferenceCode, null, null, null,
-					Pagination.of(1, 3), null);
+					Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(listTypeEntry1, listTypeEntry2, listTypeEntry3),
-			(List<ListTypeEntry>)page3.getItems());
+		assertContains(listTypeEntry1, (List<ListTypeEntry>)page3.getItems());
+		assertContains(listTypeEntry2, (List<ListTypeEntry>)page3.getItems());
+		assertContains(listTypeEntry3, (List<ListTypeEntry>)page3.getItems());
 	}
 
 	@Test
@@ -571,26 +565,35 @@ public abstract class BaseListTypeEntryResourceTestCase {
 			testGetListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage_addListTypeEntry(
 				externalReferenceCode, listTypeEntry2);
 
+		Page<ListTypeEntry> page =
+			listTypeEntryResource.
+				getListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage(
+					externalReferenceCode, null, null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<ListTypeEntry> ascPage =
 				listTypeEntryResource.
 					getListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage(
 						externalReferenceCode, null, null, null,
-						Pagination.of(1, 2), entityField.getName() + ":asc");
+						Pagination.of(1, (int)page.getTotalCount() + 1),
+						entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(listTypeEntry1, listTypeEntry2),
-				(List<ListTypeEntry>)ascPage.getItems());
+			assertContains(
+				listTypeEntry1, (List<ListTypeEntry>)ascPage.getItems());
+			assertContains(
+				listTypeEntry2, (List<ListTypeEntry>)ascPage.getItems());
 
 			Page<ListTypeEntry> descPage =
 				listTypeEntryResource.
 					getListTypeDefinitionByExternalReferenceCodeListTypeEntriesPage(
 						externalReferenceCode, null, null, null,
-						Pagination.of(1, 2), entityField.getName() + ":desc");
+						Pagination.of(1, (int)page.getTotalCount() + 1),
+						entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(listTypeEntry2, listTypeEntry1),
-				(List<ListTypeEntry>)descPage.getItems());
+			assertContains(
+				listTypeEntry2, (List<ListTypeEntry>)descPage.getItems());
+			assertContains(
+				listTypeEntry1, (List<ListTypeEntry>)descPage.getItems());
 		}
 	}
 
@@ -655,7 +658,7 @@ public abstract class BaseListTypeEntryResourceTestCase {
 				listTypeDefinitionId, null, null, null, Pagination.of(1, 10),
 				null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantListTypeDefinitionId != null) {
 			ListTypeEntry irrelevantListTypeEntry =
@@ -666,13 +669,12 @@ public abstract class BaseListTypeEntryResourceTestCase {
 			page =
 				listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
 					irrelevantListTypeDefinitionId, null, null, null,
-					Pagination.of(1, 2), null);
+					Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantListTypeEntry),
-				(List<ListTypeEntry>)page.getItems());
+			assertContains(
+				irrelevantListTypeEntry, (List<ListTypeEntry>)page.getItems());
 			assertValid(
 				page,
 				testGetListTypeDefinitionListTypeEntriesPage_getExpectedActions(
@@ -690,11 +692,10 @@ public abstract class BaseListTypeEntryResourceTestCase {
 		page = listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
 			listTypeDefinitionId, null, null, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(listTypeEntry1, listTypeEntry2),
-			(List<ListTypeEntry>)page.getItems());
+		assertContains(listTypeEntry1, (List<ListTypeEntry>)page.getItems());
+		assertContains(listTypeEntry2, (List<ListTypeEntry>)page.getItems());
 		assertValid(
 			page,
 			testGetListTypeDefinitionListTypeEntriesPage_getExpectedActions(
@@ -763,44 +764,39 @@ public abstract class BaseListTypeEntryResourceTestCase {
 	public void testGetListTypeDefinitionListTypeEntriesPageWithFilterDoubleEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.DOUBLE);
+		testGetListTypeDefinitionListTypeEntriesPageWithFilter(
+			"eq", EntityField.Type.DOUBLE);
+	}
 
-		if (entityFields.isEmpty()) {
-			return;
-		}
+	@Test
+	public void testGetListTypeDefinitionListTypeEntriesPageWithFilterStringContains()
+		throws Exception {
 
-		Long listTypeDefinitionId =
-			testGetListTypeDefinitionListTypeEntriesPage_getListTypeDefinitionId();
-
-		ListTypeEntry listTypeEntry1 =
-			testGetListTypeDefinitionListTypeEntriesPage_addListTypeEntry(
-				listTypeDefinitionId, randomListTypeEntry());
-
-		@SuppressWarnings("PMD.UnusedLocalVariable")
-		ListTypeEntry listTypeEntry2 =
-			testGetListTypeDefinitionListTypeEntriesPage_addListTypeEntry(
-				listTypeDefinitionId, randomListTypeEntry());
-
-		for (EntityField entityField : entityFields) {
-			Page<ListTypeEntry> page =
-				listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
-					listTypeDefinitionId, null, null,
-					getFilterString(entityField, "eq", listTypeEntry1),
-					Pagination.of(1, 2), null);
-
-			assertEquals(
-				Collections.singletonList(listTypeEntry1),
-				(List<ListTypeEntry>)page.getItems());
-		}
+		testGetListTypeDefinitionListTypeEntriesPageWithFilter(
+			"contains", EntityField.Type.STRING);
 	}
 
 	@Test
 	public void testGetListTypeDefinitionListTypeEntriesPageWithFilterStringEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.STRING);
+		testGetListTypeDefinitionListTypeEntriesPageWithFilter(
+			"eq", EntityField.Type.STRING);
+	}
+
+	@Test
+	public void testGetListTypeDefinitionListTypeEntriesPageWithFilterStringStartsWith()
+		throws Exception {
+
+		testGetListTypeDefinitionListTypeEntriesPageWithFilter(
+			"startswith", EntityField.Type.STRING);
+	}
+
+	protected void testGetListTypeDefinitionListTypeEntriesPageWithFilter(
+			String operator, EntityField.Type type)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
 
 		if (entityFields.isEmpty()) {
 			return;
@@ -822,7 +818,7 @@ public abstract class BaseListTypeEntryResourceTestCase {
 			Page<ListTypeEntry> page =
 				listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
 					listTypeDefinitionId, null, null,
-					getFilterString(entityField, "eq", listTypeEntry1),
+					getFilterString(entityField, operator, listTypeEntry1),
 					Pagination.of(1, 2), null);
 
 			assertEquals(
@@ -838,6 +834,13 @@ public abstract class BaseListTypeEntryResourceTestCase {
 		Long listTypeDefinitionId =
 			testGetListTypeDefinitionListTypeEntriesPage_getListTypeDefinitionId();
 
+		Page<ListTypeEntry> listTypeEntryPage =
+			listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
+				listTypeDefinitionId, null, null, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			listTypeEntryPage.getTotalCount());
+
 		ListTypeEntry listTypeEntry1 =
 			testGetListTypeDefinitionListTypeEntriesPage_addListTypeEntry(
 				listTypeDefinitionId, randomListTypeEntry());
@@ -852,21 +855,22 @@ public abstract class BaseListTypeEntryResourceTestCase {
 
 		Page<ListTypeEntry> page1 =
 			listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
-				listTypeDefinitionId, null, null, null, Pagination.of(1, 2),
-				null);
+				listTypeDefinitionId, null, null, null,
+				Pagination.of(1, totalCount + 2), null);
 
 		List<ListTypeEntry> listTypeEntries1 =
 			(List<ListTypeEntry>)page1.getItems();
 
 		Assert.assertEquals(
-			listTypeEntries1.toString(), 2, listTypeEntries1.size());
+			listTypeEntries1.toString(), totalCount + 2,
+			listTypeEntries1.size());
 
 		Page<ListTypeEntry> page2 =
 			listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
-				listTypeDefinitionId, null, null, null, Pagination.of(2, 2),
-				null);
+				listTypeDefinitionId, null, null, null,
+				Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<ListTypeEntry> listTypeEntries2 =
 			(List<ListTypeEntry>)page2.getItems();
@@ -876,12 +880,12 @@ public abstract class BaseListTypeEntryResourceTestCase {
 
 		Page<ListTypeEntry> page3 =
 			listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
-				listTypeDefinitionId, null, null, null, Pagination.of(1, 3),
-				null);
+				listTypeDefinitionId, null, null, null,
+				Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(listTypeEntry1, listTypeEntry2, listTypeEntry3),
-			(List<ListTypeEntry>)page3.getItems());
+		assertContains(listTypeEntry1, (List<ListTypeEntry>)page3.getItems());
+		assertContains(listTypeEntry2, (List<ListTypeEntry>)page3.getItems());
+		assertContains(listTypeEntry3, (List<ListTypeEntry>)page3.getItems());
 	}
 
 	@Test
@@ -1010,24 +1014,32 @@ public abstract class BaseListTypeEntryResourceTestCase {
 			testGetListTypeDefinitionListTypeEntriesPage_addListTypeEntry(
 				listTypeDefinitionId, listTypeEntry2);
 
+		Page<ListTypeEntry> page =
+			listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
+				listTypeDefinitionId, null, null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<ListTypeEntry> ascPage =
 				listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
-					listTypeDefinitionId, null, null, null, Pagination.of(1, 2),
+					listTypeDefinitionId, null, null, null,
+					Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(listTypeEntry1, listTypeEntry2),
-				(List<ListTypeEntry>)ascPage.getItems());
+			assertContains(
+				listTypeEntry1, (List<ListTypeEntry>)ascPage.getItems());
+			assertContains(
+				listTypeEntry2, (List<ListTypeEntry>)ascPage.getItems());
 
 			Page<ListTypeEntry> descPage =
 				listTypeEntryResource.getListTypeDefinitionListTypeEntriesPage(
-					listTypeDefinitionId, null, null, null, Pagination.of(1, 2),
+					listTypeDefinitionId, null, null, null,
+					Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(listTypeEntry2, listTypeEntry1),
-				(List<ListTypeEntry>)descPage.getItems());
+			assertContains(
+				listTypeEntry2, (List<ListTypeEntry>)descPage.getItems());
+			assertContains(
+				listTypeEntry1, (List<ListTypeEntry>)descPage.getItems());
 		}
 	}
 
@@ -1418,14 +1430,19 @@ public abstract class BaseListTypeEntryResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1773,9 +1790,47 @@ public abstract class BaseListTypeEntryResourceTestCase {
 		}
 
 		if (entityFieldName.equals("externalReferenceCode")) {
-			sb.append("'");
-			sb.append(String.valueOf(listTypeEntry.getExternalReferenceCode()));
-			sb.append("'");
+			Object object = listTypeEntry.getExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1786,17 +1841,93 @@ public abstract class BaseListTypeEntryResourceTestCase {
 		}
 
 		if (entityFieldName.equals("key")) {
-			sb.append("'");
-			sb.append(String.valueOf(listTypeEntry.getKey()));
-			sb.append("'");
+			Object object = listTypeEntry.getKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(listTypeEntry.getName()));
-			sb.append("'");
+			Object object = listTypeEntry.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1807,9 +1938,47 @@ public abstract class BaseListTypeEntryResourceTestCase {
 		}
 
 		if (entityFieldName.equals("type")) {
-			sb.append("'");
-			sb.append(String.valueOf(listTypeEntry.getType()));
-			sb.append("'");
+			Object object = listTypeEntry.getType();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

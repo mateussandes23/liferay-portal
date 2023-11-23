@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portlet.configuration.css.web.internal.display.context;
@@ -65,17 +56,17 @@ public class PortletConfigurationCSSPortletDisplayContext {
 		String portletResource = ParamUtil.getString(
 			renderRequest, "portletResource");
 
-		PortletPreferences portletSetup =
+		PortletPreferences portletPreferences =
 			themeDisplay.getStrictLayoutPortletSetup(
 				themeDisplay.getLayout(), portletResource);
 
 		JSONObject portletSetupJSONObject = PortletSetupUtil.cssToJSONObject(
-			portletSetup);
+			portletPreferences);
 
 		_renderRequest = renderRequest;
 
 		_portletResource = portletResource;
-		_portletSetup = portletSetup;
+		_portletPreferences = portletPreferences;
 		_portletSetupJSONObject = portletSetupJSONObject;
 	}
 
@@ -165,7 +156,7 @@ public class PortletConfigurationCSSPortletDisplayContext {
 
 			String languageId = LocaleUtil.toLanguageId(curLocale);
 
-			String portletSetupTitle = _portletSetup.getValue(
+			String portletSetupTitle = _portletPreferences.getValue(
 				"portletSetupTitle_" + languageId,
 				PortalUtil.getPortletTitle(portlet, servletContext, curLocale));
 
@@ -230,7 +221,7 @@ public class PortletConfigurationCSSPortletDisplayContext {
 			return _portletDecoratorId;
 		}
 
-		_portletDecoratorId = _portletSetup.getValue(
+		_portletDecoratorId = _portletPreferences.getValue(
 			"portletSetupPortletDecoratorId", _getDefaultDecoratorId());
 
 		return _portletDecoratorId;
@@ -303,7 +294,7 @@ public class PortletConfigurationCSSPortletDisplayContext {
 		}
 
 		_useCustomTitle = GetterUtil.getBoolean(
-			_portletSetup.getValue(
+			_portletPreferences.getValue(
 				"portletSetupUseCustomTitle", StringPool.BLANK));
 
 		return _useCustomTitle;
@@ -331,8 +322,8 @@ public class PortletConfigurationCSSPortletDisplayContext {
 
 	private DecimalFormat _decimalFormat;
 	private String _portletDecoratorId;
+	private final PortletPreferences _portletPreferences;
 	private final String _portletResource;
-	private final PortletPreferences _portletSetup;
 	private final JSONObject _portletSetupJSONObject;
 	private final RenderRequest _renderRequest;
 	private Boolean _useCustomTitle;

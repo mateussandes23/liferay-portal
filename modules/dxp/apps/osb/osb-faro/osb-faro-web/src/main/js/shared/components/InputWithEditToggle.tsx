@@ -1,11 +1,10 @@
 import autobind from 'autobind-decorator';
 import ClayButton from '@clayui/button';
 import ClayIcon from '@clayui/icon';
-import ClayLoadingIndicator from '@clayui/loading-indicator';
 import Form from 'shared/components/form';
 import getCN from 'classnames';
 import Label from 'shared/components/form/Label';
-import Promise from 'metal-promise';
+import Loading, {Align} from 'shared/components/Loading';
 import React from 'react';
 import {Formik} from 'formik';
 interface IInputWithEditToggleProps {
@@ -14,9 +13,9 @@ interface IInputWithEditToggleProps {
 	inputWidth?: number;
 	label: string;
 	name?: string;
-	onSubmit: (value, name) => typeof Promise;
+	onSubmit: (value, name) => Promise<any>;
 	required: boolean;
-	validate: typeof Promise;
+	validate: (value) => Promise<any>;
 	value: string;
 }
 
@@ -145,10 +144,8 @@ export default class InputWithEditToggle extends React.Component<
 													type='submit'
 												>
 													{isSubmitting && (
-														<ClayLoadingIndicator
-															className='d-inline-block mr-2'
-															displayType='secondary'
-															size='sm'
+														<Loading
+															align={Align.Left}
 														/>
 													)}
 

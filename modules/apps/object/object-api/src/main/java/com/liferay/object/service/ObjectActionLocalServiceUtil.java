@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.service;
@@ -67,14 +58,15 @@ public class ObjectActionLocalServiceUtil {
 			Map<java.util.Locale, String> labelMap, String name,
 			String objectActionExecutorKey, String objectActionTriggerKey,
 			com.liferay.portal.kernel.util.UnicodeProperties
-				parametersUnicodeProperties)
+				parametersUnicodeProperties,
+			boolean system)
 		throws PortalException {
 
 		return getService().addObjectAction(
 			externalReferenceCode, userId, objectDefinitionId, active,
 			conditionExpression, description, errorMessageMap, labelMap, name,
 			objectActionExecutorKey, objectActionTriggerKey,
-			parametersUnicodeProperties);
+			parametersUnicodeProperties, system);
 	}
 
 	public static ObjectAction addOrUpdateObjectAction(
@@ -84,14 +76,15 @@ public class ObjectActionLocalServiceUtil {
 			Map<java.util.Locale, String> labelMap, String name,
 			String objectActionExecutorKey, String objectActionTriggerKey,
 			com.liferay.portal.kernel.util.UnicodeProperties
-				parametersUnicodeProperties)
+				parametersUnicodeProperties,
+			boolean system)
 		throws PortalException {
 
 		return getService().addOrUpdateObjectAction(
 			externalReferenceCode, objectActionId, userId, objectDefinitionId,
 			active, conditionExpression, description, errorMessageMap, labelMap,
 			name, objectActionExecutorKey, objectActionTriggerKey,
-			parametersUnicodeProperties);
+			parametersUnicodeProperties, system);
 	}
 
 	/**
@@ -140,8 +133,11 @@ public class ObjectActionLocalServiceUtil {
 	 *
 	 * @param objectAction the object action
 	 * @return the object action that was removed
+	 * @throws PortalException
 	 */
-	public static ObjectAction deleteObjectAction(ObjectAction objectAction) {
+	public static ObjectAction deleteObjectAction(ObjectAction objectAction)
+		throws PortalException {
+
 		return getService().deleteObjectAction(objectAction);
 	}
 
@@ -248,6 +244,13 @@ public class ObjectActionLocalServiceUtil {
 
 	public static ObjectAction fetchObjectAction(long objectActionId) {
 		return getService().fetchObjectAction(objectActionId);
+	}
+
+	public static ObjectAction fetchObjectAction(
+		String externalReferenceCode, long objectDefinitionId) {
+
+		return getService().fetchObjectAction(
+			externalReferenceCode, objectDefinitionId);
 	}
 
 	/**
@@ -413,6 +416,10 @@ public class ObjectActionLocalServiceUtil {
 
 	public static ObjectActionLocalService getService() {
 		return _service;
+	}
+
+	public static void setService(ObjectActionLocalService service) {
+		_service = service;
 	}
 
 	private static volatile ObjectActionLocalService _service;

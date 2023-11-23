@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.servlet;
@@ -49,6 +40,7 @@ import com.liferay.portal.minifier.MinifierUtil;
 import com.liferay.portal.servlet.filters.dynamiccss.DynamicCSSUtil;
 import com.liferay.portal.util.AggregateUtil;
 import com.liferay.portal.util.PropsValues;
+import com.liferay.portlet.documentlibrary.constants.DLFriendlyURLConstants;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -200,7 +192,8 @@ public class ComboServlet extends HttpServlet {
 				extension = pathExtension;
 			}
 
-			if (!modulePath.startsWith(_WEB_SERVER_SERVLET_FILE_ENTRY_PREFIX) &&
+			if (!modulePath.startsWith(
+					DLFriendlyURLConstants.PATH_PREFIX_DOCUMENT) &&
 				!extension.equals(pathExtension)) {
 
 				httpServletResponse.setHeader(
@@ -291,6 +284,15 @@ public class ComboServlet extends HttpServlet {
 						httpServletResponse, modulePath, minifierType);
 				}
 
+				if (bytes == null) {
+					cacheEnabled = false;
+
+					bytes = _EMPTY_FILE_CONTENT_BAG._fileContent;
+
+					httpServletResponse.setHeader(
+						HttpHeaders.CACHE_CONTROL, "max-age=1, no-cache");
+				}
+
 				bytesArray[i] = bytes;
 			}
 
@@ -366,20 +368,19 @@ public class ComboServlet extends HttpServlet {
 				RequestDispatcherUtil.getBufferCacheServletResponse(
 					requestDispatcher, httpServletRequest, httpServletResponse);
 
-			String stringFileContent = StringPool.BLANK;
-
 			String cacheControl = GetterUtil.getString(
 				bufferCacheServletResponse.getHeader("Cache-Control"));
 			String contentType = GetterUtil.getString(
 				bufferCacheServletResponse.getContentType());
 			int status = bufferCacheServletResponse.getStatus();
 
-			if (cacheControl.contains("no-cache") ||
-				cacheControl.contains("no-store")) {
-
+			if (status != HttpServletResponse.SC_OK) {
 				_log.error(
-					"Skip " + modulePath +
-						" because it sent no-cache or no-store headers");
+					StringBundler.concat(
+						"Skip ", modulePath, " because it returns HTTP status ",
+						status));
+
+				return null;
 			}
 			else if (!contentType.startsWith("application/javascript") &&
 					 !contentType.startsWith("text/css") &&
@@ -388,16 +389,20 @@ public class ComboServlet extends HttpServlet {
 				_log.error(
 					"Skip " + modulePath +
 						" because its content type is not CSS or JavaScript");
+
+				return null;
 			}
-			else if (status != HttpServletResponse.SC_OK) {
+			else if (cacheControl.contains("no-cache") ||
+					 cacheControl.contains("no-store")) {
+
 				_log.error(
-					StringBundler.concat(
-						"Skip ", modulePath, " because it returns HTTP status ",
-						status));
+					"Skip " + modulePath +
+						" because it sent no-cache or no-store headers");
+
+				return null;
 			}
-			else {
-				stringFileContent = bufferCacheServletResponse.getString();
-			}
+
+			String stringFileContent = bufferCacheServletResponse.getString();
 
 			if (!StringUtil.endsWith(resourcePath, _CSS_MINIFIED_DASH_SUFFIX) &&
 				!StringUtil.endsWith(resourcePath, _CSS_MINIFIED_DOT_SUFFIX) &&
@@ -549,7 +554,9 @@ public class ComboServlet extends HttpServlet {
 			moduleName = moduleName.substring(0, index);
 		}
 
-		if (moduleName.startsWith(_WEB_SERVER_SERVLET_FILE_ENTRY_PREFIX)) {
+		if (moduleName.startsWith(
+				DLFriendlyURLConstants.PATH_PREFIX_DOCUMENT)) {
+
 			return true;
 		}
 
@@ -597,9 +604,6 @@ public class ComboServlet extends HttpServlet {
 	private static final String _JAVASCRIPT_MINIFIED_DASH_SUFFIX = "-min.js";
 
 	private static final String _JAVASCRIPT_MINIFIED_DOT_SUFFIX = ".min.js";
-
-	private static final String _WEB_SERVER_SERVLET_FILE_ENTRY_PREFIX =
-		"/documents/d/";
 
 	private static final Log _log = LogFactoryUtil.getLog(ComboServlet.class);
 

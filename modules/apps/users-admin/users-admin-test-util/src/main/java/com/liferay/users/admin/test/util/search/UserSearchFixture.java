@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.users.admin.test.util.search;
@@ -17,6 +8,7 @@ package com.liferay.users.admin.test.util.search;
 import com.liferay.asset.kernel.model.AssetTag;
 import com.liferay.asset.kernel.service.AssetTagLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.Contact;
 import com.liferay.portal.kernel.model.Country;
@@ -90,7 +82,7 @@ public class UserSearchFixture {
 
 	public Address addAddress(User user) throws PortalException {
 		List<ListType> listTypes = ListTypeServiceUtil.getListTypes(
-			ListTypeConstants.CONTACT_ADDRESS);
+			user.getCompanyId(), ListTypeConstants.CONTACT_ADDRESS);
 
 		ListType listType = listTypes.get(0);
 
@@ -226,9 +218,7 @@ public class UserSearchFixture {
 
 		addAddress(user);
 
-		UserLocalServiceUtil.updateUser(user);
-
-		return user;
+		return UserLocalServiceUtil.updateUser(user);
 	}
 
 	/**
@@ -381,12 +371,19 @@ public class UserSearchFixture {
 
 		_permissionChecker = PermissionThreadLocal.getPermissionChecker();
 
+		User user = TestPropsValues.getUser();
+
 		PermissionThreadLocal.setPermissionChecker(
 			new DummyPermissionChecker() {
 
 				@Override
 				public long getCompanyId() {
 					return _companyId;
+				}
+
+				@Override
+				public User getUser() {
+					return user;
 				}
 
 				@Override
@@ -459,7 +456,12 @@ public class UserSearchFixture {
 		List<String> list = new ArrayList<>(tags.length);
 
 		for (String tag : tags) {
-			list.add(StringUtil.toLowerCase(tag));
+			if (FeatureFlagManagerUtil.isEnabled("LPS-194362")) {
+				list.add(tag);
+			}
+			else {
+				list.add(StringUtil.toLowerCase(tag));
+			}
 		}
 
 		Collections.sort(list);

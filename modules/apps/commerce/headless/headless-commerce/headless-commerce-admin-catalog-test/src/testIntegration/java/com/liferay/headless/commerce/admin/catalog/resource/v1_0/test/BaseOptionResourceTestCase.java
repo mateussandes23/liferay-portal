@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.catalog.resource.v1_0.test;
@@ -258,33 +249,31 @@ public abstract class BaseOptionResourceTestCase {
 
 	@Test
 	public void testGetOptionsPageWithFilterDoubleEquals() throws Exception {
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.DOUBLE);
+		testGetOptionsPageWithFilter("eq", EntityField.Type.DOUBLE);
+	}
 
-		if (entityFields.isEmpty()) {
-			return;
-		}
-
-		Option option1 = testGetOptionsPage_addOption(randomOption());
-
-		@SuppressWarnings("PMD.UnusedLocalVariable")
-		Option option2 = testGetOptionsPage_addOption(randomOption());
-
-		for (EntityField entityField : entityFields) {
-			Page<Option> page = optionResource.getOptionsPage(
-				null, getFilterString(entityField, "eq", option1),
-				Pagination.of(1, 2), null);
-
-			assertEquals(
-				Collections.singletonList(option1),
-				(List<Option>)page.getItems());
-		}
+	@Test
+	public void testGetOptionsPageWithFilterStringContains() throws Exception {
+		testGetOptionsPageWithFilter("contains", EntityField.Type.STRING);
 	}
 
 	@Test
 	public void testGetOptionsPageWithFilterStringEquals() throws Exception {
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.STRING);
+		testGetOptionsPageWithFilter("eq", EntityField.Type.STRING);
+	}
+
+	@Test
+	public void testGetOptionsPageWithFilterStringStartsWith()
+		throws Exception {
+
+		testGetOptionsPageWithFilter("startswith", EntityField.Type.STRING);
+	}
+
+	protected void testGetOptionsPageWithFilter(
+			String operator, EntityField.Type type)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
 
 		if (entityFields.isEmpty()) {
 			return;
@@ -297,7 +286,7 @@ public abstract class BaseOptionResourceTestCase {
 
 		for (EntityField entityField : entityFields) {
 			Page<Option> page = optionResource.getOptionsPage(
-				null, getFilterString(entityField, "eq", option1),
+				null, getFilterString(entityField, operator, option1),
 				Pagination.of(1, 2), null);
 
 			assertEquals(
@@ -308,10 +297,10 @@ public abstract class BaseOptionResourceTestCase {
 
 	@Test
 	public void testGetOptionsPageWithPagination() throws Exception {
-		Page<Option> totalPage = optionResource.getOptionsPage(
+		Page<Option> optionPage = optionResource.getOptionsPage(
 			null, null, null, null);
 
-		int totalCount = GetterUtil.getInteger(totalPage.getTotalCount());
+		int totalCount = GetterUtil.getInteger(optionPage.getTotalCount());
 
 		Option option1 = testGetOptionsPage_addOption(randomOption());
 
@@ -337,7 +326,7 @@ public abstract class BaseOptionResourceTestCase {
 		Assert.assertEquals(options2.toString(), 1, options2.size());
 
 		Page<Option> page3 = optionResource.getOptionsPage(
-			null, null, Pagination.of(1, totalCount + 3), null);
+			null, null, Pagination.of(1, (int)totalCount + 3), null);
 
 		assertContains(option1, (List<Option>)page3.getItems());
 		assertContains(option2, (List<Option>)page3.getItems());
@@ -449,22 +438,23 @@ public abstract class BaseOptionResourceTestCase {
 
 		option2 = testGetOptionsPage_addOption(option2);
 
+		Page<Option> page = optionResource.getOptionsPage(
+			null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<Option> ascPage = optionResource.getOptionsPage(
-				null, null, Pagination.of(1, 2),
+				null, null, Pagination.of(1, (int)page.getTotalCount() + 1),
 				entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(option1, option2),
-				(List<Option>)ascPage.getItems());
+			assertContains(option1, (List<Option>)ascPage.getItems());
+			assertContains(option2, (List<Option>)ascPage.getItems());
 
 			Page<Option> descPage = optionResource.getOptionsPage(
-				null, null, Pagination.of(1, 2),
+				null, null, Pagination.of(1, (int)page.getTotalCount() + 1),
 				entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(option2, option1),
-				(List<Option>)descPage.getItems());
+			assertContains(option2, (List<Option>)descPage.getItems());
+			assertContains(option1, (List<Option>)descPage.getItems());
 		}
 	}
 
@@ -854,6 +844,14 @@ public abstract class BaseOptionResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("customFields", additionalAssertFieldName)) {
+				if (option.getCustomFields() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("description", additionalAssertFieldName)) {
 				if (option.getDescription() == null) {
 					valid = false;
@@ -966,14 +964,19 @@ public abstract class BaseOptionResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1060,6 +1063,16 @@ public abstract class BaseOptionResourceTestCase {
 			if (Objects.equals("catalogId", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						option1.getCatalogId(), option2.getCatalogId())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("customFields", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						option1.getCustomFields(), option2.getCustomFields())) {
 
 					return false;
 				}
@@ -1289,15 +1302,58 @@ public abstract class BaseOptionResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("customFields")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("description")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
 		}
 
 		if (entityFieldName.equals("externalReferenceCode")) {
-			sb.append("'");
-			sb.append(String.valueOf(option.getExternalReferenceCode()));
-			sb.append("'");
+			Object object = option.getExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1318,9 +1374,47 @@ public abstract class BaseOptionResourceTestCase {
 		}
 
 		if (entityFieldName.equals("key")) {
-			sb.append("'");
-			sb.append(String.valueOf(option.getKey()));
-			sb.append("'");
+			Object object = option.getKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

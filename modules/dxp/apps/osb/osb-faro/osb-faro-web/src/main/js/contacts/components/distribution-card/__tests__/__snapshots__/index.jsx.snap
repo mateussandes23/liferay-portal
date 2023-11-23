@@ -4,6 +4,7 @@ exports[`DistributionCard renders /w AddPropertyForm 1`] = `
 <div>
   <div
     class="card card-root distribution-card-root"
+    id="distributionBreakdownCardRoot"
     style="min-height: 536px;"
   >
     <div
@@ -24,15 +25,16 @@ exports[`DistributionCard renders /w AddPropertyForm 1`] = `
           </div>
         </div>
         <button
+          aria-label="Add"
           class="button-root add-tab active btn btn-monospaced btn-outline-borderless btn-sm btn-outline-secondary"
           type="button"
         >
           <svg
-            class="lexicon-icon lexicon-icon-plus icon-root icon-size-sm"
+            class="lexicon-icon lexicon-icon-plus"
             role="presentation"
           >
             <use
-              xlink:href="#plus"
+              href="#plus"
             />
           </svg>
         </button>
@@ -105,7 +107,7 @@ exports[`DistributionCard renders /w AddPropertyForm 1`] = `
                             role="presentation"
                           >
                             <use
-                              xlink:href="#caret-bottom"
+                              href="#caret-bottom"
                             />
                           </svg>
                         </div>
@@ -167,6 +169,7 @@ exports[`DistributionCard renders 1`] = `
 <div>
   <div
     class="card card-root distribution-card-root"
+    id="distributionBreakdownCardRoot"
     style="min-height: 536px;"
   >
     <div
@@ -192,6 +195,7 @@ exports[`DistributionCard renders 1`] = `
                 >
                   Streets
                   <button
+                    aria-label="Close"
                     class="button-root remove-tab btn btn-sm btn-unstyled"
                     type="button"
                   >
@@ -200,7 +204,7 @@ exports[`DistributionCard renders 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#times"
+                        href="#times"
                       />
                     </svg>
                   </button>
@@ -210,15 +214,16 @@ exports[`DistributionCard renders 1`] = `
           </div>
         </div>
         <button
+          aria-label="Add"
           class="button-root add-tab btn btn-monospaced btn-outline-borderless btn-sm btn-outline-secondary"
           type="button"
         >
           <svg
-            class="lexicon-icon lexicon-icon-plus icon-root icon-size-sm"
+            class="lexicon-icon lexicon-icon-plus"
             role="presentation"
           >
             <use
-              xlink:href="#plus"
+              href="#plus"
             />
           </svg>
         </button>
@@ -233,15 +238,15 @@ exports[`DistributionCard renders 1`] = `
       class="card-footer"
     >
       <a
-        class="button-root link-unstyled"
+        class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
       >
         Explore Breakdown
         <svg
-          class="lexicon-icon lexicon-icon-angle-right icon-root ml-2"
+          class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
           role="presentation"
         >
           <use
-            xlink:href="#angle-right"
+            href="#angle-right-small"
           />
         </svg>
       </a>
@@ -254,6 +259,7 @@ exports[`DistributionCard renders empty state via props with noResultsRenderer 1
 <div>
   <div
     class="card card-root distribution-card-root"
+    id="distributionBreakdownCardRoot"
     style="min-height: 536px;"
   >
     <div
@@ -279,6 +285,7 @@ exports[`DistributionCard renders empty state via props with noResultsRenderer 1
                 >
                   Streets
                   <button
+                    aria-label="Close"
                     class="button-root remove-tab btn btn-sm btn-unstyled"
                     type="button"
                   >
@@ -287,7 +294,7 @@ exports[`DistributionCard renders empty state via props with noResultsRenderer 1
                       role="presentation"
                     >
                       <use
-                        xlink:href="#times"
+                        href="#times"
                       />
                     </svg>
                   </button>
@@ -297,15 +304,16 @@ exports[`DistributionCard renders empty state via props with noResultsRenderer 1
           </div>
         </div>
         <button
+          aria-label="Add"
           class="button-root add-tab btn btn-monospaced btn-outline-borderless btn-sm btn-outline-secondary"
           type="button"
         >
           <svg
-            class="lexicon-icon lexicon-icon-plus icon-root icon-size-sm"
+            class="lexicon-icon lexicon-icon-plus"
             role="presentation"
           >
             <use
-              xlink:href="#plus"
+              href="#plus"
             />
           </svg>
         </button>
@@ -324,15 +332,15 @@ exports[`DistributionCard renders empty state via props with noResultsRenderer 1
       class="card-footer"
     >
       <a
-        class="button-root link-unstyled"
+        class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
       >
         Explore Breakdown
         <svg
-          class="lexicon-icon lexicon-icon-angle-right icon-root ml-2"
+          class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
           role="presentation"
         >
           <use
-            xlink:href="#angle-right"
+            href="#angle-right-small"
           />
         </svg>
       </a>
@@ -345,6 +353,7 @@ exports[`DistributionCard renders w/ showAddDataSource 1`] = `
 <div>
   <div
     class="card card-root distribution-card-root"
+    id="distributionBreakdownCardRoot"
     style="min-height: 536px;"
   >
     <div

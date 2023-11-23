@@ -248,11 +248,10 @@ definition {
 			locator1 = "TextInput#GENERIC_TEXT_INPUT",
 			value1 = "BLACKSKU");
 
-		Click(locator1 = "Dropdown#TRIGGER");
-
-		Click(
-			key_fieldName = "Black",
-			locator1 = "FormViewBuilder#OBJECT_FIELD_BUTTON_DROPDOWN");
+		Select(
+			key_optionName = "Color",
+			locator1 = "CommerceFrontStore#FS_PRODUCT_OPTIONS_SELECT",
+			value1 = "Black");
 
 		Check.checkToggleSwitch(
 			key_toggleSwitchLabel = "Purchasable",
@@ -531,7 +530,7 @@ definition {
 	@description = "This is a test for COMMERCE-9253. CanCheckTheApprovedStatusForSingleApproverWorkflow"
 	@priority = 5
 	test CanCheckApprovedProductWorkflowStatusWithSingleApproverWorkflow {
-		property custom.properties = "jsonws.web.service.paths.excludes=${line.separator}company.security.strangers.verify=false";
+		property custom.properties = "company.security.strangers.verify=false${line.separator}jsonws.web.service.paths.excludes=";
 		property portal.acceptance = "true";
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
@@ -751,7 +750,7 @@ definition {
 
 		Workflow.configureWorkflow(
 			workflowDefinition = "Single Approver",
-			workflowResourceValue = "Commerce Product");
+			workflowResourceValue = "Product");
 
 		CommerceNavigator.gotoPortlet(
 			category = "Product Management",
@@ -774,14 +773,14 @@ definition {
 
 			Workflow.configureWorkflow(
 				workflowDefinition = "No Workflow",
-				workflowResourceValue = "Commerce Product");
+				workflowResourceValue = "Product");
 		}
 	}
 
 	@description = "This is a test for COMMERCE-9182. VerifyDraftProductNotAppearOnMiniumCatalogPage"
 	@priority = 5
 	test CanCheckDraftProductVisibilityOnMiniumCatalogPage {
-		property custom.properties = "jsonws.web.service.paths.excludes=${line.separator}company.security.strangers.verify=false";
+		property custom.properties = "company.security.strangers.verify=false${line.separator}jsonws.web.service.paths.excludes=";
 		property portal.acceptance = "true";
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
@@ -827,7 +826,7 @@ definition {
 			userEmailAddress = "buyer@liferay.com");
 
 		Type(
-			locator1 = "Search#EMBEDDED_SEARCH_BAR",
+			locator1 = "Search#SEARCH_BAR_WIDGET",
 			value1 = "Simple T-Shirt");
 
 		Button.clickSubmitButton();
@@ -866,7 +865,7 @@ definition {
 			userEmailAddress = "buyer@liferay.com");
 
 		Type(
-			locator1 = "Search#EMBEDDED_SEARCH_BAR",
+			locator1 = "Search#SEARCH_BAR_WIDGET",
 			value1 = "Simple T-Shirt");
 
 		Button.clickSubmitButton();
@@ -902,7 +901,7 @@ definition {
 	@description = "This is a test for COMMERCE-9290. CanCheckTheDraftStatusForSingleApproverWorkflow"
 	@priority = 5
 	test CanCheckDraftProductWorkflowStatusWithSingleApproverWorkflow {
-		property custom.properties = "jsonws.web.service.paths.excludes=${line.separator}company.security.strangers.verify=false";
+		property custom.properties = "company.security.strangers.verify=false${line.separator}jsonws.web.service.paths.excludes=";
 		property portal.acceptance = "true";
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
@@ -1083,7 +1082,7 @@ definition {
 	@description = "This is a test for COMMERCE-9292. CanCheckThePendingReviewStatusForSingleApproverWorkflow"
 	@priority = 5
 	test CanCheckPendingProductWorkflowStatusWithSingleApproverWorkflow {
-		property custom.properties = "jsonws.web.service.paths.excludes=${line.separator}company.security.strangers.verify=false";
+		property custom.properties = "company.security.strangers.verify=false${line.separator}jsonws.web.service.paths.excludes=";
 		property portal.acceptance = "true";
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
@@ -1306,7 +1305,7 @@ definition {
 	@description = "This is a test for the COMMERCE-10763, to verify that a buyer user can download the virtual product by the URL retrieved using API"
 	@priority = 4
 	test CanDownloadConfiguredVirtualProduct {
-		property custom.properties = "jsonws.web.service.paths.excludes=${line.separator}company.security.strangers.verify=false";
+		property custom.properties = "company.security.strangers.verify=false${line.separator}jsonws.web.service.paths.excludes=";
 		property portal.acceptance = "false";
 
 		var baseURL = PropsUtil.get("portal.url");
@@ -1454,7 +1453,7 @@ definition {
 	@description = "This is a test for the COMMERCE-10763, to verify that a buyer user can not download the virtual product by the URL retrieved using API without permissions"
 	@priority = 4
 	test CanDownloadConfiguredVirtualProductWithoutPermissions {
-		property custom.properties = "jsonws.web.service.paths.excludes=${line.separator}company.security.strangers.verify=false";
+		property custom.properties = "company.security.strangers.verify=false${line.separator}jsonws.web.service.paths.excludes=";
 		property portal.acceptance = "false";
 
 		var baseURL = PropsUtil.get("portal.url");
@@ -1612,6 +1611,331 @@ definition {
 		}
 	}
 
+	@description = "This is a test for the COMMERCE-11644. Verify that for the product relations an media tab the date is using the correct format"
+	@priority = 5
+	test CanProductMediaAndRelationShowCorrectDateFormat {
+		property portal.acceptance = "true";
+
+		task ("Given 2 products are created") {
+			for (var productName : list "Simple,Relation") {
+				CommerceJSONProductsAPI._addCommerceProduct(
+					catalogName = "Master",
+					productDescription = "Full Description",
+					productName = "${productName} Product",
+					productType = "Simple",
+					purchasable = "true",
+					shortDescription = "Short Description");
+			}
+
+			CommerceProducts.openProductsAdmin();
+
+			CommerceProducts.searchAndGoToProductEntry(entryProductName = "Simple Product");
+		}
+
+		task ("And a new image is added") {
+			CommerceEntry.gotoMenuTab(menuTab = "Media");
+
+			CommerceProductImages.addProductImages(
+				imageTitles = "Black",
+				validationImage = "true");
+		}
+
+		task ("Then the date of the new entry is using the correct format") {
+			var imageDiplayDate = CommerceJSONProductsAPI.getCommerceProductMediaFieldValues(
+				jsonPath = "$..['displayDate']",
+				productName = "Simple Product",
+				type = "images");
+
+			var imageDiplayDate = DateUtil.format(${imageDiplayDate}, "yyyy-MM-dd'T'HH:mm:ss'Z'", "MMM d, yyyy");
+
+			for (var dateKeyWords : list "Seconds,Minutes,Hours,Days,Months") {
+				AssertElementNotPresent(
+					key_columnNumber = 3,
+					key_productName = "Commerce_Black",
+					key_value = "${dateKeyWords} Ago",
+					locator1 = "CommerceEntry#TABLE_SEARCH_BY_NAME_AND_COLUMN_CONTENT");
+			}
+
+			AssertElementPresent(
+				key_columnNumber = 3,
+				key_productName = "Commerce_Black",
+				key_value = ${imageDiplayDate},
+				locator1 = "CommerceEntry#TABLE_SEARCH_BY_NAME_AND_COLUMN_CONTENT");
+		}
+
+		task ("And a new attachment is added") {
+			CommerceProductImages.addAttachmentImages(imageTitles = "White");
+		}
+
+		task ("Then the date of the new entry is using the correct format") {
+			var attachmentDiplayDate = CommerceJSONProductsAPI.getCommerceProductMediaFieldValues(
+				jsonPath = "$..['displayDate']",
+				productName = "Simple Product",
+				type = "attachment");
+
+			var attachmentDiplayDate = DateUtil.format(${attachmentDiplayDate}, "yyyy-MM-dd'T'HH:mm:ss'Z'", "MMM d, yyyy");
+
+			for (var dateKeyWords : list "Seconds,Minutes,Hours,Days,Months") {
+				AssertElementNotPresent(
+					key_columnNumber = 3,
+					key_productName = "Commerce_White",
+					key_value = "${dateKeyWords} Ago",
+					locator1 = "CommerceEntry#TABLE_SEARCH_BY_NAME_AND_COLUMN_CONTENT");
+			}
+
+			AssertElementPresent(
+				key_columnNumber = 3,
+				key_productName = "Commerce_White",
+				key_value = ${attachmentDiplayDate},
+				locator1 = "CommerceEntry#TABLE_SEARCH_BY_NAME_AND_COLUMN_CONTENT");
+		}
+
+		task ("And during the process to add a new product relation") {
+			CommerceEntry.gotoMenuTab(menuTab = "Product Relations");
+
+			Click(locator1 = "Button#PLUS");
+
+			Click(
+				key_selectAction = "Add Up-Sell Product",
+				locator1 = "FormViewBuilder#FIELD_ELLIPSIS_ACTION_FIELDSET");
+
+			SelectFrame.selectFrameNoLoading(locator1 = "IFrame#MODAL_IFRAME");
+
+			Type(
+				locator1 = "CommerceEntry#SEARCH_PRODUCT_RELATIONS",
+				value1 = "Relation Product");
+
+			KeyPress(
+				locator1 = "CommerceEntry#SEARCH_PRODUCT_RELATIONS",
+				value1 = "\RETURN");
+		}
+
+		task ("Then the date for all the possible product relation is using the correct format") {
+			for (var dateKeyWords : list "Seconds Ago,Minutes Ago,Hours Ago,Days Ago,Months Ago") {
+				AssertElementNotPresent(
+					key_columnNumber = 6,
+					key_productName = "Relation Product",
+					key_value = ${dateKeyWords},
+					locator1 = "CommerceEntry#TABLE_SEARCH_BY_NAME_AND_COLUMN_CONTENT_RELATIONS");
+			}
+
+			var currentDate = DateUtil.getFormattedCurrentDate("MMM dd", "GMT");
+
+			AssertElementPresent(
+				key_columnNumber = 6,
+				key_productName = "Relation Product",
+				key_value = ${currentDate},
+				locator1 = "CommerceEntry#TABLE_SEARCH_BY_NAME_AND_COLUMN_CONTENT_RELATIONS");
+
+			Check.checkToggleSwitch(
+				locator1 = "CommerceAccelerators#SELECT_PRODUCT_RELATIONS",
+				productName = "Relation Product");
+
+			SelectFrameTop();
+
+			Button.clickAdd();
+
+			Alert.viewSuccessMessage();
+		}
+
+		task ("And the date for the new created relation iis using the correct date format") {
+			for (var dateKeyWords : list "Seconds Ago,Minutes Ago,Hours Ago,Days Ago,Months Ago") {
+				AssertElementNotPresent(
+					key_columnNumber = 4,
+					key_productName = "Relation Product",
+					key_value = ${dateKeyWords},
+					locator1 = "CommerceEntry#TABLE_SEARCH_BY_NAME_AND_COLUMN_CONTENT");
+			}
+
+			var currentDate = DateUtil.getFormattedCurrentDate("MMM d", "GMT");
+
+			AssertElementPresent(
+				key_columnNumber = 4,
+				key_productName = "Relation Product",
+				key_value = ${currentDate},
+				locator1 = "CommerceEntry#TABLE_SEARCH_BY_NAME_AND_COLUMN_CONTENT");
+		}
+	}
+
+	@description = "This is a test for COMMERCE-11961. User can search products on the Grouped tab of grouped products"
+	@priority = 5
+	test CanSearchProductsOnGroupedProducts {
+		property portal.acceptance = "true";
+
+		task ("Given a Minium site is created") {
+			CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
+		}
+
+		task ("And a grouped type of product is created consisting of three products") {
+			CommerceJSONProductsAPI._addCommerceProduct(
+				catalogName = "Minium",
+				productDescription = "Full Description",
+				productName = "Grouped Product",
+				productType = "Grouped",
+				shortDescription = "Short Description",
+				sku = "GROUPEDSKU");
+
+			CommerceProducts.openProductsAdmin();
+
+			CommerceNavigator.searchEntry(entryName = "Grouped");
+
+			CommerceNavigator.gotoEntry(entryName = "Grouped Product");
+
+			CommerceEntry.gotoMenuTab(menuTab = "Grouped");
+
+			for (var groupedProductNames : list "ABS Sensor,Brake Pads,Cams") {
+				CommerceProducts.addGroupedProductEntries(productNames = ${groupedProductNames});
+			}
+		}
+
+		task ("When the product 'ABS Sensor' is searched on the Grouped tab") {
+			CommerceNavigator.searchEntry(entryName = "ABS Sensor");
+		}
+
+		task ("Then the search result shows only ABS sensor") {
+			LexiconEntry.viewEntryName(rowEntry = "ABS Sensor");
+
+			for (var groupedProductNames : list "Brake Pads,Cams") {
+				LexiconEntry.viewNoEntry(rowEntry = ${groupedProductNames});
+			}
+		}
+
+		task ("When the search result is cleared") {
+			Search.clearSearchResult();
+		}
+
+		task ("Then all three products previously added are shown on the Grouped tab") {
+			for (var groupedProductNames : list "ABS Sensor,Brake Pads,Cams") {
+				LexiconEntry.viewEntryName(rowEntry = ${groupedProductNames});
+			}
+		}
+	}
+
+	@description = "COMMERCE-12182 This is a test to verify that Tier Price Settings remain unchanged after an entry is created"
+	@priority = 5
+	test CanTierPriceSettingsDoesNotChangeAfterCreatingATierPriceEntry {
+		property portal.acceptance = "true";
+
+		task ("Given a Minium site is created") {
+			CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
+		}
+
+		task ("And the Price Lists tab for the product ABS Sensor is open") {
+			CommerceProducts.openProductsAdmin();
+
+			CommerceNavigator.gotoEntry(entryName = "ABS Sensor");
+
+			CommerceEntry.gotoMenuTab(menuTab = "SKUs");
+
+			CommerceNavigator.gotoEntry(entryName = "MIN93015");
+
+			SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+			CommerceEntry.gotoMenuTab(menuTab = "Price");
+		}
+
+		task ("And the admin goes into Minium Base Price List") {
+			CommerceNavigator.gotoEntry(entryName = "Minium Base Price List");
+		}
+
+		task ("When the admin creates a new Tier Price Entry with the Bulk Pricing") {
+			CommercePriceLists.createTierPriceEntryDirectlyInsideProductSKU(
+				price = 10,
+				quantity = 1,
+				tierPriceSetting = "Bulk Pricing");
+
+			SelectFrameTop();
+		}
+
+		task ("And goes back into the Details tab") {
+			CommerceEntry.gotoMenuTab(menuTab = "SKUs");
+
+			CommerceNavigator.gotoEntry(entryName = "MIN93015");
+
+			SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+			CommerceEntry.gotoMenuTab(menuTab = "Price");
+
+			CommerceNavigator.gotoEntry(entryName = "Minium Base Price List");
+
+			SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+		}
+
+		task ("Then the Tier Price Settings remain Bulk Pricing") {
+			AssertChecked.assertCheckedNotVisible(
+				key_radioOption = "Bulk Pricing",
+				locator1 = "CommerceEntry#RADIO_BUTTON");
+
+			AssertNotChecked.assertNotCheckedNotVisible(
+				key_radioOption = "Tiered Pricing",
+				locator1 = "CommerceEntry#RADIO_BUTTON");
+		}
+
+		task ("When the admin goes into the Price Lists section") {
+			CommercePriceLists.openPriceListsAdmin();
+
+			CommerceNavigator.gotoEntry(entryName = "Minium Base Price List");
+		}
+
+		task ("And the admin opened MIN93015") {
+			CommerceEntry.gotoMenuTab(menuTab = "Entries");
+
+			CommerceNavigator.gotoEntry(entryName = "MIN93015");
+
+			SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+		}
+
+		task ("And change the Tier Price Settings in Tiered Pricing") {
+			Click(
+				key_radioOption = "Tiered Pricing",
+				locator1 = "CommerceEntry#RADIO_BUTTON");
+
+			Button.clickSave();
+		}
+
+		task ("Then a new entry is created again inside the product the Tier Price Settings remain Tiered Pricing") {
+			CommerceProducts.openProductsAdmin();
+
+			CommerceNavigator.gotoEntry(entryName = "ABS Sensor");
+
+			CommerceEntry.gotoMenuTab(menuTab = "SKUs");
+
+			CommerceNavigator.gotoEntry(entryName = "MIN93015");
+
+			SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+			CommerceEntry.gotoMenuTab(menuTab = "Price");
+
+			CommerceNavigator.gotoEntry(entryName = "Minium Base Price List");
+
+			CommercePriceLists.createTierPriceEntryDirectlyInsideProductSKU(
+				price = 20,
+				quantity = 2);
+
+			SelectFrameTop();
+
+			CommerceEntry.gotoMenuTab(menuTab = "SKUs");
+
+			CommerceNavigator.gotoEntry(entryName = "MIN93015");
+
+			SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+			CommerceEntry.gotoMenuTab(menuTab = "Price");
+
+			CommerceNavigator.gotoEntry(entryName = "Minium Base Price List");
+
+			SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
+
+			AssertChecked.assertCheckedNotVisible(
+				key_radioOption = "Tiered Pricing",
+				locator1 = "CommerceEntry#RADIO_BUTTON");
+
+			AssertNotChecked.assertNotCheckedNotVisible(
+				key_radioOption = "Bulk Pricing",
+				locator1 = "CommerceEntry#RADIO_BUTTON");
+		}
+	}
+
 	@description = "This is a test for bug COMMERCE-9546. Verify a product image converted in base64 can be uploaded via headless API with the extension setted"
 	@priority = 4
 	test CanUploadProductBase64ImageViaAPI {
@@ -1728,8 +2052,9 @@ definition {
 
 			SelectFrame.selectFrameNoLoading(locator1 = "CommerceEntry#IFRAME_SIDE_PANEL");
 
-			AssertTextEquals(
-				locator1 = "Dropdown#SELECTED_VALUE",
+			AssertSelectedLabel(
+				key_optionName = "Package Quantity",
+				locator1 = "CommerceFrontStore#FS_PRODUCT_OPTIONS_SELECT",
 				value1 = 112);
 		}
 	}
@@ -1799,7 +2124,7 @@ definition {
 	@description = "This is a test for bug COMMERCE-9999. Verify a product image can be uploaded via headless API with CDN."
 	@priority = 3
 	test CanUploadProductImageViaAPIUsingCDN {
-		property custom.properties = "jsonws.web.service.paths.excludes=${line.separator}company.security.strangers.verify=false";
+		property custom.properties = "company.security.strangers.verify=false${line.separator}jsonws.web.service.paths.excludes=";
 		property portal.acceptance = "false";
 
 		task ("Given a Minium Site is created") {
@@ -1969,7 +2294,7 @@ definition {
 		}
 
 		task ("When the admin searches for specific filters") {
-			FDSFilters.searchFilter(searchTerm = "Type");
+			FrontendDataSetFilters.searchFilter(searchTerm = "Type");
 		}
 
 		task ("Then only the matching results are shown in the list") {
@@ -2356,11 +2681,10 @@ definition {
 			locator1 = "TextInput#GENERIC_TEXT_INPUT",
 			value1 = "BLACKSKU");
 
-		Click(locator1 = "Dropdown#TRIGGER");
-
-		Click(
-			key_fieldName = "Black",
-			locator1 = "FormViewBuilder#OBJECT_FIELD_BUTTON_DROPDOWN");
+		Select(
+			key_optionName = "Color",
+			locator1 = "CommerceFrontStore#FS_PRODUCT_OPTIONS_SELECT",
+			value1 = "Black");
 
 		Check.checkToggleSwitch(
 			key_toggleSwitchLabel = "Purchasable",
@@ -2553,10 +2877,11 @@ definition {
 		}
 	}
 
+	@priority = 5
 	test ProductPublishing {
 		property environment.acceptance = "true";
 		property operating.system.types = "alpine,amazonlinux,centos,debian,fedora,orcllinux,osx,redhat,rockylinux,solaris,suse,ubuntu,windows";
-		property portal.acceptance = "false";
+		property portal.acceptance = "true";
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 
@@ -2630,8 +2955,9 @@ definition {
 		CommerceEntry.viewProductSkus(skusList = "6:10.00,12:20.00,24:30.00,48:40.00,112:50.00");
 	}
 
+	@priority = 5
 	test TranslateProductName {
-		property portal.acceptance = "false";
+		property portal.acceptance = "true";
 
 		CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
 
@@ -2863,7 +3189,7 @@ definition {
 		Click(locator1 = "ACUtils#NEXT_PAGES");
 
 		AssertTextEquals(
-			locator1 = "Pagination#PAGINATION_ITEMS_PER_PAGE",
+			locator1 = "CP2ActivationKeys#PAGINATION_BUTTON",
 			value1 = "10 items");
 
 		Pagination.viewResults(results = "Showing 11 to 20 of 50 entries.");

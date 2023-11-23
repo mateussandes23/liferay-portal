@@ -1,9 +1,9 @@
 @component-name = "portal-wcm"
 definition {
 
+	property ci.retries.disabled = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testcase.url = "http://localhost:8080";
 	property testray.main.component.name = "Content Pages";
 
 	static var randomSiteName = StringUtil.randomString(8);
@@ -11,6 +11,10 @@ definition {
 	var siteURLKey = StringUtil.toLowerCase(${randomSiteName});
 
 	setUp {
+		task ("Set up virtual instance") {
+			TestCase.setUpPortalInstance();
+		}
+
 		task ("Sign in") {
 			User.firstLoginPG();
 		}
@@ -43,8 +47,6 @@ definition {
 		}
 
 		task ("Then the page creator accesses to the Look and Feel settings") {
-			Navigator.gotoNavTab(navTab = "Design");
-
 			AssertElementPresent(
 				key_title = "Design",
 				locator1 = "Header#H2_TITLE");
@@ -109,6 +111,16 @@ definition {
 				locator2 = "width",
 				value1 = "280px");
 		}
+	}
+
+	@description = "This is a test for LPS-188909. The portal version info shouldn't be shown on the Home page."
+	@priority = 4
+	test CannotViewPortalVersionInfoOnHomePage {
+		ContentPages.viewFragmentText(
+			fragmentName = "paragraph",
+			id = "element-text",
+			position = 2,
+			text = "Enjoy using the best DXP on Earth!");
 	}
 
 	@description = "This is a test for LPS-146373. The page creator could close the left sidebar panel via the times icon."
@@ -213,7 +225,8 @@ definition {
 
 	@description = "This is a test for LPS-158746. Could add and remove fragment to Favorites session and widget to Highlighted session on content page."
 	@priority = 5
-	test CouldAddAndRemoveFragmentToFavoritesSessionAndWidgetToighlightedSession {
+	test CouldAddAndRemoveFragmentToFavoritesSessionAndWidgetToHighlightedSession {
+		property portal.acceptance = "true";
 		property portal.release = "false";
 
 		task ("When go to edit content page") {
@@ -290,10 +303,7 @@ definition {
 			task ("Go to add and remove favorite widget") {
 				Navigator.gotoNavTab(navTab = "Widgets");
 
-				AssertClick(
-					key_collectionName = "Collaboration",
-					locator1 = "PageEditor#FRAGMENT_SIDEBAR_COLLECTION_PANEL_COLLAPSED",
-					value1 = "Collaboration");
+				PageEditor.expandWidgetCategory(categoryName = "Collaboration");
 
 				MouseOver(
 					key_collectionName = "Collaboration",
@@ -337,7 +347,7 @@ definition {
 
 	@description = "This is a test for LPS-158746. Could add and remove fragment to Favorites session and widget to Highlighted session on content page."
 	@priority = 5
-	test CouldAddAndRemoveFragmentToFavoritesSessionAndWidgetToighlightedSessionOnReleaseBundle {
+	test CouldAddAndRemoveFragmentToFavoritesSessionAndWidgetToHighlightedSessionOnReleaseBundle {
 		property portal.upstream = "false";
 
 		task ("When go to edit content page") {
@@ -413,6 +423,8 @@ definition {
 
 			task ("Go to add and remove favorite widget") {
 				Navigator.gotoNavTab(navTab = "Widgets");
+
+				PageEditor.expandWidgetCategory(categoryName = "Collaboration");
 
 				MouseOver(
 					key_collectionName = "Collaboration",
@@ -602,31 +614,59 @@ definition {
 			var scrollBarWidth = ${offsetWidth} - ${clientWidth};
 			var bothSidebarWidth = ${leftSidebarWidth} + ${rightSidebarWidth};
 			var pageContentWidth = ${gridFragmentWidth} + ${scrollBarWidth};
+			var difference = ${bodyWidth} - ${bothSidebarWidth};
 
-			TestUtils.assertEquals(
-				actual = MathUtil.difference(${bodyWidth}, ${bothSidebarWidth}),
-				expected = ${pageContentWidth});
+			StringUtil.assertEquals(${pageContentWidth}, ${difference});
 		}
 	}
 
 	@description = "This is a test for LPS-170955. View Autosave icon styles are adjusted."
 	@priority = 5
 	test ViewAutosaveIconStyles {
+		property portal.acceptance = "true";
+
 		task ("Given a page designer navigates to the page editor") {
 			ContentPagesNavigator.openEditContentPage(
 				pageName = "Test Page Name",
 				siteName = ${randomSiteName});
 		}
 
-		task ("When the page designer adds a fragment to page") {
-			PageEditor.addFragment(
-				collectionName = "Basic Components",
-				fragmentName = "Button");
+		task ("When the page designer adds a fragment with intercept requests") {
+			var map = MapUtil.newHashMap();
+
+			ExecuteCDPCommand(
+				value1 = "Fetch.enable",
+				value2 = ${map});
+
+			Navigator.gotoNavTab(navTab = "Fragments");
+
+			PageEditor.expandFragmentCollection(collectionName = "Basic Components");
+
+			DragAndDrop.javaScriptDragAndDropToObject(
+				key_collectionName = "Basic Components",
+				key_fragmentName = "Button",
+				locator1 = "PageEditor#FRAGMENTS_AND_WIDGETS_TAB_FRAGMENT",
+				locator2 = "PageEditor#FRAGMENT_DROP_TARGET");
+		}
+
+		task ("Then the page designer see the styles of loading icon") {
+			MouseOver.javaScriptFocus(locator1 = "//span[@aria-label='Saving'][contains(@class,'loading-animation')]");
+
+			AssertVisible(
+				key_content = "Saving",
+				locator1 = "Tooltip#FLOATING_TOOLTIP_CONTENT");
+		}
+
+		task ("When the page designer forwards the request") {
+			var map = MapUtil.newHashMap();
+
+			ExecuteCDPCommand(
+				value1 = "Fetch.disable",
+				value2 = ${map});
 		}
 
 		task ("Then the page designer sees the styles of autosave icon") {
-
-			// View the tooltip for saving status wait for POSHI-464 implemented
+			PageEditor.waitForAutoSave();
 
 			MouseOver.javaScriptFocus(locator1 = "//*[name()='svg'][contains(@class,'lexicon-icon-check-circle')]");
 
@@ -664,7 +704,7 @@ definition {
 
 			Panel.collapsePanel(panel = "Frame");
 
-			AssertElementNotPresent(locator1 = "//div[contains(@class,'fieldset')]");
+			AssertNotVisible(locator1 = "//div[contains(@class,'fieldset')]");
 
 			Panel.expandPanel(panel = "Dropdown Options");
 
@@ -678,7 +718,7 @@ definition {
 				Panel.collapsePanel(panel = ${key_panel});
 			}
 
-			AssertElementNotPresent(locator1 = "//div[contains(@class,'fieldset')]");
+			AssertNotVisible(locator1 = "//div[contains(@class,'fieldset')]");
 
 			for (var key_panel : list "Spacing,Text,Background,Borders,Effects") {
 				Panel.expandPanel(panel = ${key_panel});
@@ -981,12 +1021,12 @@ definition {
 
 			for (var i : list "1,2,3,4") {
 				AssertAttributeValue(
-					attribute1 = "title",
 					category = "Brand Colors",
 					index = ${n},
 					locator1 = "PageEditor#COLOR_SWATCH_ITEM",
 					panel = "Color System",
-					value1 = "Brand Color ${i}");
+					value1 = "title",
+					value2 = "Brand Color ${i}");
 
 				var n = ${n} + 1;
 			}
@@ -1033,7 +1073,7 @@ definition {
 
 			PagesAdmin.openPageEllipsisMenu(pageName = "Test Page Name");
 
-			MenuItem.viewOrder(menuItemList = "Edit,Translate,View,Preview Draft,Discard Draft,Orphan Widgets,Copy,Export for Translation,Import Translation,Configure,Permissions,Delete");
+			MenuItem.viewOrder(menuItemList = "Edit,Translate,View,Preview Draft,Discard Draft,Orphan Widgets,Convert to Page Template,Make a Copy,Export for Translation,Import Translation,Configure,Permissions,Delete");
 		}
 	}
 
@@ -1082,9 +1122,9 @@ definition {
 
 			var bothSidebarWidth = ${leftSidebarWidth} + ${rightSidebarWidth};
 
-			TestUtils.assertEquals(
-				actual = MathUtil.difference(${bodyWidth}, ${bothSidebarWidth}),
-				expected = ${headingFragmentWidth});
+			var difference = ${bodyWidth} - ${bothSidebarWidth};
+
+			StringUtil.assertEquals(${headingFragmentWidth}, ${difference});
 		}
 	}
 
@@ -1105,21 +1145,6 @@ definition {
 			AssertElementNotPresent(locator1 = "Sidebar#PANEL_OPEN");
 
 			AssertElementNotPresent(locator1 = "PageEditor#ITEM_CONFIGURATION_SIDEBAR_OPEN");
-		}
-	}
-
-	@description = "This is a test for LPS-153650. The portal version info should be shown on the Home page."
-	@priority = 4
-	test ViewPortalVersionInfoOnHomePage {
-		var portalVersionInfo = selenium.getText("//div[contains(@id,'fragment-')][.//*[contains(@class,'paragraph')]]//*[contains(@data-lfr-editable-id,'element-text')]");
-
-		var match = StringUtil.matches(${portalVersionInfo}, "Liferay Digital Experience Platform \d+\.\d+\.\d+ Update \d+ \(\w+ \/ Build \d+ \/ \w+ \d+, \d+\)");
-
-		if (${match} == "true") {
-			echo("The portal version info ${portalVersionInfo} is shown on the Home page");
-		}
-		else {
-			fail("The portal version info ${portalVersionInfo} is missing on the Home page");
 		}
 	}
 

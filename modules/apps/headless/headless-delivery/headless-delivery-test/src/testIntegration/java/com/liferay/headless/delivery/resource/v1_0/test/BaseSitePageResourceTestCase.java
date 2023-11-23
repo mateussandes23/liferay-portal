@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.delivery.resource.v1_0.test;
@@ -45,6 +36,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -210,20 +202,19 @@ public abstract class BaseSitePageResourceTestCase {
 		Page<SitePage> page = sitePageResource.getSiteSitePagesPage(
 			siteId, null, null, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantSiteId != null) {
 			SitePage irrelevantSitePage = testGetSiteSitePagesPage_addSitePage(
 				irrelevantSiteId, randomIrrelevantSitePage());
 
 			page = sitePageResource.getSiteSitePagesPage(
-				irrelevantSiteId, null, null, null, Pagination.of(1, 2), null);
+				irrelevantSiteId, null, null, null,
+				Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantSitePage),
-				(List<SitePage>)page.getItems());
+			assertContains(irrelevantSitePage, (List<SitePage>)page.getItems());
 			assertValid(
 				page,
 				testGetSiteSitePagesPage_getExpectedActions(irrelevantSiteId));
@@ -238,11 +229,10 @@ public abstract class BaseSitePageResourceTestCase {
 		page = sitePageResource.getSiteSitePagesPage(
 			siteId, null, null, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(sitePage1, sitePage2),
-			(List<SitePage>)page.getItems());
+		assertContains(sitePage1, (List<SitePage>)page.getItems());
+		assertContains(sitePage2, (List<SitePage>)page.getItems());
 		assertValid(page, testGetSiteSitePagesPage_getExpectedActions(siteId));
 	}
 
@@ -297,40 +287,36 @@ public abstract class BaseSitePageResourceTestCase {
 	public void testGetSiteSitePagesPageWithFilterDoubleEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.DOUBLE);
+		testGetSiteSitePagesPageWithFilter("eq", EntityField.Type.DOUBLE);
+	}
 
-		if (entityFields.isEmpty()) {
-			return;
-		}
+	@Test
+	public void testGetSiteSitePagesPageWithFilterStringContains()
+		throws Exception {
 
-		Long siteId = testGetSiteSitePagesPage_getSiteId();
-
-		SitePage sitePage1 = testGetSiteSitePagesPage_addSitePage(
-			siteId, randomSitePage());
-
-		@SuppressWarnings("PMD.UnusedLocalVariable")
-		SitePage sitePage2 = testGetSiteSitePagesPage_addSitePage(
-			siteId, randomSitePage());
-
-		for (EntityField entityField : entityFields) {
-			Page<SitePage> page = sitePageResource.getSiteSitePagesPage(
-				siteId, null, null,
-				getFilterString(entityField, "eq", sitePage1),
-				Pagination.of(1, 2), null);
-
-			assertEquals(
-				Collections.singletonList(sitePage1),
-				(List<SitePage>)page.getItems());
-		}
+		testGetSiteSitePagesPageWithFilter("contains", EntityField.Type.STRING);
 	}
 
 	@Test
 	public void testGetSiteSitePagesPageWithFilterStringEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.STRING);
+		testGetSiteSitePagesPageWithFilter("eq", EntityField.Type.STRING);
+	}
+
+	@Test
+	public void testGetSiteSitePagesPageWithFilterStringStartsWith()
+		throws Exception {
+
+		testGetSiteSitePagesPageWithFilter(
+			"startswith", EntityField.Type.STRING);
+	}
+
+	protected void testGetSiteSitePagesPageWithFilter(
+			String operator, EntityField.Type type)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
 
 		if (entityFields.isEmpty()) {
 			return;
@@ -348,7 +334,7 @@ public abstract class BaseSitePageResourceTestCase {
 		for (EntityField entityField : entityFields) {
 			Page<SitePage> page = sitePageResource.getSiteSitePagesPage(
 				siteId, null, null,
-				getFilterString(entityField, "eq", sitePage1),
+				getFilterString(entityField, operator, sitePage1),
 				Pagination.of(1, 2), null);
 
 			assertEquals(
@@ -361,6 +347,11 @@ public abstract class BaseSitePageResourceTestCase {
 	public void testGetSiteSitePagesPageWithPagination() throws Exception {
 		Long siteId = testGetSiteSitePagesPage_getSiteId();
 
+		Page<SitePage> sitePagePage = sitePageResource.getSiteSitePagesPage(
+			siteId, null, null, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(sitePagePage.getTotalCount());
+
 		SitePage sitePage1 = testGetSiteSitePagesPage_addSitePage(
 			siteId, randomSitePage());
 
@@ -371,27 +362,29 @@ public abstract class BaseSitePageResourceTestCase {
 			siteId, randomSitePage());
 
 		Page<SitePage> page1 = sitePageResource.getSiteSitePagesPage(
-			siteId, null, null, null, Pagination.of(1, 2), null);
+			siteId, null, null, null, Pagination.of(1, totalCount + 2), null);
 
 		List<SitePage> sitePages1 = (List<SitePage>)page1.getItems();
 
-		Assert.assertEquals(sitePages1.toString(), 2, sitePages1.size());
+		Assert.assertEquals(
+			sitePages1.toString(), totalCount + 2, sitePages1.size());
 
 		Page<SitePage> page2 = sitePageResource.getSiteSitePagesPage(
-			siteId, null, null, null, Pagination.of(2, 2), null);
+			siteId, null, null, null, Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<SitePage> sitePages2 = (List<SitePage>)page2.getItems();
 
 		Assert.assertEquals(sitePages2.toString(), 1, sitePages2.size());
 
 		Page<SitePage> page3 = sitePageResource.getSiteSitePagesPage(
-			siteId, null, null, null, Pagination.of(1, 3), null);
+			siteId, null, null, null, Pagination.of(1, (int)totalCount + 3),
+			null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(sitePage1, sitePage2, sitePage3),
-			(List<SitePage>)page3.getItems());
+		assertContains(sitePage1, (List<SitePage>)page3.getItems());
+		assertContains(sitePage2, (List<SitePage>)page3.getItems());
+		assertContains(sitePage3, (List<SitePage>)page3.getItems());
 	}
 
 	@Test
@@ -501,22 +494,25 @@ public abstract class BaseSitePageResourceTestCase {
 
 		sitePage2 = testGetSiteSitePagesPage_addSitePage(siteId, sitePage2);
 
+		Page<SitePage> page = sitePageResource.getSiteSitePagesPage(
+			siteId, null, null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<SitePage> ascPage = sitePageResource.getSiteSitePagesPage(
-				siteId, null, null, null, Pagination.of(1, 2),
+				siteId, null, null, null,
+				Pagination.of(1, (int)page.getTotalCount() + 1),
 				entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(sitePage1, sitePage2),
-				(List<SitePage>)ascPage.getItems());
+			assertContains(sitePage1, (List<SitePage>)ascPage.getItems());
+			assertContains(sitePage2, (List<SitePage>)ascPage.getItems());
 
 			Page<SitePage> descPage = sitePageResource.getSiteSitePagesPage(
-				siteId, null, null, null, Pagination.of(1, 2),
+				siteId, null, null, null,
+				Pagination.of(1, (int)page.getTotalCount() + 1),
 				entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(sitePage2, sitePage1),
-				(List<SitePage>)descPage.getItems());
+			assertContains(sitePage2, (List<SitePage>)descPage.getItems());
+			assertContains(sitePage1, (List<SitePage>)descPage.getItems());
 		}
 	}
 
@@ -558,7 +554,7 @@ public abstract class BaseSitePageResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/sitePages");
 
-		Assert.assertEquals(0, sitePagesJSONObject.get("totalCount"));
+		long totalCount = sitePagesJSONObject.getLong("totalCount");
 
 		SitePage sitePage1 = testGraphQLGetSiteSitePagesPage_addSitePage();
 		SitePage sitePage2 = testGraphQLGetSiteSitePagesPage_addSitePage();
@@ -567,10 +563,15 @@ public abstract class BaseSitePageResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/sitePages");
 
-		Assert.assertEquals(2, sitePagesJSONObject.getLong("totalCount"));
+		Assert.assertEquals(
+			totalCount + 2, sitePagesJSONObject.getLong("totalCount"));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(sitePage1, sitePage2),
+		assertContains(
+			sitePage1,
+			Arrays.asList(
+				SitePageSerDes.toDTOs(sitePagesJSONObject.getString("items"))));
+		assertContains(
+			sitePage2,
 			Arrays.asList(
 				SitePageSerDes.toDTOs(sitePagesJSONObject.getString("items"))));
 	}
@@ -713,7 +714,7 @@ public abstract class BaseSitePageResourceTestCase {
 		Page<SitePage> page = sitePageResource.getSiteSitePagesExperiencesPage(
 			siteId, friendlyUrlPath);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if ((irrelevantSiteId != null) && (irrelevantFriendlyUrlPath != null)) {
 			SitePage irrelevantSitePage =
@@ -724,11 +725,9 @@ public abstract class BaseSitePageResourceTestCase {
 			page = sitePageResource.getSiteSitePagesExperiencesPage(
 				irrelevantSiteId, irrelevantFriendlyUrlPath);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantSitePage),
-				(List<SitePage>)page.getItems());
+			assertContains(irrelevantSitePage, (List<SitePage>)page.getItems());
 			assertValid(
 				page,
 				testGetSiteSitePagesExperiencesPage_getExpectedActions(
@@ -744,11 +743,10 @@ public abstract class BaseSitePageResourceTestCase {
 		page = sitePageResource.getSiteSitePagesExperiencesPage(
 			siteId, friendlyUrlPath);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(sitePage1, sitePage2),
-			(List<SitePage>)page.getItems());
+		assertContains(sitePage1, (List<SitePage>)page.getItems());
+		assertContains(sitePage2, (List<SitePage>)page.getItems());
 		assertValid(
 			page,
 			testGetSiteSitePagesExperiencesPage_getExpectedActions(
@@ -1345,14 +1343,19 @@ public abstract class BaseSitePageResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1931,9 +1934,47 @@ public abstract class BaseSitePageResourceTestCase {
 		}
 
 		if (entityFieldName.equals("friendlyUrlPath")) {
-			sb.append("'");
-			sb.append(String.valueOf(sitePage.getFriendlyUrlPath()));
-			sb.append("'");
+			Object object = sitePage.getFriendlyUrlPath();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1969,9 +2010,47 @@ public abstract class BaseSitePageResourceTestCase {
 		}
 
 		if (entityFieldName.equals("pageType")) {
-			sb.append("'");
-			sb.append(String.valueOf(sitePage.getPageType()));
-			sb.append("'");
+			Object object = sitePage.getPageType();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -2002,9 +2081,47 @@ public abstract class BaseSitePageResourceTestCase {
 		}
 
 		if (entityFieldName.equals("title")) {
-			sb.append("'");
-			sb.append(String.valueOf(sitePage.getTitle()));
-			sb.append("'");
+			Object object = sitePage.getTitle();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -2015,9 +2132,47 @@ public abstract class BaseSitePageResourceTestCase {
 		}
 
 		if (entityFieldName.equals("uuid")) {
-			sb.append("'");
-			sb.append(String.valueOf(sitePage.getUuid()));
-			sb.append("'");
+			Object object = sitePage.getUuid();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

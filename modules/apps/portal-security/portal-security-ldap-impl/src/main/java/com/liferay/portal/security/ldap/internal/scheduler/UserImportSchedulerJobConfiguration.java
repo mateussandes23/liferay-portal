@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.security.ldap.internal.scheduler;
@@ -17,7 +8,6 @@ package com.liferay.portal.security.ldap.internal.scheduler;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.scheduler.SchedulerJobConfiguration;
@@ -41,7 +31,7 @@ import org.osgi.service.component.annotations.ReferencePolicyOption;
  * @author Shuyang Zhou
  */
 @Component(
-	configurationPid = "com.liferay.portal.security.ldap.exportimport.configuration.LDAPImportConfiguration",
+	factory = "com.liferay.portal.security.ldap.internal.scheduler.UserImportSchedulerJobConfiguration",
 	service = SchedulerJobConfiguration.class
 )
 public class UserImportSchedulerJobConfiguration
@@ -71,19 +61,21 @@ public class UserImportSchedulerJobConfiguration
 
 	@Override
 	public TriggerConfiguration getTriggerConfiguration() {
-		return TriggerConfiguration.createTriggerConfiguration(
-			_ldapImportConfiguration.importInterval(), TimeUnit.MINUTE);
+		return _triggerConfiguration;
 	}
 
 	@Activate
 	protected void activate(Map<String, Object> properties) {
-		_ldapImportConfiguration = ConfigurableUtil.createConfigurable(
-			LDAPImportConfiguration.class, properties);
+		LDAPImportConfiguration ldapImportConfiguration =
+			(LDAPImportConfiguration)properties.get("configuration");
+
+		_triggerConfiguration = TriggerConfiguration.createTriggerConfiguration(
+			ldapImportConfiguration.importInterval(), TimeUnit.MINUTE);
 
 		if (_log.isDebugEnabled()) {
 			_log.debug(
 				"LDAP user imports will be attempted every " +
-					_ldapImportConfiguration.importInterval() + " minutes");
+					ldapImportConfiguration.importInterval() + " minutes");
 		}
 	}
 
@@ -139,8 +131,6 @@ public class UserImportSchedulerJobConfiguration
 	@Reference
 	private CompanyLocalService _companyLocalService;
 
-	private LDAPImportConfiguration _ldapImportConfiguration;
-
 	@Reference(
 		target = "(factoryPid=com.liferay.portal.security.ldap.exportimport.configuration.LDAPImportConfiguration)"
 	)
@@ -152,5 +142,7 @@ public class UserImportSchedulerJobConfiguration
 		policyOption = ReferencePolicyOption.GREEDY
 	)
 	private volatile LDAPUserImporter _ldapUserImporter;
+
+	private TriggerConfiguration _triggerConfiguration;
 
 }

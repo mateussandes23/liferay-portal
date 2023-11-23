@@ -1,28 +1,20 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.vulcan.internal.jaxrs.writer.interceptor;
 
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.vulcan.fields.NestedField;
 import com.liferay.portal.vulcan.fields.NestedFieldId;
 import com.liferay.portal.vulcan.fields.NestedFieldsContext;
 import com.liferay.portal.vulcan.fields.NestedFieldsContextThreadLocal;
+import com.liferay.portal.vulcan.internal.fields.servlet.NestedFieldsHttpServletRequestWrapper;
 import com.liferay.portal.vulcan.internal.fields.servlet.NestedFieldsHttpServletRequestWrapperTest;
-import com.liferay.portal.vulcan.internal.jaxrs.context.provider.PaginationContextProvider;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 
@@ -791,7 +783,27 @@ public class NestedFieldsWriterInterceptorTest {
 			if (Objects.equals(
 					contextType.getTypeName(), Pagination.class.getName())) {
 
-				return (ContextProvider<T>)new PaginationContextProvider();
+				return (ContextProvider<T>)new ContextProvider<Pagination>() {
+
+					@Override
+					public Pagination createContext(Message message) {
+						NestedFieldsHttpServletRequestWrapper
+							nestedFieldsHttpServletRequestWrapper =
+								(NestedFieldsHttpServletRequestWrapper)
+									message.get("HTTP.REQUEST");
+
+						return Pagination.of(
+							GetterUtil.getInteger(
+								nestedFieldsHttpServletRequestWrapper.
+									getParameter("page"),
+								1),
+							GetterUtil.getInteger(
+								nestedFieldsHttpServletRequestWrapper.
+									getParameter("pageSize"),
+								20));
+					}
+
+				};
 			}
 			else if (Objects.equals(
 						contextType.getTypeName(),

@@ -1,20 +1,12 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.service;
 
 import com.liferay.portal.kernel.service.ServiceWrapper;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 
 /**
  * Provides a wrapper for {@link ObjectEntryLocalService}.
@@ -306,6 +298,15 @@ public class ObjectEntryLocalServiceWrapper
 	}
 
 	@Override
+	public com.liferay.object.model.ObjectEntry fetchManyToOneObjectEntry(
+			long groupId, long objectRelationshipId, long primaryKey)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryLocalService.fetchManyToOneObjectEntry(
+			groupId, objectRelationshipId, primaryKey);
+	}
+
+	@Override
 	public com.liferay.object.model.ObjectEntry fetchObjectEntry(
 		long objectEntryId) {
 
@@ -387,22 +388,24 @@ public class ObjectEntryLocalServiceWrapper
 	public java.util.List<com.liferay.object.model.ObjectEntry>
 			getManyToManyObjectEntries(
 				long groupId, long objectRelationshipId, long primaryKey,
-				boolean related, boolean reverse, int start, int end)
+				boolean related, boolean reverse, String search, int start,
+				int end)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectEntryLocalService.getManyToManyObjectEntries(
-			groupId, objectRelationshipId, primaryKey, related, reverse, start,
-			end);
+			groupId, objectRelationshipId, primaryKey, related, reverse, search,
+			start, end);
 	}
 
 	@Override
 	public int getManyToManyObjectEntriesCount(
 			long groupId, long objectRelationshipId, long primaryKey,
-			boolean related, boolean reverse)
+			boolean related, boolean reverse, String search)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectEntryLocalService.getManyToManyObjectEntriesCount(
-			groupId, objectRelationshipId, primaryKey, related, reverse);
+			groupId, objectRelationshipId, primaryKey, related, reverse,
+			search);
 	}
 
 	/**
@@ -494,6 +497,17 @@ public class ObjectEntryLocalServiceWrapper
 			groupId, objectDefinitionId);
 	}
 
+	@Override
+	public long getObjectEntriesCount(
+			long groupId,
+			com.liferay.object.model.ObjectDefinition objectDefinition,
+			com.liferay.petra.sql.dsl.expression.Predicate predicate)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _objectEntryLocalService.getObjectEntriesCount(
+			groupId, objectDefinition, predicate);
+	}
+
 	/**
 	 * Returns the object entry with the primary key.
 	 *
@@ -548,21 +562,22 @@ public class ObjectEntryLocalServiceWrapper
 	public java.util.List<com.liferay.object.model.ObjectEntry>
 			getOneToManyObjectEntries(
 				long groupId, long objectRelationshipId, long primaryKey,
-				boolean related, int start, int end)
+				boolean related, String search, int start, int end)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectEntryLocalService.getOneToManyObjectEntries(
-			groupId, objectRelationshipId, primaryKey, related, start, end);
+			groupId, objectRelationshipId, primaryKey, related, search, start,
+			end);
 	}
 
 	@Override
 	public int getOneToManyObjectEntriesCount(
 			long groupId, long objectRelationshipId, long primaryKey,
-			boolean related)
+			boolean related, String search)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectEntryLocalService.getOneToManyObjectEntriesCount(
-			groupId, objectRelationshipId, primaryKey, related);
+			groupId, objectRelationshipId, primaryKey, related, search);
 	}
 
 	/**
@@ -724,6 +739,11 @@ public class ObjectEntryLocalServiceWrapper
 
 		return _objectEntryLocalService.updateStatus(
 			userId, objectEntryId, status, serviceContext);
+	}
+
+	@Override
+	public BasePersistence<?> getBasePersistence() {
+		return _objectEntryLocalService.getBasePersistence();
 	}
 
 	@Override

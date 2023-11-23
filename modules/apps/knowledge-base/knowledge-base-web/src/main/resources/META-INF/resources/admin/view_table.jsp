@@ -1,16 +1,7 @@
 <%--
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 --%>
 
@@ -21,9 +12,9 @@ long kbFolderClassNameId = PortalUtil.getClassNameId(KBFolderConstants.getClassN
 
 long parentResourceClassNameId = ParamUtil.getLong(request, "parentResourceClassNameId", kbFolderClassNameId);
 
-KBAdminManagementToolbarDisplayContext kbAdminManagementToolbarDisplayContext = new KBAdminManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, renderRequest, renderResponse, portletConfig);
+KBAdminManagementToolbarDisplayContext kbAdminManagementToolbarDisplayContext = new KBAdminManagementToolbarDisplayContext(request, liferayPortletRequest, liferayPortletResponse, renderRequest, renderResponse, portletConfig, trashHelper);
 KBArticleURLHelper kbArticleURLHelper = new KBArticleURLHelper(renderRequest, renderResponse);
-KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDisplayContext(request, liferayPortletRequest, liferayPortletResponse, renderResponse);
+KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDisplayContext(request, liferayPortletRequest, liferayPortletResponse, renderResponse, trashHelper);
 %>
 
 <liferay-ui:search-container
@@ -49,10 +40,13 @@ KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDispl
 				%>
 
 				<liferay-ui:search-container-column-text
+					cssClass="table-cell-expand"
 					name="title"
 				>
 					<clay:content-row>
-						<clay:content-col>
+						<clay:content-col
+							cssClass="pr-1"
+						>
 							<clay:sticker
 								cssClass="sticker-secondary"
 								icon="folder"
@@ -60,6 +54,7 @@ KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDispl
 						</clay:content-col>
 
 						<clay:content-col
+							cssClass="pl-1"
 							expand="<%= true %>"
 						>
 							<liferay-portlet:renderURL varImpl="rowURL">
@@ -70,9 +65,11 @@ KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDispl
 								<portlet:param name="selectedItemId" value="<%= String.valueOf(kbFolder.getKbFolderId()) %>" />
 							</liferay-portlet:renderURL>
 
-							<aui:a href="<%= rowURL.toString() %>">
-								<%= HtmlUtil.escape(kbFolder.getName()) %>
-							</aui:a>
+							<clay:link
+								aria-label="<%= HtmlUtil.escape(kbFolder.getName()) %>"
+								href="<%= rowURL.toString() %>"
+								label="<%= HtmlUtil.escape(kbFolder.getName()) %>"
+							/>
 						</clay:content-col>
 					</clay:content-row>
 				</liferay-ui:search-container-column-text>
@@ -112,6 +109,7 @@ KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDispl
 				</liferay-ui:search-container-column-text>
 
 				<liferay-ui:search-container-column-text
+					cssClass="table-cell-minw-150"
 					name="status"
 					value="--"
 				/>
@@ -121,7 +119,7 @@ KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDispl
 				>
 
 					<%
-					KBDropdownItemsProvider kbDropdownItemsProvider = new KBDropdownItemsProvider(liferayPortletRequest, liferayPortletResponse);
+					KBDropdownItemsProvider kbDropdownItemsProvider = new KBDropdownItemsProvider(liferayPortletRequest, liferayPortletResponse, trashHelper);
 					%>
 
 					<clay:dropdown-actions
@@ -145,10 +143,13 @@ KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDispl
 				%>
 
 				<liferay-ui:search-container-column-text
+					cssClass="table-cell-expand"
 					name="title"
 				>
 					<clay:content-row>
-						<clay:content-col>
+						<clay:content-col
+							cssClass="pr-1"
+						>
 							<clay:sticker
 								cssClass="sticker-secondary"
 								icon="document-text"
@@ -156,6 +157,7 @@ KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDispl
 						</clay:content-col>
 
 						<clay:content-col
+							cssClass="pl-1"
 							expand="<%= true %>"
 						>
 
@@ -163,9 +165,11 @@ KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDispl
 							PortletURL viewURL = kbArticleURLHelper.createViewWithRedirectURL(kbArticle, currentURL);
 							%>
 
-							<aui:a href="<%= viewURL.toString() %>">
-								<%= HtmlUtil.escape(kbArticle.getTitle()) %>
-							</aui:a>
+							<clay:link
+								aria-label="<%= HtmlUtil.escape(kbArticle.getTitle()) %>"
+								href="<%= viewURL.toString() %>"
+								label="<%= HtmlUtil.escape(kbArticle.getTitle()) %>"
+							/>
 						</clay:content-col>
 					</clay:content-row>
 				</liferay-ui:search-container-column-text>
@@ -200,17 +204,48 @@ KBArticleViewDisplayContext kbArticleViewDisplayContext = new KBArticleViewDispl
 				</liferay-ui:search-container-column-text>
 
 				<liferay-ui:search-container-column-text
+					cssClass="table-cell-minw-150"
 					name="status"
 				>
-					<aui:workflow-status helpMessage='<%= kbArticle.isExpired() ? dateFormatDateTime.format(kbArticle.getExpirationDate()) : "" %>' markupView="lexicon" showHelpMessage="<%= kbArticle.isExpired() %>" showIcon="<%= false %>" showLabel="<%= false %>" status="<%= kbArticle.getStatus() %>" />
+					<c:choose>
+						<c:when test='<%= FeatureFlagManagerUtil.isEnabled("LPS-188058") && kbArticle.isScheduled() %>'>
 
-					<c:if test="<%= kbArticleViewDisplayContext.isExpiringSoon(kbArticle) %>">
-						<span class="label label-warning">
-							<span class="label-item label-item-expand"><liferay-ui:message key="expiring-soon" /></span>
-						</span>
+							<%
+							String displayDateString = StringPool.BLANK;
 
-						<liferay-ui:icon-help message='<%= kbArticle.getExpirationDate()!= null ? dateFormatDateTime.format(kbArticle.getExpirationDate()) : "" %>' />
-					</c:if>
+							if (kbArticle.getDisplayDate() != null) {
+								displayDateString = dateTimeFormat.format(kbArticle.getDisplayDate());
+							}
+							%>
+
+							<aui:workflow-status helpMessage="<%= kbArticle.isScheduled() ? displayDateString : StringPool.BLANK %>" markupView="lexicon" showHelpMessage="<%= kbArticle.isScheduled() %>" showIcon="<%= false %>" showLabel="<%= false %>" status="<%= kbArticle.getStatus() %>" />
+						</c:when>
+						<c:otherwise>
+
+							<%
+							String expirationDateString = StringPool.BLANK;
+
+							if (kbArticle.getExpirationDate() != null) {
+								expirationDateString = dateTimeFormat.format(kbArticle.getExpirationDate());
+							}
+							%>
+
+							<aui:workflow-status helpMessage="<%= kbArticle.isExpired() ? expirationDateString : StringPool.BLANK %>" markupView="lexicon" showHelpMessage="<%= kbArticle.isExpired() %>" showIcon="<%= false %>" showLabel="<%= false %>" status="<%= kbArticle.getStatus() %>" />
+
+							<c:if test="<%= kbArticleViewDisplayContext.isExpiringSoon(kbArticle) %>">
+								<span class="label label-warning">
+									<span class="label-item label-item-expand"><liferay-ui:message key="expiring-soon" /></span>
+								</span>
+
+								<clay:icon
+									aria-label="<%= expirationDateString %>"
+									cssClass="lfr-portal-tooltip"
+									symbol="question-circle-full"
+									title="<%= expirationDateString %>"
+								/>
+							</c:if>
+						</c:otherwise>
+					</c:choose>
 				</liferay-ui:search-container-column-text>
 
 				<liferay-ui:search-container-column-text

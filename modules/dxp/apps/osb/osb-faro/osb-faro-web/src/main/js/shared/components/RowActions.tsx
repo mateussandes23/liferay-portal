@@ -7,6 +7,7 @@ import React from 'react';
 interface IRowActionsProps {
 	actions?: (React.HTMLAttributes<HTMLElement> & {
 		label: string;
+		onClick?: any;
 	})[];
 	quickActions?: {
 		iconSymbol: string;
@@ -23,7 +24,7 @@ const RowActions: React.FC<IRowActionsProps> = ({
 	<>
 		{!!quickActions?.length && (
 			<div className='quick-action-menu'>
-				{quickActions.map(({href, iconSymbol, label}) =>
+				{quickActions.map(({href, iconSymbol, label, onClick}) =>
 					href ? (
 						<ClayLink
 							aria-label={label}
@@ -47,6 +48,7 @@ const RowActions: React.FC<IRowActionsProps> = ({
 							data-tooltip
 							displayType='unstyled'
 							key={label}
+							onClick={onClick}
 							title={label}
 						>
 							<ClayIcon
@@ -66,6 +68,7 @@ const RowActions: React.FC<IRowActionsProps> = ({
 				closeOnClick
 				trigger={
 					<ClayButton
+						aria-label={Liferay.Language.get('menu')}
 						className='component-action'
 						displayType='unstyled'
 					>

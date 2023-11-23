@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.delivery.resource.v1_0.test;
@@ -219,7 +210,7 @@ public abstract class BaseLanguageResourceTestCase {
 		Page<Language> page = languageResource.getAssetLibraryLanguagesPage(
 			assetLibraryId);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantAssetLibraryId != null) {
 			Language irrelevantLanguage =
@@ -229,11 +220,9 @@ public abstract class BaseLanguageResourceTestCase {
 			page = languageResource.getAssetLibraryLanguagesPage(
 				irrelevantAssetLibraryId);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantLanguage),
-				(List<Language>)page.getItems());
+			assertContains(irrelevantLanguage, (List<Language>)page.getItems());
 			assertValid(
 				page,
 				testGetAssetLibraryLanguagesPage_getExpectedActions(
@@ -248,11 +237,10 @@ public abstract class BaseLanguageResourceTestCase {
 
 		page = languageResource.getAssetLibraryLanguagesPage(assetLibraryId);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(language1, language2),
-			(List<Language>)page.getItems());
+		assertContains(language1, (List<Language>)page.getItems());
+		assertContains(language2, (List<Language>)page.getItems());
 		assertValid(
 			page,
 			testGetAssetLibraryLanguagesPage_getExpectedActions(
@@ -297,7 +285,7 @@ public abstract class BaseLanguageResourceTestCase {
 
 		Page<Language> page = languageResource.getSiteLanguagesPage(siteId);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantSiteId != null) {
 			Language irrelevantLanguage = testGetSiteLanguagesPage_addLanguage(
@@ -305,11 +293,9 @@ public abstract class BaseLanguageResourceTestCase {
 
 			page = languageResource.getSiteLanguagesPage(irrelevantSiteId);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantLanguage),
-				(List<Language>)page.getItems());
+			assertContains(irrelevantLanguage, (List<Language>)page.getItems());
 			assertValid(
 				page,
 				testGetSiteLanguagesPage_getExpectedActions(irrelevantSiteId));
@@ -323,11 +309,10 @@ public abstract class BaseLanguageResourceTestCase {
 
 		page = languageResource.getSiteLanguagesPage(siteId);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(language1, language2),
-			(List<Language>)page.getItems());
+		assertContains(language1, (List<Language>)page.getItems());
+		assertContains(language2, (List<Language>)page.getItems());
 		assertValid(page, testGetSiteLanguagesPage_getExpectedActions(siteId));
 	}
 
@@ -376,7 +361,7 @@ public abstract class BaseLanguageResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/languages");
 
-		Assert.assertEquals(0, languagesJSONObject.get("totalCount"));
+		long totalCount = languagesJSONObject.getLong("totalCount");
 
 		Language language1 = testGraphQLGetSiteLanguagesPage_addLanguage();
 		Language language2 = testGraphQLGetSiteLanguagesPage_addLanguage();
@@ -385,10 +370,15 @@ public abstract class BaseLanguageResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/languages");
 
-		Assert.assertEquals(2, languagesJSONObject.getLong("totalCount"));
+		Assert.assertEquals(
+			totalCount + 2, languagesJSONObject.getLong("totalCount"));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(language1, language2),
+		assertContains(
+			language1,
+			Arrays.asList(
+				LanguageSerDes.toDTOs(languagesJSONObject.getString("items"))));
+		assertContains(
+			language2,
 			Arrays.asList(
 				LanguageSerDes.toDTOs(languagesJSONObject.getString("items"))));
 	}
@@ -547,14 +537,19 @@ public abstract class BaseLanguageResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -793,9 +788,47 @@ public abstract class BaseLanguageResourceTestCase {
 		sb.append(" ");
 
 		if (entityFieldName.equals("countryName")) {
-			sb.append("'");
-			sb.append(String.valueOf(language.getCountryName()));
-			sb.append("'");
+			Object object = language.getCountryName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -806,9 +839,47 @@ public abstract class BaseLanguageResourceTestCase {
 		}
 
 		if (entityFieldName.equals("id")) {
-			sb.append("'");
-			sb.append(String.valueOf(language.getId()));
-			sb.append("'");
+			Object object = language.getId();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -819,9 +890,47 @@ public abstract class BaseLanguageResourceTestCase {
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(language.getName()));
-			sb.append("'");
+			Object object = language.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

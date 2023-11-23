@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.internal.upgrade.v5_0_0;
@@ -21,7 +12,7 @@ import com.liferay.portal.kernel.dao.jdbc.AutoBatchPreparedStatementUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
 import com.liferay.portal.kernel.upgrade.UpgradeProcessFactory;
 import com.liferay.portal.kernel.upgrade.UpgradeStep;
-import com.liferay.portal.kernel.uuid.PortalUUID;
+import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,10 +22,6 @@ import java.sql.Timestamp;
  * @author Murilo Stodolni
  */
 public class ObjectFieldSettingUpgradeProcess extends UpgradeProcess {
-
-	public ObjectFieldSettingUpgradeProcess(PortalUUID portalUUID) {
-		_portalUUID = portalUUID;
-	}
 
 	@Override
 	protected void doUpgrade() throws Exception {
@@ -56,7 +43,7 @@ public class ObjectFieldSettingUpgradeProcess extends UpgradeProcess {
 			ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
-				preparedStatement2.setString(1, _portalUUID.generate());
+				preparedStatement2.setString(1, PortalUUIDUtil.generate());
 				preparedStatement2.setLong(2, increment());
 				preparedStatement2.setLong(3, resultSet.getLong("companyId"));
 				preparedStatement2.setLong(4, resultSet.getLong("userId"));
@@ -77,9 +64,8 @@ public class ObjectFieldSettingUpgradeProcess extends UpgradeProcess {
 
 				preparedStatement2.addBatch();
 
-				preparedStatement2.setString(1, _portalUUID.generate());
+				preparedStatement2.setString(1, PortalUUIDUtil.generate());
 				preparedStatement2.setLong(2, increment());
-
 				preparedStatement2.setString(
 					9, ObjectFieldSettingConstants.NAME_DEFAULT_VALUE);
 				preparedStatement2.setString(
@@ -98,7 +84,5 @@ public class ObjectFieldSettingUpgradeProcess extends UpgradeProcess {
 			UpgradeProcessFactory.dropColumns("ObjectField", "defaultValue")
 		};
 	}
-
-	private final PortalUUID _portalUUID;
 
 }

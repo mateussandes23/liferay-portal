@@ -1,16 +1,7 @@
 <%--
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 --%>
 
@@ -45,7 +36,7 @@ String unsubscribeActionName = StringPool.BLANK;
 			subscribeActionName = "/journal/subscribe_ddm_structure";
 			unsubscribeActionName = "/journal/unsubscribe_ddm_structure";
 		}
-		else if ((ddmStructureId > 0) && (article != null)) {
+		else if ((ddmStructureId <= 0) && (article != null)) {
 			subscribed = JournalUtil.isSubscribedToArticle(themeDisplay.getCompanyId(), scopeGroupId, user.getUserId(), article.getResourcePrimKey());
 
 			subscribeActionName = "/journal/subscribe_article";
@@ -85,21 +76,24 @@ String unsubscribeActionName = StringPool.BLANK;
 
 						<clay:link
 							aria-label='<%= LanguageUtil.get(request, "unsubscribe") %>'
-							cssClass="align-items-center d-flex icon-monospaced lfr-portal-tooltip"
+							borderless="<%= true %>"
+							cssClass="lfr-portal-tooltip"
+							displayType="secondary"
 							href="<%= unsubscribeURL %>"
 							icon="bell-off"
+							monospaced="<%= true %>"
+							small="<%= true %>"
 							title='<%= LanguageUtil.get(request, "unsubscribe") %>'
+							type="button"
 						/>
 					</c:when>
 					<c:otherwise>
-						<span class="align-items-center lfr-portal-tooltip" title="<%= LanguageUtil.get(request, "subscribed-to-a-parent-folder") %>">
-							<clay:icon
-								aria-label='<%= LanguageUtil.get(request, "subscribed-to-a-parent-folder") %>'
-								cssClass="icon-monospaced mt-0"
-								symbol="bell-off"
-								title='<%= LanguageUtil.get(request, "subscribed-to-a-parent-folder") %>'
-							/>
-						</span>
+						<clay:icon
+							aria-label='<%= LanguageUtil.get(request, "subscribed-to-a-parent-folder") %>'
+							cssClass="icon-monospaced lfr-portal-tooltip mt-0"
+							symbol="bell-off"
+							title='<%= LanguageUtil.get(request, "subscribed-to-a-parent-folder") %>'
+						/>
 					</c:otherwise>
 				</c:choose>
 			</c:when>
@@ -122,10 +116,15 @@ String unsubscribeActionName = StringPool.BLANK;
 
 				<clay:link
 					aria-label='<%= LanguageUtil.get(request, "subscribe") %>'
-					cssClass="align-items-center d-flex icon-monospaced lfr-portal-tooltip mt-1"
+					borderless="<%= true %>"
+					cssClass="lfr-portal-tooltip"
+					displayType="secondary"
 					href="<%= subscribeURL %>"
 					icon="bell-on"
+					monospaced="<%= true %>"
+					small="<%= true %>"
 					title='<%= LanguageUtil.get(request, "subscribe") %>'
+					type="button"
 				/>
 			</c:otherwise>
 		</c:choose>

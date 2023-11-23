@@ -1,25 +1,18 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayIcon from '@clayui/icon';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, {useState} from 'react';
 import {DragSource as dragSource} from 'react-dnd';
 
+import useKeyboardNavigation from '../../hooks/useKeyboardNavigation';
 import {PROPERTY_TYPES} from '../../utils/constants';
 import {DragTypes} from '../../utils/drag-types';
+import {LIST_ITEM_TYPES} from '../../utils/listItemTypes';
 
 const TYPE_ICON_MAP = {
 	[PROPERTY_TYPES.BOOLEAN]: 'check-circle',
@@ -36,25 +29,41 @@ function CriteriaSidebarItem({
 	className,
 	connectDragSource,
 	dragging,
+	icon,
 	label,
 	type,
 }) {
+	const [isActive, setIsActive] = useState(false);
+	const {isTarget, setElement} = useKeyboardNavigation({
+		type: LIST_ITEM_TYPES.listItem,
+	});
+
 	return connectDragSource(
 		<li
 			className={classNames(
-				'align-items-center criteria-sidebar-item-root c-py-2 c-pr-3 c-pl-3 c-my-1 c-mx-0 d-flex ',
-				{dragging},
+				'align-items-center criteria-sidebar-item-root c-py-2 c-pr-3 c-pl-1 c-my-1 d-flex ',
+				{
+					'criteria-sidebar-item-root--active': isActive,
+					dragging,
+				},
 				className
 			)}
-			tabIndex="0"
+			ref={setElement}
+			role="menuitem"
+			tabIndex={isTarget ? 0 : -1}
 		>
-			<span className="inline-item">
+			<span
+				className="c-p-2 inline-item"
+				onBlur={() => setIsActive(false)}
+				onFocus={() => setIsActive(true)}
+				tabIndex={isTarget ? 0 : -1}
+			>
 				<ClayIcon symbol="drag" />
 			</span>
 
 			<span className="c-mx-2 c-my-0 criteria-sidebar-item-type sticker sticker-dark">
 				<span className="inline-item">
-					<ClayIcon symbol={TYPE_ICON_MAP[type] || 'text'} />
+					<ClayIcon symbol={icon || TYPE_ICON_MAP[type] || 'text'} />
 				</span>
 			</span>
 
@@ -68,6 +77,7 @@ CriteriaSidebarItem.propTypes = {
 	connectDragSource: PropTypes.func,
 	defaultValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 	dragging: PropTypes.bool,
+	icon: PropTypes.string,
 	label: PropTypes.string,
 	name: PropTypes.string,
 	propertyKey: PropTypes.string.isRequired,

@@ -1,6 +1,7 @@
 definition {
 
-	macro changeDisplayItem {
+	@summary = "Default summary"
+	macro changeDisplayItem(displayItem = null) {
 		Click(locator1 = "PublicationsChangeDetails#CURRENT_DISPLAY_ICON");
 
 		MenuItem.click(menuItem = ${displayItem});
@@ -11,7 +12,8 @@ definition {
 			value1 = ${displayItem});
 	}
 
-	macro viewChangeDetailsInChildren {
+	@summary = "Default summary"
+	macro viewChangeDetailsInChildren(changeChildrenCategory = null, changeChildrenTitle = null) {
 		var key_changeChildrenCategory = ${changeChildrenCategory};
 		var key_changeChildrenTitle = ${changeChildrenTitle};
 
@@ -20,12 +22,13 @@ definition {
 			value1 = ${changeChildrenTitle});
 	}
 
-	macro viewChangeDetailsInData {
+	@summary = "Default summary"
+	macro viewChangeDetailsInData(changeType = null, diffAddedValue = null, columnValueInPublication = null, diffRemovedValue = null, publicationName = null, columnValueInProduction = null, columnName = null) {
 		var key_columnName = ${columnName};
 
 		if (${changeType} == "Added") {
 			AssertElementPresent(
-				key_displayItem = "Publication (New)",
+				key_displayItem = "${publicationName} (New)",
 				locator1 = "PublicationsChangeDetails#CURRENT_DISPLAY_ITEM");
 
 			var key_columnValueInPublication = ${columnValueInPublication};
@@ -92,7 +95,7 @@ definition {
 					value1 = ${columnValueInProduction});
 			}
 
-			PublicationsChangeDetails.changeDisplayItem(displayItem = "Version: 1.1 (Publication)");
+			PublicationsChangeDetails.changeDisplayItem(displayItem = "Version: 1.1 (${publicationName})");
 
 			if (isSet(columnValueInPublication)) {
 				var key_columnValueInPublication = ${columnValueInPublication};
@@ -104,10 +107,11 @@ definition {
 		}
 	}
 
-	macro viewChangeDetailsInDisplay {
+	@summary = "Default summary"
+	macro viewChangeDetailsInDisplay(changeType = null, diffAddedValue = null, contentValueInProduction = null, diffRemovedValue = null, publicationName = null, contentValueInPublication = null) {
 		if (${changeType} == "Added") {
 			AssertElementPresent(
-				key_displayItem = "Publication (New)",
+				key_displayItem = "${publicationName} (New)",
 				locator1 = "PublicationsChangeDetails#CURRENT_DISPLAY_ITEM");
 
 			var key_contentValueInPublication = ${contentValueInPublication};
@@ -176,7 +180,7 @@ definition {
 					value1 = ${contentValueInProduction});
 			}
 
-			PublicationsChangeDetails.changeDisplayItem(displayItem = "Version: 1.1 (Publication)");
+			PublicationsChangeDetails.changeDisplayItem(displayItem = "Version: 1.1 (${publicationName})");
 
 			if (isSet(contentValueInPublication)) {
 				var key_contentValueInPublication = ${contentValueInPublication};
@@ -188,24 +192,26 @@ definition {
 		}
 	}
 
-	macro viewChangeDetailsInParents {
+	@summary = "Default summary"
+	macro viewChangeDetailsInParents(changeParentsTitle = null, changeParentsCategory = null) {
 		var key_changeParentsCategory = ${changeParentsCategory};
 		var key_changeParentsTitle = ${changeParentsTitle};
 
-		AssertTextEquals(
+		AssertTextEquals.assertPartialText(
 			locator1 = "PublicationsChangeDetails#CHANGE_PARENTS_TITLE",
 			value1 = ${changeParentsTitle});
 	}
 
-	macro viewConflictingChangeDetails {
+	@summary = "Default summary"
+	macro viewConflictingChangeDetails(modificationConflict = null, modificationDeletionConflict = null, diffAddedValue = null, columnValueInPublication = null, diffRemovedValue = null, publicationName = null, columnValueInProduction = null, deletionModificationConflict = null, columnName = null) {
 		if (${deletionModificationConflict} == "true") {
-			if (IsElementNotPresent(key_displayItem = "Production", locator1 = "PublicationsChangeDetails#CURRENT_DISPLAY_ITEM")) {
-				PublicationsChangeDetails.changeDisplayItem(displayItem = "Production");
+			if (IsElementNotPresent(key_displayItem = "Split View", locator1 = "PublicationsChangeDetails#CURRENT_DISPLAY_ITEM")) {
+				PublicationsChangeDetails.changeDisplayItem(displayItem = "Split View");
 			}
 
-			Alert.viewErrorMessage(errorMessage = "This item is missing or is deleted.");
-
-			PublicationsChangeDetails.changeDisplayItem(displayItem = "Publication");
+			Click(
+				key_navItem = "Data",
+				locator1 = "NavBar#NAV_ITEM_LINK");
 
 			if (isSet(columnValueInPublication)) {
 				var key_columnName = ${columnName};
@@ -279,7 +285,7 @@ definition {
 					value1 = ${columnValueInProduction});
 			}
 
-			PublicationsChangeDetails.changeDisplayItem(displayItem = "Publication");
+			PublicationsChangeDetails.changeDisplayItem(displayItem = ${publicationName});
 
 			if (isSet(columnValueInPublication)) {
 				var key_columnValueInPublication = ${columnValueInPublication};
@@ -291,7 +297,8 @@ definition {
 		}
 	}
 
-	macro viewDDLRecordChangeDetails {
+	@summary = "Default summary"
+	macro viewDDLRecordChangeDetails(fieldValueInPublication = null, fieldName = null, changeType = null, diffAddedValue = null, fieldValueInProduction = null, publicationName = null) {
 		if (${changeType} == "Modified") {
 			if (IsElementNotPresent(key_displayItem = "Unified View", locator1 = "PublicationsChangeDetails#CURRENT_DISPLAY_ITEM")) {
 				PublicationsChangeDetails.changeDisplayItem(displayItem = "Unified View");
@@ -322,7 +329,7 @@ definition {
 					value1 = ${fieldValueInProduction});
 			}
 
-			PublicationsChangeDetails.changeDisplayItem(displayItem = "Publication");
+			PublicationsChangeDetails.changeDisplayItem(displayItem = ${publicationName});
 
 			AssertTextEquals.assertPartialText(
 				key_displayItem = "Publication",
@@ -339,7 +346,8 @@ definition {
 		}
 	}
 
-	macro viewDocumentChangeDetailsInDisplay {
+	@summary = "Default summary"
+	macro viewDocumentChangeDetailsInDisplay(keyImageInProduction = null, changeType = null, keyImage = null, keyImageInPublication = null, publicationName = null) {
 		if ((${changeType} == "Added") || (${changeType} == "Deleted")) {
 			AssertVisible(
 				key_imageSourceURL = ${keyImage},
@@ -347,7 +355,7 @@ definition {
 
 			if (${changeType} == "Added") {
 				AssertElementPresent(
-					key_displayItem = "Publication (New)",
+					key_displayItem = "${publicationName} (New)",
 					locator1 = "PublicationsChangeDetails#CURRENT_DISPLAY_ITEM");
 			}
 
@@ -391,7 +399,8 @@ definition {
 		}
 	}
 
-	macro viewFragmentChangePreviewInDisplay {
+	@summary = "Default summary"
+	macro viewFragmentChangePreviewInDisplay(fragmentPreviewInPublication = null, fragmentPreviewInProduction = null) {
 		if (isSet(fragmentPreviewInProduction)) {
 			AssertElementPresent(
 				key_fragmentPreviewInProduction = ${fragmentPreviewInProduction},

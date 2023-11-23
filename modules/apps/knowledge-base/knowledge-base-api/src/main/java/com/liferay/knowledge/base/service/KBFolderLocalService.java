@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.knowledge.base.service;
@@ -130,6 +121,10 @@ public interface KBFolderLocalService
 	 */
 	@Indexable(type = IndexableType.DELETE)
 	public KBFolder deleteKBFolder(long kbFolderId) throws PortalException;
+
+	public KBFolder deleteKBFolder(
+			long kbFolderId, boolean includeTrashedEntries)
+		throws PortalException;
 
 	public void deleteKBFolders(long groupId) throws PortalException;
 
@@ -310,6 +305,14 @@ public interface KBFolderLocalService
 
 	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
 	public List<Object> getKBFoldersAndKBArticles(
+		long groupId, long parentResourcePrimKey);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<Object> getKBFoldersAndKBArticles(
+		long groupId, long parentResourcePrimKey, int status);
+
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public List<Object> getKBFoldersAndKBArticles(
 		long groupId, long parentResourcePrimKey, int status, int start,
 		int end, OrderByComparator<?> orderByComparator);
 
@@ -355,6 +358,11 @@ public interface KBFolderLocalService
 	public int getKBFoldersCount(long groupId, long parentKBFolderId)
 		throws PortalException;
 
+	@Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+	public int getKBFoldersCount(
+			long groupId, long parentKBFolderId, int status)
+		throws PortalException;
+
 	/**
 	 * Returns the OSGi service identifier.
 	 *
@@ -370,7 +378,17 @@ public interface KBFolderLocalService
 	public PersistedModel getPersistedModel(Serializable primaryKeyObj)
 		throws PortalException;
 
-	public void moveKBFolder(long kbFolderId, long parentKBFolderId)
+	public KBFolder moveKBFolder(long kbFolderId, long parentKBFolderId)
+		throws PortalException;
+
+	public KBFolder moveKBFolderFromTrash(
+			long userId, long kbFolderId, long parentKBFolderId)
+		throws PortalException;
+
+	public KBFolder moveKBFolderToTrash(long userId, long kbFolderId)
+		throws PortalException;
+
+	public KBFolder restoreKBFolderFromTrash(long userId, long kbFolderId)
 		throws PortalException;
 
 	/**
@@ -390,6 +408,9 @@ public interface KBFolderLocalService
 			long parentResourceClassNameId, long parentResourcePrimKey,
 			long kbFolderId, String name, String description,
 			ServiceContext serviceContext)
+		throws PortalException;
+
+	public KBFolder updateStatus(long userId, KBFolder kbFolder, int status)
 		throws PortalException;
 
 	@Override

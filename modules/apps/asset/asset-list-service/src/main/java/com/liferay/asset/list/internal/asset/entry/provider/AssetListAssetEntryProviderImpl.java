@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.asset.list.internal.asset.entry.provider;
@@ -21,10 +12,10 @@ import com.liferay.asset.kernel.model.AssetRendererFactory;
 import com.liferay.asset.kernel.model.ClassType;
 import com.liferay.asset.kernel.model.ClassTypeReader;
 import com.liferay.asset.kernel.service.AssetCategoryLocalService;
+import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.asset.kernel.service.AssetTagLocalService;
 import com.liferay.asset.kernel.service.persistence.AssetEntryQuery;
 import com.liferay.asset.list.asset.entry.provider.AssetListAssetEntryProvider;
-import com.liferay.asset.list.asset.entry.query.processor.AssetListAssetEntryQueryProcessor;
 import com.liferay.asset.list.constants.AssetListEntryTypeConstants;
 import com.liferay.asset.list.internal.configuration.AssetListConfiguration;
 import com.liferay.asset.list.model.AssetListEntry;
@@ -78,8 +69,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
@@ -146,7 +137,8 @@ public class AssetListAssetEntryProviderImpl
 
 	@Activate
 	@Modified
-	protected void activate(Map<String, Object> properties)
+	protected void activate(
+			BundleContext bundleContext, Map<String, Object> properties)
 		throws ConfigurationException {
 
 		_assetListConfiguration = ConfigurableUtil.createConfigurable(
@@ -162,13 +154,11 @@ public class AssetListAssetEntryProviderImpl
 			assetListEntry.getTypeSettings(segmentsEntryId)
 		).build();
 
-		return _createAssetEntryQuery(
-			assetListEntry, userId, unicodeProperties);
+		return _createAssetEntryQuery(assetListEntry, unicodeProperties);
 	}
 
 	private AssetEntryQuery _createAssetEntryQuery(
-		AssetListEntry assetListEntry, String userId,
-		UnicodeProperties unicodeProperties) {
+		AssetListEntry assetListEntry, UnicodeProperties unicodeProperties) {
 
 		AssetEntryQuery assetEntryQuery = new AssetEntryQuery();
 
@@ -278,10 +268,6 @@ public class AssetListAssetEntryProviderImpl
 			GetterUtil.getString(
 				unicodeProperties.getProperty("orderByType2", "ASC")));
 
-		_processAssetEntryQuery(
-			assetListEntry.getCompanyId(), userId, unicodeProperties,
-			assetEntryQuery);
-
 		return assetEntryQuery;
 	}
 
@@ -379,6 +365,39 @@ public class AssetListAssetEntryProviderImpl
 		return ArrayUtil.toArray(assetCategoryIdsList.toArray(new Long[0]));
 	}
 
+	private List<AssetListEntryAssetEntryRel>
+		_filterAssetListEntryAssetEntryRels(
+			List<AssetListEntryAssetEntryRel> assetListEntryAssetEntryRels) {
+
+		return ListUtil.filter(
+			assetListEntryAssetEntryRels,
+			assetListEntryAssetEntryRel -> {
+				AssetEntry assetEntry = _assetEntryLocalService.fetchEntry(
+					assetListEntryAssetEntryRel.getAssetEntryId());
+
+				if ((assetEntry == null) || !assetEntry.isVisible()) {
+					return false;
+				}
+
+				AssetRendererFactory<?> assetRendererFactory =
+					AssetRendererFactoryRegistryUtil.
+						getAssetRendererFactoryByClassName(
+							assetEntry.getClassName());
+
+				if (assetRendererFactory == null) {
+					if (_log.isWarnEnabled()) {
+						_log.warn(
+							"No asset renderer factory found for class " +
+								assetEntry.getClassName());
+					}
+
+					return false;
+				}
+
+				return true;
+			});
+	}
+
 	private long[] _getAssetCategoryIds(UnicodeProperties unicodeProperties) {
 		long[] assetCategoryIds = new long[0];
 
@@ -454,11 +473,12 @@ public class AssetListAssetEntryProviderImpl
 			for (long segmentId : segmentsEntryIds) {
 				assetListEntryAssetEntryRels.addAll(
 					ListUtil.sort(
-						_assetListEntryAssetEntryRelLocalService.
-							getAssetListEntryAssetEntryRels(
-								assetListEntry.getAssetListEntryId(),
-								new long[] {segmentId}, QueryUtil.ALL_POS,
-								QueryUtil.ALL_POS),
+						_filterAssetListEntryAssetEntryRels(
+							_assetListEntryAssetEntryRelLocalService.
+								getAssetListEntryAssetEntryRels(
+									assetListEntry.getAssetListEntryId(),
+									new long[] {segmentId}, QueryUtil.ALL_POS,
+									QueryUtil.ALL_POS)),
 						Comparator.comparing(
 							AssetListEntryAssetEntryRelModel::getPosition)));
 			}
@@ -466,13 +486,15 @@ public class AssetListAssetEntryProviderImpl
 			return assetListEntryAssetEntryRels;
 		}
 
-		return _assetListEntryAssetEntryRelLocalService.
-			getAssetListEntryAssetEntryRels(
-				assetListEntry.getAssetListEntryId(),
-				new long[] {
-					_getFirstSegmentsEntryId(assetListEntry, segmentsEntryIds)
-				},
-				QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+		return _filterAssetListEntryAssetEntryRels(
+			_assetListEntryAssetEntryRelLocalService.
+				getAssetListEntryAssetEntryRels(
+					assetListEntry.getAssetListEntryId(),
+					new long[] {
+						_getFirstSegmentsEntryId(
+							assetListEntry, segmentsEntryIds)
+					},
+					QueryUtil.ALL_POS, QueryUtil.ALL_POS));
 	}
 
 	private String[] _getAssetTagNames(UnicodeProperties unicodeProperties) {
@@ -518,7 +540,7 @@ public class AssetListAssetEntryProviderImpl
 
 		for (String[] assetTagArrayNames : assetTagNames) {
 			TermsFilter assetTagIdTermsFilter = new TermsFilter(
-				Field.ASSET_TAG_NAMES);
+				Field.ASSET_TAG_NAMES + ".raw");
 
 			assetTagIdTermsFilter.addValues(
 				ArrayUtil.toStringArray(assetTagArrayNames));
@@ -939,19 +961,6 @@ public class AssetListAssetEntryProviderImpl
 		return searchContext;
 	}
 
-	private void _processAssetEntryQuery(
-		long companyId, String userId, UnicodeProperties unicodeProperties,
-		AssetEntryQuery assetEntryQuery) {
-
-		for (AssetListAssetEntryQueryProcessor
-				assetListAssetEntryQueryProcessor :
-					_assetListAssetEntryQueryProcessors) {
-
-			assetListAssetEntryQueryProcessor.processAssetEntryQuery(
-				companyId, userId, unicodeProperties, assetEntryQuery);
-		}
-	}
-
 	private void _setCategoriesAndTagsAndKeywords(
 		AssetEntryQuery assetEntryQuery, UnicodeProperties unicodeProperties,
 		long[] overrideAllAssetCategoryIds, String[] overrideAllAssetTagNames,
@@ -1117,10 +1126,11 @@ public class AssetListAssetEntryProviderImpl
 	private AssetCategoryLocalService _assetCategoryLocalService;
 
 	@Reference
+	private AssetEntryLocalService _assetEntryLocalService;
+
+	@Reference
 	private AssetHelper _assetHelper;
 
-	private final List<AssetListAssetEntryQueryProcessor>
-		_assetListAssetEntryQueryProcessors = new CopyOnWriteArrayList<>();
 	private volatile AssetListConfiguration _assetListConfiguration;
 
 	@Reference

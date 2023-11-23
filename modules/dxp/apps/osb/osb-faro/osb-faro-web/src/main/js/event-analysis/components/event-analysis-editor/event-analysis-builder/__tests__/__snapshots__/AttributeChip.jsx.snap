@@ -10,13 +10,14 @@ exports[`AttributeChip render 1`] = `
     >
       <div
         class="drag-handle"
+        draggable="true"
       >
         <svg
           class="lexicon-icon lexicon-icon-drag icon-root"
           role="presentation"
         >
           <use
-            xlink:href="#drag"
+            href="#drag"
           />
         </svg>
       </div>
@@ -32,7 +33,7 @@ exports[`AttributeChip render 1`] = `
             role="presentation"
           >
             <use
-              xlink:href="#text"
+              href="#text"
             />
           </svg>
         </div>
@@ -50,6 +51,7 @@ exports[`AttributeChip render 1`] = `
         </div>
       </button>
       <button
+        aria-label="Close"
         class="button-root remove-button btn btn-unstyled"
         type="button"
       >
@@ -58,7 +60,7 @@ exports[`AttributeChip render 1`] = `
           role="presentation"
         >
           <use
-            xlink:href="#times-circle"
+            href="#times-circle"
           />
         </svg>
       </button>

@@ -1,19 +1,19 @@
 definition {
 
-	@summary = "Get all current companies in a JSON format"
-	macro _getPortalInstances {
+	@summary = "Default summary"
+	macro _getPortalInstances(authenticationMethod = null) {
 		var portalURL = JSONCompany.getDefaultPortalURL();
 
 		if (${authenticationMethod} == "By Screen Name") {
-			var userLogin = "test:test";
+			var userLoginInfo = "test:test";
 		}
 		else {
-			var userLogin = JSONUtil2.formatJSONUser();
+			var userLoginInfo = JSONUtil2.formatJSONSuperAdminUser();
 		}
 
 		var curl = '''
 			${portalURL}/o/headless-portal-instances/v1.0/portal-instances \
-				-u ${userLogin} \
+				-u ${userLoginInfo} \
 				-H Content-Type: application/json
 		''';
 
@@ -22,8 +22,8 @@ definition {
 		return ${json};
 	}
 
-	@summary = "Creates a new Portal Instance with domain = mailDomain, virtualHost = virtualHost, and portalInstanceId = webId"
-	macro addPortalInstance {
+	@summary = "Default summary"
+	macro addPortalInstance(authenticationMethod = null, domain = null, portalInstanceId = null, virtualHost = null, token = null) {
 		Variables.assertDefined(parameterList = "${domain},${virtualHost},${portalInstanceId}");
 
 		var portalURL = JSONCompany.getDefaultPortalURL();
@@ -43,15 +43,15 @@ definition {
 			value = "\"${portalInstanceId}\"");
 
 		if (${authenticationMethod} == "By Screen Name") {
-			var userLogin = "test:test";
+			var userLoginInfo = "test:test";
 		}
 		else {
-			var userLogin = JSONUtil2.formatJSONUser();
+			var userLoginInfo = JSONUtil2.formatJSONSuperAdminUser();
 		}
 
 		var curl = '''
 			${portalURL}/o/headless-portal-instances/v1.0/portal-instances \
-				-u ${userLogin} \
+				-u ${userLoginInfo} \
 				-d ${parameters} \
 				-H Content-Type: application/json
 		''';
@@ -60,11 +60,17 @@ definition {
 			var curl = StringUtil.add(${curl}, " -H 'Authorization: Bearer ${token}'", "");
 		}
 
-		JSONCurlUtil.post(${curl});
+		var company = JSONCurlUtil.post(${curl});
+
+		var companiesCacheTemp = JSONObjectList.addJSONObject(
+			jSONObject = ${company},
+			jSONObjectList = ${companiesCache});
+
+		static var companiesCache = ${companiesCacheTemp};
 	}
 
-	@summary = "Creates a new Portal Instance with domain = mailDomain, virtualHost = virtualHost, portalInstanceId = webId, and siteInitializerKey = virtualInstanceInitializer"
-	macro addPortalInstanceWithVirtualInstanceInitializer {
+	@summary = "Default summary"
+	macro addPortalInstanceWithVirtualInstanceInitializer(siteInitializerKey = null, authenticationMethod = null, domain = null, portalInstanceId = null, virtualHost = null) {
 		Variables.assertDefined(parameterList = "${domain},${virtualHost},${portalInstanceId},${siteInitializerKey}");
 
 		var portalURL = JSONCompany.getPortalURL();
@@ -89,15 +95,15 @@ definition {
 			value = "\"${siteInitializerKey}\"");
 
 		if (${authenticationMethod} == "By Screen Name") {
-			var userLogin = "test:test";
+			var userLoginInfo = "test:test";
 		}
 		else {
-			var userLogin = JSONUtil2.formatJSONUser();
+			var userLoginInfo = JSONUtil2.formatJSONSuperAdminUser();
 		}
 
 		var curl = '''
 			${portalURL}/o/headless-portal-instances/v1.0/portal-instances \
-				-u ${userLogin} \
+				-u ${userLoginInfo} \
 				-d ${parameters} \
 				-H Content-Type: application/json
 		''';
@@ -105,38 +111,59 @@ definition {
 		JSONCurlUtil.post(${curl});
 	}
 
-	@summary = "Clean up all Portal Instances that are not the default using Headless"
-	macro cleanAllPortalInstances {
+	@summary = "Default summary"
+	macro cleanAllPortalInstances(authenticationMethod = null) {
 		var portalInstanceJson = HeadlessPortalInstanceAPI._getPortalInstances(authenticationMethod = ${authenticationMethod});
 
 		var portalInstanceIds = JSONUtil.getWithJSONPath(${portalInstanceJson}, "$.items..portalInstanceId");
+		var lxcEnvironment = JSONUtil2.getLXCEnvironment();
 
-		for (var portalInstanceId : list ${portalInstanceIds}) {
-			if (${portalInstanceId} != "liferay.com") {
-				HeadlessPortalInstanceAPI.deletePortalInstance(
-					authenticationMethod = ${authenticationMethod},
-					portalInstanceId = ${portalInstanceId});
+		if (${lxcEnvironment} != "true") {
+			for (var portalInstanceId : list ${portalInstanceIds}) {
+				if (${portalInstanceId} != "liferay.com") {
+					HeadlessPortalInstanceAPI.deletePortalInstance(
+						authenticationMethod = ${authenticationMethod},
+						portalInstanceId = ${portalInstanceId});
+				}
+			}
+		}
+		else {
+
+			// If LXC Environment, only delete the one we are using beforehand
+
+			var portalURL = JSONCompany.getPortalURL();
+
+			var portalInstance = Regex.removeHTTP(url = ${portalURL});
+
+			var portalInstance = Regex.removePortNumber(url = ${portalInstance});
+
+			for (var portalInstanceId : list ${portalInstanceIds}) {
+				if (${portalInstanceId} == ${portalInstance}) {
+					HeadlessPortalInstanceAPI.deletePortalInstance(
+						authenticationMethod = ${authenticationMethod},
+						portalInstanceId = ${portalInstanceId});
+				}
 			}
 		}
 	}
 
-	@summary = "Deletes a Portal Instance with portalInstanceId resembling webId"
-	macro deletePortalInstance {
+	@summary = "Default summary"
+	macro deletePortalInstance(authenticationMethod = null) {
 		Variables.assertDefined(parameterList = ${portalInstanceId});
 
 		var portalURL = JSONCompany.getDefaultPortalURL();
 		var portalInstanceId = StringUtil.replace(${portalInstanceId}, " ", "%20");
 
 		if (${authenticationMethod} == "By Screen Name") {
-			var userLogin = "test:test";
+			var userLoginInfo = "test:test";
 		}
 		else {
-			var userLogin = JSONUtil2.formatJSONUser();
+			var userLoginInfo = JSONUtil2.formatJSONSuperAdminUser();
 		}
 
 		var curl = '''
 			${portalURL}/o/headless-portal-instances/v1.0/portal-instances/${portalInstanceId} \
-				-u ${userLogin} \
+				-u ${userLoginInfo} \
 				-H Content-Type: application/json
 		''';
 

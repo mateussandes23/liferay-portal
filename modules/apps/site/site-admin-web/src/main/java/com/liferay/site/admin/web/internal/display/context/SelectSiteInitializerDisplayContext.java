@@ -1,21 +1,12 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.site.admin.web.internal.display.context;
 
-import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItem;
-import com.liferay.frontend.taglib.clay.servlet.taglib.util.NavigationItemListBuilder;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.VerticalNavItemList;
+import com.liferay.frontend.taglib.clay.servlet.taglib.util.VerticalNavItemListBuilder;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -71,30 +62,6 @@ public class SelectSiteInitializerDisplayContext {
 		return _backURL;
 	}
 
-	public List<NavigationItem> getNavigationItems() {
-		return NavigationItemListBuilder.add(
-			navigationItem -> {
-				navigationItem.setActive(
-					Objects.equals(_getTabs1(), "provided-by-liferay"));
-				navigationItem.setHref(
-					_getPortletURL(), "tabs1", "provided-by-liferay");
-				navigationItem.setLabel(
-					LanguageUtil.get(
-						_httpServletRequest, "provided-by-liferay"));
-			}
-		).add(
-			navigationItem -> {
-				navigationItem.setActive(
-					Objects.equals(_getTabs1(), "custom-site-templates"));
-				navigationItem.setHref(
-					_getPortletURL(), "tabs1", "custom-site-templates");
-				navigationItem.setLabel(
-					LanguageUtil.get(
-						_httpServletRequest, "custom-site-templates"));
-			}
-		).build();
-	}
-
 	public long getParentGroupId() {
 		if (_parentGroupId != null) {
 			return _parentGroupId;
@@ -120,6 +87,40 @@ public class SelectSiteInitializerDisplayContext {
 		return siteInitializerItemSearchContainer;
 	}
 
+	public String getTitle() {
+		return LanguageUtil.get(_httpServletRequest, _getTabs1());
+	}
+
+	public VerticalNavItemList getVerticalNavItemList() {
+		return VerticalNavItemListBuilder.add(
+			verticalNavItem -> {
+				verticalNavItem.setActive(
+					Objects.equals(_getTabs1(), "provided-by-liferay"));
+				verticalNavItem.setHref(
+					_getPortletURL(), "tabs1", "provided-by-liferay");
+
+				String name = LanguageUtil.get(
+					_httpServletRequest, "provided-by-liferay");
+
+				verticalNavItem.setId(name);
+				verticalNavItem.setLabel(name);
+			}
+		).add(
+			verticalNavItem -> {
+				verticalNavItem.setActive(
+					Objects.equals(_getTabs1(), "custom-site-templates"));
+				verticalNavItem.setHref(
+					_getPortletURL(), "tabs1", "custom-site-templates");
+
+				String name = LanguageUtil.get(
+					_httpServletRequest, "custom-site-templates");
+
+				verticalNavItem.setId(name);
+				verticalNavItem.setLabel(name);
+			}
+		).build();
+	}
+
 	private PortletURL _getPortletURL() {
 		return PortletURLBuilder.createRenderURL(
 			_renderResponse
@@ -127,6 +128,9 @@ public class SelectSiteInitializerDisplayContext {
 			"/site_admin/select_site_initializer"
 		).setRedirect(
 			getBackURL()
+		).setParameter(
+			"backURLTitle",
+			ParamUtil.getString(_httpServletRequest, "backURLTitle")
 		).setParameter(
 			"parentGroupId", getParentGroupId()
 		).buildPortletURL();

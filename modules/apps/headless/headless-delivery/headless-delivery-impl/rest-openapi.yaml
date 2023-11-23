@@ -1,5 +1,25 @@
 components:
     schemas:
+        ActionExecutionResult:
+            # @review
+            description:
+                Represents a definition of an action execution result.
+            properties:
+                type:
+                    # @review
+                    description:
+                        The type of result.
+                    enum: [DisplayPage, None, Notification, Page, URL]
+                    type:
+                        string
+                value:
+                    oneOf:
+                        - $ref: "#/components/schemas/DisplayPageActionExecutionResult"
+                        - $ref: "#/components/schemas/NoneActionExecutionResult"
+                        - $ref: "#/components/schemas/NotificationActionExecutionResult"
+                        - $ref: "#/components/schemas/SitePageActionExecutionResult"
+                        - $ref: "#/components/schemas/URLActionExecutionResult"
+            type: object
         AggregateRating:
             description:
                 Represents the average rating. See [AggregateRating](https://www.schema.org/AggregateRating) for more
@@ -51,8 +71,7 @@ components:
                     readOnly: true
                     type: object
                 aggregateRating:
-                    allOf:
-                        - $ref: "#/components/schemas/AggregateRating"
+                    $ref: "#/components/schemas/AggregateRating"
                     description:
                         The blog post's average rating.
                     readOnly: true
@@ -65,8 +84,7 @@ components:
                         The blog post's body (content).
                     type: string
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The blog post's author.
                     readOnly: true
@@ -165,7 +183,6 @@ components:
                         A list of related contents to this blog post.
                     items:
                         $ref: "#/components/schemas/RelatedContent"
-                    readOnly: true
                     type: array
                 renderedContents:
                     description:
@@ -323,6 +340,10 @@ components:
             description:
                 Represents a client extension
             properties:
+                clientExtensionConfig:
+                    additionalProperties:
+                        type: string
+                    type: object
                 externalReferenceCode:
                     # @review
                     description:
@@ -389,8 +410,7 @@ components:
                     readOnly: true
                     type: object
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The comment's author.
                     readOnly: true
@@ -532,8 +552,7 @@ components:
                 (e.g., documents, geolocation, etc.).
             properties:
                 contentFieldValue:
-                    allOf:
-                        - $ref: "#/components/schemas/ContentFieldValue"
+                    $ref: "#/components/schemas/ContentFieldValue"
                     description:
                         The field's value.
                 contentFieldValue_i18n:
@@ -590,8 +609,7 @@ components:
                         The field's content for simple types.
                     type: string
                 document:
-                    allOf:
-                        - $ref: "#/components/schemas/ContentDocument"
+                    $ref: "#/components/schemas/ContentDocument"
                     description:
                         A content document element.
                 geo:
@@ -610,8 +628,7 @@ components:
                             type: number
                     type: object
                 image:
-                    allOf:
-                        - $ref: "#/components/schemas/ContentDocument"
+                    $ref: "#/components/schemas/ContentDocument"
                     description:
                         A content document element that stores an image file.
                 link:
@@ -629,8 +646,7 @@ components:
                             readOnly: true
                             type: string
                         embeddedStructuredContent:
-                            allOf:
-                                - $ref: "#/components/schemas/StructuredContent"
+                            $ref: "#/components/schemas/StructuredContent"
                             # @review
                             description:
                                 Optional field with the structured content, can be embedded with nestedFields.
@@ -645,6 +661,10 @@ components:
                                 The resource's title.
                             type: string
                     type: object
+                value:
+                    description:
+                        The field's visible value
+                    type: string
         ContentSetElement:
             description:
                 Represents each member of a content set and can contain different types of assets.
@@ -704,8 +724,7 @@ components:
                     readOnly: true
                     type: array
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The content structure's creator.
                     readOnly: true
@@ -897,8 +916,7 @@ components:
                     format: int64
                     type: integer
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     # @review
                     description:
                         The content template's creator.
@@ -1025,6 +1043,12 @@ components:
                     format: uri
                     readOnly: true
                     type: string
+                userGroupBriefs:
+                    description:
+                        A list of userGroups information.
+                    items:
+                        $ref: "#/components/schemas/UserGroupBrief"
+                    type: array
             type: object
         CreatorStatistics:
             # @review
@@ -1080,8 +1104,7 @@ components:
                 geolocation, strings, etc.).
             properties:
                 customValue:
-                    allOf:
-                        - $ref: "#/components/schemas/CustomValue"
+                    $ref: "#/components/schemas/CustomValue"
                     description:
                         The field's value.
                 dataType:
@@ -1134,10 +1157,26 @@ components:
                         The localized field's content values for simple types.
                     type: object
                 geo:
-                    allOf:
-                        - $ref: "#/components/schemas/Geo"
+                    $ref: "#/components/schemas/Geo"
                     description:
                         A point determined by latitude and longitude.
+            type: object
+        DisplayPageActionExecutionResult:
+            # @review
+            description:
+                Represents a definition of an action execution of type display page.
+            properties:
+                mapping:
+                    # @review
+                    description:
+                        The mapping of the display page action result.
+                    properties:
+                        fieldKey:
+                            # @review
+                            description:
+                                The mapping's field key.
+                            type: string
+                    type: object
             type: object
         DisplayPageTemplate:
             description:
@@ -1240,8 +1279,7 @@ components:
                     readOnly: true
                     type: array
                 aggregateRating:
-                    allOf:
-                        - $ref: "#/components/schemas/AggregateRating"
+                    $ref: "#/components/schemas/AggregateRating"
                     description:
                         The document's average rating.
                     readOnly: true
@@ -1265,8 +1303,7 @@ components:
                     readOnly: true
                     type: string
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The document's creator.
                     readOnly: true
@@ -1455,8 +1492,7 @@ components:
                     readOnly: true
                     type: string
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The folder's creator.
                     readOnly: true
@@ -1604,6 +1640,7 @@ components:
                     type: string
                 value:
                     anyOf:
+                        - $ref: "#/components/schemas/FragmentFieldAction"
                         - $ref: "#/components/schemas/FragmentFieldBackgroundImage"
                         - $ref: "#/components/schemas/FragmentFieldHTML"
                         - $ref: "#/components/schemas/FragmentFieldImage"
@@ -1612,14 +1649,42 @@ components:
                     description:
                         The fragment field's value.
             type: object
+        FragmentFieldAction:
+            # @review
+            description:
+                Represents a fragment field with an action.
+            properties:
+                action:
+                    # @review
+                    description:
+                        The fragment field's action. Must be mapped to an external value.
+                    oneOf:
+                        - $ref: "#/components/schemas/FragmentMappedValue"
+                onError:
+                    $ref: "#/components/schemas/ActionExecutionResult"
+                    # @review
+                    description:
+                        The action execution result in case the action fails.
+                onSuccess:
+                    $ref: "#/components/schemas/ActionExecutionResult"
+                    # @review
+                    description:
+                        The action execution result in case the action succeeds.
+                text:
+                    # @review
+                    description:
+                        The fragment field's text.
+                    oneOf:
+                        - $ref: "#/components/schemas/FragmentInlineValue"
+                        - $ref: "#/components/schemas/FragmentMappedValue"
+            type: object
         FragmentFieldBackgroundImage:
             # @review
             description:
                 Represents a fragment field with a background image.
             properties:
                 backgroundFragmentImage:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentImage"
+                    $ref: "#/components/schemas/FragmentImage"
                     # @review
                     description:
                         The fragment field's background image.
@@ -1659,14 +1724,12 @@ components:
                 Represents a fragment field with an image.
             properties:
                 fragmentImage:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentImage"
+                    $ref: "#/components/schemas/FragmentImage"
                     # @review
                     description:
                         The fragment field's image.
                 fragmentLink:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentLink"
+                    $ref: "#/components/schemas/FragmentLink"
                     # @review
                     description:
                         A link to a fragment.
@@ -1677,8 +1740,7 @@ components:
                 Represents a fragment field with text.
             properties:
                 fragmentLink:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentLink"
+                    $ref: "#/components/schemas/FragmentLink"
                     # @review
                     description:
                         A link to a fragment.
@@ -1702,8 +1764,7 @@ components:
                     oneOf:
                         - $ref: "#/components/schemas/FragmentInlineValue"
                 fragmentImageClassPKReference:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentImageClassPKReference"
+                    $ref: "#/components/schemas/FragmentImageClassPKReference"
                     # @review
                     description:
                         A reference to a fragment image class primary key.
@@ -1734,8 +1795,7 @@ components:
                         A map of class primary key references.
                     type: object
                 fragmentImageConfiguration:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentImageConfiguration"
+                    $ref: "#/components/schemas/FragmentImageConfiguration"
                     # @review
                     description:
                         The fragment image's configuration.
@@ -1794,8 +1854,7 @@ components:
                     enum: [Blank, Parent, Self, Top]
                     type: string
                 value:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentLinkValue"
+                    $ref: "#/components/schemas/FragmentLinkValue"
                     # @review
                     description:
                         The fragment link's value.
@@ -1830,8 +1889,7 @@ components:
                 Represents a fragment mapped value.
             properties:
                 defaultFragmentInlineValue:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentInlineValue"
+                    $ref: "#/components/schemas/FragmentInlineValue"
                     # @review
                     description:
                         The default value of the fragment mapped value.
@@ -1902,8 +1960,7 @@ components:
                         The fragment's background color.
                     type: string
                 backgroundFragmentImage:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentImage"
+                    $ref: "#/components/schemas/FragmentImage"
                     # @review
                     description:
                         The fragment's background image.
@@ -2223,8 +2280,7 @@ components:
                     readOnly: true
                     type: object
                 aggregateRating:
-                    allOf:
-                        - $ref: "#/components/schemas/AggregateRating"
+                    $ref: "#/components/schemas/AggregateRating"
                     description:
                         The article's average rating.
                     readOnly: true
@@ -2233,8 +2289,7 @@ components:
                         The article's main content.
                     type: string
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The article's author.
                     readOnly: true
@@ -2256,6 +2311,12 @@ components:
                         The last time the article's content or metadata changed.
                     format: date-time
                     readOnly: true
+                    type: string
+                datePublished:
+                    # @review
+                    description:
+                        The article's scheduled publication date.
+                    format: date-time
                     type: string
                 description:
                     description:
@@ -2437,8 +2498,7 @@ components:
                     readOnly: true
                     type: object
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The folder's creator.
                     readOnly: true
@@ -2654,8 +2714,7 @@ components:
                     readOnly: true
                     type: object
                 aggregateRating:
-                    allOf:
-                        - $ref: "#/components/schemas/AggregateRating"
+                    $ref: "#/components/schemas/AggregateRating"
                     description:
                         The message's average rating.
                     readOnly: true
@@ -2668,14 +2727,12 @@ components:
                         The message's main content.
                     type: string
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The message's author.
                     readOnly: true
                 creatorStatistics:
-                    allOf:
-                        - $ref: "#/components/schemas/CreatorStatistics"
+                    $ref: "#/components/schemas/CreatorStatistics"
                     # @review
                     description:
                         The message's creator statistics (rank, join date, number of posts, ...)
@@ -2809,8 +2866,7 @@ components:
                     readOnly: true
                     type: object
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The section's creator.
                     readOnly: true
@@ -2836,6 +2892,8 @@ components:
                 description:
                     description:
                         The section's description.
+                    type: string
+                friendlyUrlPath:
                     type: string
                 id:
                     description:
@@ -2900,8 +2958,7 @@ components:
                     readOnly: true
                     type: object
                 aggregateRating:
-                    allOf:
-                        - $ref: "#/components/schemas/AggregateRating"
+                    $ref: "#/components/schemas/AggregateRating"
                     description:
                         The thread's average rating.
                     readOnly: true
@@ -2910,14 +2967,12 @@ components:
                         The thread's main body content (the message written as the thread's description).
                     type: string
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The thread's creator.
                     readOnly: true
                 creatorStatistics:
-                    allOf:
-                        - $ref: "#/components/schemas/CreatorStatistics"
+                    $ref: "#/components/schemas/CreatorStatistics"
                     # @review
                     description:
                         The thread's creator statistics (rank, join date, number of posts, ...)
@@ -3077,11 +3132,18 @@ components:
                 Represents a definition of a submission result of type message.
             properties:
                 message:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentInlineValue"
+                    $ref: "#/components/schemas/FragmentInlineValue"
                     # @review
                     description:
                         The localized submission of message type.
+                messageType:
+                    # @review
+                    description:
+                        The message form submission type (embedded, none).
+                    enum: [Embedded, None]
+                    type: string
+                showNotification:
+                    type: boolean
             type: object
         NavigationMenu:
             # @review
@@ -3099,8 +3161,7 @@ components:
                     readOnly: true
                     type: object
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     # @review
                     description:
                         The navigation menu's creator.
@@ -3170,9 +3231,8 @@ components:
                         The navigation menu item's content API REST URL.
                     type: string
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
-                     # @review
+                    $ref: "#/components/schemas/Creator"
+                        # @review
                     description:
                         The navigation menu item's creator.
                     readOnly: true
@@ -3255,6 +3315,33 @@ components:
                     type: string
                 useCustomName:
                     type: boolean
+        NoneActionExecutionResult:
+            # @review
+            description:
+                Represents a definition of an action execution result of type none.
+            properties:
+                reload:
+                    # @review
+                    description:
+                        Whether to reload the page after the action is executed.
+                    type: boolean
+            type: object
+        NotificationActionExecutionResult:
+            # @review
+            description:
+                Represents a definition of an action execution result of type notification.
+            properties:
+                reload:
+                    # @review
+                    description:
+                        Whether to reload the page after the action is executed.
+                    type: boolean
+                text:
+                    $ref: "#/components/schemas/FragmentInlineValue"
+                    # @review
+                    description:
+                        The localized text to display when an action is executed.
+            type: object
         OpenGraphSettings:
             # @review
             description:
@@ -3273,8 +3360,7 @@ components:
                         The localized Open Graph's descriptions.
                     type: object
                 image:
-                    allOf:
-                        - $ref: "#/components/schemas/ContentDocument"
+                    $ref: "#/components/schemas/ContentDocument"
                     # @review
                     description:
                         The Open Graph's image.
@@ -3362,8 +3448,7 @@ components:
                             type: object
                     type: object
                 fragmentStyle:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentStyle"
+                    $ref: "#/components/schemas/FragmentStyle"
                     # @review
                     description:
                         The fragment style of the page collection.
@@ -3512,14 +3597,19 @@ components:
                 Represent a definition of a Page.
             properties:
                 pageElement:
-                    allOf:
-                        - $ref: "#/components/schemas/PageElement"
+                    $ref: "#/components/schemas/PageElement"
                     # @review
                     description:
                         The page's page element.
+                pageRules:
+                    # @review
+                    description:
+                        A list of the page rules this page has.
+                    items:
+                        $ref: "#/components/schemas/PageRule"
+                    type: array
                 settings:
-                    allOf:
-                        - $ref: "#/components/schemas/Settings"
+                    $ref: "#/components/schemas/Settings"
                     # @review
                     description:
                         The page's settings.
@@ -3564,6 +3654,10 @@ components:
                         - $ref: "#/components/schemas/PageRowDefinition"
                         - $ref: "#/components/schemas/PageSectionDefinition"
                         - $ref: "#/components/schemas/PageWidgetInstanceDefinition"
+                id:
+                    description:
+                        The page element's ID.
+                    type: string
                 pageElements:
                     # @review
                     description:
@@ -3626,8 +3720,7 @@ components:
                             type: object
                     type: object
                 fragmentStyle:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentStyle"
+                    $ref: "#/components/schemas/FragmentStyle"
                     # @review
                     description:
                         The fragment style of a Page form.
@@ -3709,8 +3802,7 @@ components:
                         $ref: "#/components/schemas/CustomCSSViewport"
                     type: array
                 fragment:
-                    allOf:
-                        - $ref: "#/components/schemas/Fragment"
+                    $ref: "#/components/schemas/Fragment"
                     # @review
                     description:
                         The fragment of the page fragment instance.
@@ -3729,8 +3821,7 @@ components:
                         $ref: "#/components/schemas/FragmentField"
                     type: array
                 fragmentStyle:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentStyle"
+                    $ref: "#/components/schemas/FragmentStyle"
                     # @review
                     description:
                         The fragment style of the page fragment instance.
@@ -3789,8 +3880,7 @@ components:
                         $ref: "#/components/schemas/CustomCSSViewport"
                     type: array
                 fragmentStyle:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentStyle"
+                    $ref: "#/components/schemas/FragmentStyle"
                     # @review
                     description:
                         The fragment style of a Page row.
@@ -3877,6 +3967,94 @@ components:
                         The vertical aligment property of the page row.
                     type: string
             type: object
+        PageRule:
+            # @review
+            description:
+                Represents a definition of a Page Rule.
+            properties:
+                conditionType:
+                    # @review
+                    description:
+                        The custom name of a Page rule.
+                    enum: [All, Any]
+                    type: string
+                id:
+                    # @review
+                    description:
+                        The page rule ID.
+                    type: string
+                name:
+                    # @review
+                    description:
+                        The custom name of a Page rule.
+                    type: string
+                pageRuleActions:
+                    # @review
+                    description:
+                        A list of actions of a Page rule.
+                    items:
+                        $ref: "#/components/schemas/PageRuleAction"
+                    type: array
+                pageRuleConditions:
+                    # @review
+                    description:
+                        A list of conditions of a Page rule.
+                    items:
+                        $ref: "#/components/schemas/PageRuleCondition"
+                    type: array
+            type: object
+        PageRuleAction:
+            # @review
+            description:
+                Represents a definition of a Page Rule Action.
+            properties:
+                action:
+                    # @review
+                    description:
+                        The page rule action's action.
+                    type: string
+                id:
+                    # @review
+                    description:
+                        The page rule action's ID.
+                    type: string
+                itemId:
+                    # @review
+                    description:
+                        The page rule condition's item ID.
+                    type: string
+                type:
+                    # @review
+                    description:
+                        The page rule action's type.
+                    type: string
+            type: object
+        PageRuleCondition:
+            # @review
+            description:
+                Represents a definition of a Page Rule Condition.
+            properties:
+                condition:
+                    # @review
+                    description:
+                        The page rule condition's description.
+                    type: string
+                id:
+                    # @review
+                    description:
+                        The page rule condition's ID.
+                    type: string
+                type:
+                    # @review
+                    description:
+                        The page rule condition's type.
+                    type: string
+                value:
+                    # @review
+                    description:
+                        The page rule condition's value.
+                    type: string
+            type: object
         PageSectionDefinition:
             # @review
             description:
@@ -3886,8 +4064,7 @@ components:
                     deprecated: true
                     type: string
                 backgroundFragmentImage:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentImage"
+                    $ref: "#/components/schemas/FragmentImage"
                     # @review
                     description:
                         The background fragment image of the page section.
@@ -3932,14 +4109,12 @@ components:
                         $ref: "#/components/schemas/CustomCSSViewport"
                     type: array
                 fragmentLink:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentLink"
+                    $ref: "#/components/schemas/FragmentLink"
                     # @review
                     description:
                         The fragment link of the page section.
                 fragmentStyle:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentStyle"
+                    $ref: "#/components/schemas/FragmentStyle"
                     # @review
                     description:
                         The fragment style of the page section.
@@ -4065,20 +4240,17 @@ components:
                         A flag that indicates whether the page is hidden from navigation.
                     type: boolean
                 openGraphSettings:
-                    allOf:
-                        - $ref: "#/components/schemas/OpenGraphSettings"
+                    $ref: "#/components/schemas/OpenGraphSettings"
                     # @review
                     description:
                         The page's Open Graph settings.
                 seoSettings:
-                    allOf:
-                        - $ref: "#/components/schemas/SEOSettings"
+                    $ref: "#/components/schemas/SEOSettings"
                     # @review
                     description:
                         The page's SEO settings.
                 sitePageNavigationMenuSettings:
-                    allOf:
-                        - $ref: "#/components/schemas/SitePageNavigationMenuSettings"
+                    $ref: "#/components/schemas/SitePageNavigationMenuSettings"
                     # @review
                     description:
                         The page's site navigation menu settings.
@@ -4089,8 +4261,7 @@ components:
                 Represents a Page template.
             properties:
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     # @review
                     description:
                         The page template's creator.
@@ -4129,14 +4300,12 @@ components:
                         The page template's name.
                     type: string
                 pageDefinition:
-                    allOf:
-                        - $ref: "#/components/schemas/PageDefinition"
+                    $ref: "#/components/schemas/PageDefinition"
                     # @review
                     description:
                         The page template's definition.
                 pageTemplateCollection:
-                    allOf:
-                        - $ref: "#/components/schemas/PageTemplateCollection"
+                    $ref: "#/components/schemas/PageTemplateCollection"
                     # @review
                     description:
                         The page template's collection.
@@ -4169,8 +4338,7 @@ components:
                 Represents a Page template collection.
             properties:
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     # @review
                     description:
                         The page template collection's creator.
@@ -4237,8 +4405,7 @@ components:
                         $ref: "#/components/schemas/CustomCSSViewport"
                     type: array
                 fragmentStyle:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentStyle"
+                    $ref: "#/components/schemas/FragmentStyle"
                     # @review
                     description:
                         The fragment style of the page widget instance.
@@ -4255,8 +4422,7 @@ components:
                         The custom name of a Page Widget instance.
                     type: string
                 widgetInstance:
-                    allOf:
-                        - $ref: "#/components/schemas/WidgetInstance"
+                    $ref: "#/components/schemas/WidgetInstance"
                     # @review
                     description:
                         The widget instance of the page widget instance.
@@ -4283,8 +4449,7 @@ components:
                     readOnly: true
                     type: number
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The rating's creator.
                     readOnly: true
@@ -4326,13 +4491,11 @@ components:
                 contentType:
                     description:
                         The type of the content.
-                    readOnly: true
                     type: string
                 id:
                     description:
                         The identifier of the resource.
                     format: int64
-                    readOnly: true
                     type: integer
                 title:
                     description:
@@ -4584,8 +4747,7 @@ components:
                         The page's JavaScript.
                     type: string
                 masterPage:
-                    allOf:
-                        - $ref: "#/components/schemas/MasterPage"
+                    $ref: "#/components/schemas/MasterPage"
                     # @review
                     description:
                         The page's master page.
@@ -4606,8 +4768,7 @@ components:
                             type: string
                     type: object
                 themeCSSClientExtension:
-                    allOf:
-                        - $ref: "#/components/schemas/ClientExtension"
+                    $ref: "#/components/schemas/ClientExtension"
                     # @review
                     description:
                         The Client Extension for the theme css of a page
@@ -4638,8 +4799,7 @@ components:
                     readOnly: true
                     type: object
                 aggregateRating:
-                    allOf:
-                        - $ref: "#/components/schemas/AggregateRating"
+                    $ref: "#/components/schemas/AggregateRating"
                     # @review
                     description:
                         The page's average rating.
@@ -4653,8 +4813,7 @@ components:
                     readOnly: true
                     type: array
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     # @review
                     description:
                         The page's creator.
@@ -4687,8 +4846,7 @@ components:
                     format: date-time
                     type: string
                 experience:
-                    allOf:
-                        - $ref: "#/components/schemas/Experience"
+                    $ref: "#/components/schemas/Experience"
                     # @review
                     description:
                         Experience of the page that it's being retrieved.
@@ -4718,8 +4876,7 @@ components:
                         type: string
                     type: array
                 pageDefinition:
-                    allOf:
-                        - $ref: "#/components/schemas/PageDefinition"
+                    $ref: "#/components/schemas/PageDefinition"
                     # @review
                     description:
                         Optional field with the structure of all the elements of the page. Can be embedded with
@@ -4746,8 +4903,7 @@ components:
                         type: object
                     type: array
                 pageSettings:
-                    allOf:
-                        - $ref: "#/components/schemas/PageSettings"
+                    $ref: "#/components/schemas/PageSettings"
                     # @review
                     description:
                         Settings of the page, such as SEO or OpenGraph.
@@ -4768,8 +4924,7 @@ components:
                             type: string
                     type: object
                 renderedPage:
-                    allOf:
-                        - $ref: "#/components/schemas/RenderedPage"
+                    $ref: "#/components/schemas/RenderedPage"
                     # @review
                     description:
                         Metadata of the page such as it's master page and template.
@@ -4786,12 +4941,13 @@ components:
                         The categories associated with this page.
                     items:
                         $ref: "#/components/schemas/TaxonomyCategoryBrief"
-                    readOnly: true
                     type: array
                 taxonomyCategoryIds:
+                    deprecated: true
                     # @review
                     description:
-                        A write-only field that adds `TaxonomyCategory` instances to the page.
+                        A write-only field that adds `TaxonomyCategory` instances to the page. Deprecated as of
+                        Cavanaugh (7.4.x), replaced by `taxonomyCategoryBriefs.taxonomyCategoryReference`
                     items:
                         format: int64
                         type: integer
@@ -4825,14 +4981,24 @@ components:
             required:
                 - title
             type: object
+        SitePageActionExecutionResult:
+            # @review
+            description:
+                Represents a definition of an action execution of type page.
+            properties:
+                itemReference:
+                    $ref: "#/components/schemas/ClassFieldsReference"
+                    # @review
+                    description:
+                        The reference to a page.
+            type: object
         SitePageFormSubmissionResult:
             # @review
             description:
                 Represents a definition of a submission result of type page.
             properties:
                 itemReference:
-                    allOf:
-                        - $ref: "#/components/schemas/ClassFieldsReference"
+                    $ref: "#/components/schemas/ClassFieldsReference"
                     # @review
                     description:
                         The localized submission of page type.
@@ -4875,8 +5041,7 @@ components:
                     readOnly: true
                     type: object
                 aggregateRating:
-                    allOf:
-                        - $ref: "#/components/schemas/AggregateRating"
+                    $ref: "#/components/schemas/AggregateRating"
                     description:
                         The structured content's average rating.
                     readOnly: true
@@ -4905,8 +5070,7 @@ components:
                     format: int64
                     type: integer
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The structured content's creator.
                     readOnly: true
@@ -4984,6 +5148,11 @@ components:
                         The number of comments the structured content has received.
                     readOnly: true
                     type: integer
+                permissions:
+                    items:
+                        type: permission
+                    type: array
+                    writeOnly: true
                 priority:
                     # @review
                     description:
@@ -4996,7 +5165,6 @@ components:
                         A list of related contents to this structured content.
                     items:
                         $ref: "#/components/schemas/RelatedContent"
-                    readOnly: true
                     type: array
                 renderedContents:
                     description:
@@ -5016,7 +5184,6 @@ components:
                     description:
                         The ID of the folder where structured content is stored.
                     format: int64
-                    readOnly: true
                     type: integer
                 subscribed:
                     # @review
@@ -5088,8 +5255,7 @@ components:
                     readOnly: true
                     type: string
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The folder's creator.
                     readOnly: true
@@ -5195,6 +5361,36 @@ components:
                         The localized category's names.
                     readOnly: true
                     type: object
+                taxonomyCategoryReference:
+                    # @review
+                    description:
+                        A unique reference to a taxonomy category.
+                    properties:
+                        externalReferenceCode:
+                            # @review
+                            description:
+                                The taxonomy category's external reference code.
+                            type: string
+                        siteKey:
+                            # @review
+                            description:
+                                The key of the site or asset library where the taxonomy category is located. It can be
+                                left out if the taxonomy category is in the same site as the page.
+                            type: string
+                    required:
+                        - externalReferenceCode
+                    type: object
+            type: object
+        URLActionExecutionResult:
+            # @review
+            description:
+                Represents a definition of an action execution result of type URL.
+            properties:
+                url:
+                    $ref: "#/components/schemas/FragmentInlineValue"
+                    # @review
+                    description:
+                        The localized action execution result of type URL.
             type: object
         URLFormSubmissionResult:
             # @review
@@ -5202,11 +5398,26 @@ components:
                 Represents a definition of a submission result of type URL.
             properties:
                 url:
-                    allOf:
-                        - $ref: "#/components/schemas/FragmentInlineValue"
+                    $ref: "#/components/schemas/FragmentInlineValue"
                     # @review
                     description:
                         The localized submission of URL type.
+            type: object
+        UserGroupBrief:
+            description:
+                The author's user groups information.
+            properties:
+                id:
+                    description:
+                        The ID of the user group.
+                    format: int64
+                    readOnly: true
+                    type: integer
+                name:
+                    description:
+                        The name of the user group.
+                    readOnly: true
+                    type: string
             type: object
         UtilityPageTemplate:
             description:
@@ -5290,8 +5501,7 @@ components:
                     readOnly: true
                     type: object
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The wiki node's creator.
                     readOnly: true
@@ -5365,8 +5575,7 @@ components:
                     readOnly: true
                     type: object
                 aggregateRating:
-                    allOf:
-                        - $ref: "#/components/schemas/AggregateRating"
+                    $ref: "#/components/schemas/AggregateRating"
                     description:
                         The blog post's average rating.
                     readOnly: true
@@ -5375,8 +5584,7 @@ components:
                         The wiki page's content.
                     type: string
                 creator:
-                    allOf:
-                        - $ref: "#/components/schemas/Creator"
+                    $ref: "#/components/schemas/Creator"
                     description:
                         The wiki page's creator.
                     readOnly: true
@@ -5554,7 +5762,7 @@ components:
 info:
     description:
         "A Java client JAR is available for use with the group ID 'com.liferay', artifact ID
-        'com.liferay.headless.delivery.client', and version '4.0.57'."
+        'com.liferay.headless.delivery.client', and version '4.0.68'."
     license:
         name: "Apache 2.0"
         url: "http://www.apache.org/licenses/LICENSE-2.0.html"
@@ -5813,6 +6021,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -6015,6 +6227,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -6296,6 +6512,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -6604,6 +6824,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -6848,6 +7072,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -7255,6 +7483,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -7594,6 +7826,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -8028,6 +8264,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -8522,6 +8762,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -8893,6 +9137,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -9330,6 +9578,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -9791,6 +10043,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -10171,6 +10427,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -10782,6 +11042,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -10942,6 +11206,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -11391,6 +11659,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -11800,6 +12072,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -12048,6 +12324,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -12536,6 +12816,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -12774,6 +13058,35 @@ paths:
                                 $ref: "#/components/schemas/KnowledgeBaseArticle"
             tags: ["KnowledgeBaseArticle"]
     "/sites/{siteId}/knowledge-base-articles/by-external-reference-code/{knowledgeBaseArticleExternalReferenceCode}/knowledge-base-attachments/by-external-reference-code/{externalReferenceCode}":
+        delete:
+            # @review
+            description:
+                Delete the knowledge base attachment by knowledge base article's and knowledge base attachment's
+                external reference codes.
+            operationId: deleteSiteKnowledgeBaseArticleByExternalReferenceCodeKnowledgeBaseArticleExternalReferenceCodeKnowledgeBaseAttachmentByExternalReferenceCode
+            parameters:
+                - in: path
+                  name: siteId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+                - in: path
+                  name: knowledgeBaseArticleExternalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+                - in: path
+                  name: externalReferenceCode
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                204:
+                    content:
+                        application/json: {}
+                        application/xml: {}
+            tags: ["KnowledgeBaseAttachment"]
         get:
             # @review
             description:
@@ -12808,97 +13121,6 @@ paths:
                   name: restrictFields
                   schema:
                       type: string
-            responses:
-                200:
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/KnowledgeBaseAttachment"
-                        application/xml:
-                            schema:
-                                $ref: "#/components/schemas/KnowledgeBaseAttachment"
-            tags: ["KnowledgeBaseAttachment"]
-        post:
-            # @review
-            description:
-                Creates the knowledge base article attachment by external reference code with the information sent in
-                the request body. The request body must be `multipart/form-data` with two parts, the file's bytes
-                (`file`), and an optional JSON string (`knowledgeBaseAttachment`) with the metadata.
-            operationId: postSiteKnowledgeBaseArticleByExternalReferenceCodeKnowledgeBaseArticleExternalReferenceCodeKnowledgeBaseAttachmentByExternalReferenceCode
-            parameters:
-                - in: path
-                  name: siteId
-                  required: true
-                  schema:
-                      format: int64
-                      type: integer
-                - in: path
-                  name: knowledgeBaseArticleExternalReferenceCode
-                  required: true
-                  schema:
-                      type: string
-                - in: path
-                  name: externalReferenceCode
-                  required: true
-                  schema:
-                      type: string
-            requestBody:
-                content:
-                    multipart/form-data:
-                        schema:
-                            properties:
-                                file:
-                                    format: binary
-                                    type: string
-                                knowledgeBaseAttachment:
-                                    $ref: "#/components/schemas/KnowledgeBaseAttachment"
-                            type: object
-            responses:
-                200:
-                    content:
-                        application/json:
-                            schema:
-                                $ref: "#/components/schemas/KnowledgeBaseAttachment"
-                        application/xml:
-                            schema:
-                                $ref: "#/components/schemas/KnowledgeBaseAttachment"
-            tags: ["KnowledgeBaseAttachment"]
-        put:
-            # @review
-            description:
-                Replaces the knowledge base article attachment by external reference code with the information sent in
-                the request body. Any missing fields are deleted, unless they are required. The request body must be
-                `multipart/form-data` with two parts, the file's bytes (`file`), and an optional JSON string
-                (`knowledgeBaseAttachment`) with the metadata.
-            operationId: putSiteKnowledgeBaseArticleByExternalReferenceCodeKnowledgeBaseArticleExternalReferenceCodeKnowledgeBaseAttachmentByExternalReferenceCode
-            parameters:
-                - in: path
-                  name: siteId
-                  required: true
-                  schema:
-                      format: int64
-                      type: integer
-                - in: path
-                  name: knowledgeBaseArticleExternalReferenceCode
-                  required: true
-                  schema:
-                      type: string
-                - in: path
-                  name: externalReferenceCode
-                  required: true
-                  schema:
-                      type: string
-            requestBody:
-                content:
-                    multipart/form-data:
-                        schema:
-                            properties:
-                                file:
-                                    format: binary
-                                    type: string
-                                knowledgeBaseAttachment:
-                                    $ref: "#/components/schemas/KnowledgeBaseAttachment"
-                            type: object
             responses:
                 200:
                     content:
@@ -12950,6 +13172,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -13203,6 +13429,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -13565,12 +13795,45 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
                         application/json: {}
                         application/xml: {}
             tags: ["MessageBoardMessage"]
+    "/sites/{siteId}/message-board-section/by-friendly-url-path/{friendlyUrlPath}":
+        get:
+            operationId: getSiteMessageBoardSectionByFriendlyUrlPath
+            parameters:
+                - in: path
+                  name: siteId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+                - in: path
+                  name: friendlyUrlPath
+                  required: true
+                  schema:
+                      type: string
+                - in: header
+                  name: Accept-Language
+                  schema:
+                      type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/MessageBoardSection"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/MessageBoardSection"
+            tags: ["MessageBoardSection"]
     "/sites/{siteId}/message-board-sections":
         get:
             description:
@@ -13710,6 +13973,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -13896,6 +14163,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -14017,6 +14288,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -14566,6 +14841,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -15019,6 +15298,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -15256,6 +15539,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -15429,6 +15716,47 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/WikiPageAttachment"
             tags: ["WikiPageAttachment"]
+    "/sites/{siteId}/{userId}/message-board-messages/activity":
+        # @review
+        get:
+            description:
+                Retrieves the site's message board messages user's activity.
+            operationId: getSiteUserMessageBoardMessagesActivityPage
+            parameters:
+                - in: path
+                  name: siteId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+                - in: path
+                  name: userId
+                  required: true
+                  schema:
+                      format: int64
+                      type: integer
+                - in: query
+                  name: page
+                  schema:
+                      type: integer
+                - in: query
+                  name: pageSize
+                  schema:
+                      type: integer
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/MessageBoardMessage"
+                                type: array
+                        application/xml:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/MessageBoardMessage"
+                                type: array
+            tags: ["MessageBoardMessage"]
     "/structured-content-folder/{structuredContentFolderId}/permissions":
         get:
             operationId: getStructuredContentFolderPermissionsPage
@@ -15470,6 +15798,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -16179,6 +16511,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -16413,6 +16749,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:
@@ -16784,6 +17124,10 @@ paths:
                   schema:
                       format: int64
                       type: integer
+            requestBody:
+                content:
+                    application/json: {}
+                    application/xml: {}
             responses:
                 204:
                     content:

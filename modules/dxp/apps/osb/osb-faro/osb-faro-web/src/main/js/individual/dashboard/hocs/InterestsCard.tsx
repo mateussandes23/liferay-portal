@@ -11,6 +11,7 @@ import StatesRenderer from 'shared/components/states-renderer/StatesRenderer';
 import Table, {Column} from 'shared/components/table';
 import URLConstants from 'shared/util/url-constants';
 import {compositionListColumns} from 'shared/util/table-columns';
+import {Containers} from 'shared/components/download-report/DownloadPDFReport';
 import {COUNT} from 'shared/util/pagination';
 import {OrderByDirections} from 'shared/util/constants';
 import {Routes, toRoute} from 'shared/util/router';
@@ -71,7 +72,11 @@ const InterestsCard: React.FC<React.HTMLAttributes<HTMLElement>> = () => {
 	];
 
 	return (
-		<Card className='interests-card-root' minHeight={536}>
+		<Card
+			className='interests-card-root'
+			id={Containers.TopInterestsAsOfYesterdayCard}
+			minHeight={536}
+		>
 			<Card.Header>
 				<Card.Title>
 					{Liferay.Language.get('top-interests-as-of-yesterday')}
@@ -125,15 +130,22 @@ const InterestsCard: React.FC<React.HTMLAttributes<HTMLElement>> = () => {
 
 			<Card.Footer>
 				<ClayLink
+					borderless
+					button
 					className='button-root'
+					displayType='secondary'
 					href={toRoute(Routes.CONTACTS_INDIVIDUALS_INTERESTS, {
 						channelId,
 						groupId
 					})}
+					small
 				>
 					{Liferay.Language.get('view-all-interests')}
 
-					<ClayIcon className='icon-root ml-2' symbol='angle-right' />
+					<ClayIcon
+						className='icon-root ml-2'
+						symbol='angle-right-small'
+					/>
 				</ClayLink>
 			</Card.Footer>
 		</Card>

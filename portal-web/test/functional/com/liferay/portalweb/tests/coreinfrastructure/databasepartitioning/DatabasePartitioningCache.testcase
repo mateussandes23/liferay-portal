@@ -3,8 +3,9 @@ definition {
 
 	property app.server.types = "tomcat";
 	property ci.retries.disabled = "true";
-	property database.partition.enabled = "true";
+	property custom.properties = "virtual.hosts.valid.hosts=localhost,127.0.0.1,www.able.com";
 	property database.types = "mysql";
+	property liferay.online.properties = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property test.run.environment = "EE";
@@ -22,14 +23,13 @@ definition {
 
 	@priority = 5
 	test CacheIsClearedOnCompanyRemoval {
-		property test.name.skip.portal.instance = "DatabasePartitioningCache#CacheIsClearedOnCompanyRemoval";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
-		PortalInstances.openVirtualInstancesAdmin();
-
-		PortalInstances.addCP(
-			mailDomain = "www.able.com",
-			virtualHost = "www.able.com",
-			webId = "www.able.com");
+		HeadlessPortalInstanceAPI.addPortalInstance(
+			domain = "www.able.com",
+			portalInstanceId = "www.able.com",
+			virtualHost = "www.able.com");
 
 		User.firstLoginUI(
 			password = "test",
@@ -68,7 +68,8 @@ definition {
 
 	@priority = 5
 	test CacheIsOnlyPopulatedToSingleCompany {
-		property test.name.skip.portal.instance = "DatabasePartitioningCache#CacheIsOnlyPopulatedToSingleCompany";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		PortalInstances.openVirtualInstancesAdmin();
 
@@ -95,14 +96,13 @@ definition {
 		property cluster.enabled = "true";
 		property minimum.slave.ram = "24";
 		property remote.elasticsearch.enabled = "true";
-		property test.name.skip.portal.instance = "DatabasePartitioningCache#CacheOnlyClearsOnSameCompanyAcrossCluster";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
-		PortalInstances.openVirtualInstancesAdmin();
-
-		PortalInstances.addCP(
-			mailDomain = "www.able.com",
-			virtualHost = "www.able.com",
-			webId = "www.able.com");
+		HeadlessPortalInstanceAPI.addPortalInstance(
+			domain = "www.able.com",
+			portalInstanceId = "www.able.com",
+			virtualHost = "www.able.com");
 
 		ApplicationsMenu.gotoPortlet(
 			category = "System",
@@ -170,7 +170,8 @@ definition {
 
 	@priority = 4
 	test NullCacheDoesNotBreakSiteFromAnotherPartition {
-		property test.name.skip.portal.instance = "DatabasePartitioningCache#NullCacheDoesNotBreakSiteFromAnotherPartition";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		HeadlessPortalInstanceAPI.addPortalInstance(
 			domain = "www.able.com",

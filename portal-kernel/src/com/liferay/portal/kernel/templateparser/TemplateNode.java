@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.kernel.templateparser;
@@ -34,6 +25,7 @@ import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.text.DecimalFormat;
@@ -74,6 +66,10 @@ public class TemplateNode extends LinkedHashMap<String, Object> {
 
 	public void appendChild(TemplateNode templateNode) {
 		_childTemplateNodes.put(templateNode.getName(), templateNode);
+
+		if (Objects.equals(templateNode.getName(), "name")) {
+			put(_RANDOM_ID + "Name", getName());
+		}
 
 		put(templateNode.getName(), templateNode);
 	}
@@ -203,6 +199,10 @@ public class TemplateNode extends LinkedHashMap<String, Object> {
 	}
 
 	public String getName() {
+		if (super.containsKey(_RANDOM_ID + "Name")) {
+			return (String)get(_RANDOM_ID + "Name");
+		}
+
 		Object name = get("name");
 
 		if ((name == null) || (name instanceof String)) {
@@ -241,7 +241,7 @@ public class TemplateNode extends LinkedHashMap<String, Object> {
 
 		String data = (String)get("data");
 
-		if (!JSONUtil.isValid(data)) {
+		if (!JSONUtil.isJSONObject(data)) {
 			return StringPool.BLANK;
 		}
 
@@ -347,8 +347,8 @@ public class TemplateNode extends LinkedHashMap<String, Object> {
 					uuid, groupId);
 
 			return DLUtil.getPreviewURL(
-				fileEntry, fileEntry.getFileVersion(), null, StringPool.BLANK,
-				false, true);
+				fileEntry, fileEntry.getFileVersion(), _themeDisplay,
+				StringPool.BLANK, false, true);
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
@@ -481,6 +481,8 @@ public class TemplateNode extends LinkedHashMap<String, Object> {
 
 		return decimalFormat.format(GetterUtil.getDouble(data));
 	}
+
+	private static final String _RANDOM_ID = StringUtil.randomId();
 
 	private static final Log _log = LogFactoryUtil.getLog(TemplateNode.class);
 

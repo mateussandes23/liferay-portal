@@ -1,7 +1,7 @@
 definition {
 
-	@summary = "Helper function to add fields '${templateFieldNames}' to the template"
-	macro _addFields {
+	@summary = "Default summary"
+	macro _addFields(templateFieldNames = null) {
 		if (isSet(templateFieldNames)) {
 			Navigator.gotoSidebarTab(tabName = "Elements");
 
@@ -16,7 +16,8 @@ definition {
 		}
 	}
 
-	macro _addGeneralVariables {
+	@summary = "Default summary"
+	macro _addGeneralVariables(generalVariables = null) {
 		if (isSet(generalVariables)) {
 			Navigator.gotoSidebarTab(tabName = "Elements");
 
@@ -31,8 +32,8 @@ definition {
 		}
 	}
 
-	@summary = "Helper function to add description '${description}' to the template"
-	macro _inputDescription {
+	@summary = "Default summary"
+	macro _inputDescription(templateDescription = null) {
 		if (isSet(templateDescription)) {
 			Navigator.gotoSidebarTab(tabName = "Properties");
 
@@ -40,8 +41,8 @@ definition {
 		}
 	}
 
-	@summary = "Helper function to link structure '${structureName}' to the template"
-	macro _inputStructure {
+	@summary = "Default summary"
+	macro _inputStructure(structureName = null) {
 		if (isSet(structureName)) {
 			Navigator.gotoSidebarTab(tabName = "Properties");
 
@@ -72,8 +73,8 @@ definition {
 		}
 	}
 
-	@summary = "Helper function to add a script to a template via file"
-	macro _inputTemplateFile {
+	@summary = "Default summary"
+	macro _inputTemplateFile(templateFile = null) {
 		if (isSet(templateFile)) {
 			Click(locator1 = "Icon#HEADER_VERTICAL_ELLIPSIS");
 
@@ -88,8 +89,8 @@ definition {
 		}
 	}
 
-	@summary = "Click on the add button to add a template named '${templateName}' for structure '${structureName}', input most basic fields and then save the template"
-	macro addCP {
+	@summary = "Default summary"
+	macro addCP(templateScript = null, templateName = null, structureName = null, templateDescription = null, generalVariables = null, templateFile = null, templateFieldNames = null, imageSourceURL = null) {
 		LexiconEntry.gotoAdd();
 
 		WaitForVisible(locator1 = "Sidebar#PANEL_OPEN");
@@ -104,11 +105,11 @@ definition {
 			templateName = ${templateName},
 			templateScript = ${templateScript});
 
-		DDLDataDefinition.save(publicationsEnabled = ${publicationsEnabled});
+		PortletEntry.save();
 	}
 
-	@summary = "Attempt to add a blank template"
-	macro addNullCP {
+	@summary = "Default summary"
+	macro addNullCP() {
 		LexiconEntry.gotoAdd();
 
 		WaitForVisible(locator1 = "Sidebar#PANEL_OPEN");
@@ -122,8 +123,8 @@ definition {
 		SelectFrame(value1 = "relative=top");
 	}
 
-	@summary = "Give the roles '${roles}' permissions to view the template '${templateName}'"
-	macro addRoleViewPermissions {
+	@summary = "Default summary"
+	macro addRoleViewPermissions(templateName = null, roles = null) {
 		WebContentTemplates.gotoTemplateEllipsisItem(
 			item = "Permissions",
 			templateName = ${templateName});
@@ -137,9 +138,10 @@ definition {
 		SelectFrameTop();
 	}
 
-	macro copyCP {
+	@summary = "Default summary"
+	macro copyCP(templateCopyName = null, templateName = null, description = null) {
 		WebContentTemplates.gotoTemplateEllipsisItem(
-			item = "Copy",
+			item = "Make a Copy",
 			templateName = ${templateName});
 
 		if (isSet(templateCopyName)) {
@@ -155,8 +157,8 @@ definition {
 		Alert.viewSuccessMessage();
 	}
 
-	@summary = "Attempt to delete the template '${templateName}'"
-	macro deleteCP {
+	@summary = "Default summary"
+	macro deleteCP(templateName = null, webContentHasReference = null) {
 		var key_ddlTemplateName = ${templateName};
 
 		Click(
@@ -179,8 +181,8 @@ definition {
 		}
 	}
 
-	@summary = "Click on '${templateName}' ellipsis > '${item}'"
-	macro gotoTemplateEllipsisItem {
+	@summary = "Default summary"
+	macro gotoTemplateEllipsisItem(item = null, templateName = null) {
 		LexiconEntry.changeDisplayStyle(displayStyle = "cards");
 
 		if (${item} == "Permissions") {
@@ -192,8 +194,8 @@ definition {
 			item = ${item});
 	}
 
-	@summary = "Type '${templateScript}' into the template ACE editor field"
-	macro inputScript {
+	@summary = "Default summary"
+	macro inputScript(templateScript = null) {
 		if (isSet(templateScript)) {
 			Type.typeCodeMirrorEditorNoError(
 				locator1 = "DDMEditTemplate#CODE_MIRROR_EDITOR",
@@ -201,8 +203,8 @@ definition {
 		}
 	}
 
-	@summary = "Input most basic fields inside a template"
-	macro inputTemplateAddScreenFields {
+	@summary = "Default summary"
+	macro inputTemplateAddScreenFields(templateScript = null, templateName = null, structureName = null, templateDescription = null, generalVariables = null, templateFile = null, templateFieldNames = null, imageSourceURL = null) {
 		if (isSet(templateName)) {
 			PortletEntry.inputName(name = ${templateName});
 		}
@@ -228,8 +230,8 @@ definition {
 		WebContentTemplates._inputTemplateFile(templateFile = ${templateFile});
 	}
 
-	@summary = "Add localization for the template name"
-	macro localizeTemplateName {
+	@summary = "Default summary"
+	macro localizeTemplateName(locale2 = null, templateName = null, localization2Name = null, locale = null, localization1Name = null) {
 		LexiconEntry.changeDisplayStyle(displayStyle = "table");
 
 		var key_ddlTemplateName = ${templateName};
@@ -257,8 +259,8 @@ definition {
 		}
 	}
 
-	@summary = "Modify template"
-	macro modifyTemplate {
+	@summary = "Default summary"
+	macro modifyTemplate(templateScript = null, templatePreviousName = null, templateName = null, templateDescription = null, templateFile = null, templateFieldNames = null, imageSourceURL = null) {
 		WebContentTemplates.gotoTemplateEllipsisItem(
 			item = "Edit",
 			templateName = ${templatePreviousName});
@@ -273,16 +275,16 @@ definition {
 			templateName = ${templateName},
 			templateScript = ${templateScript});
 
-		DDLDataDefinition.save(publicationsEnabled = ${publicationsEnabled});
+		PortletEntry.save();
 	}
 
-	@summary = "Open Web Content Templates admin page for the site '${siteURLKey}'"
-	macro openWebContentTemplatesAdmin {
+	@summary = "Default summary"
+	macro openWebContentTemplatesAdmin(siteURLKey = null) {
 		Navigator.openWithAppendToBaseURL(urlAppend = "group/${siteURLKey}/~/control_panel/manage?p_p_id=com_liferay_journal_web_portlet_JournalPortlet&_com_liferay_journal_web_portlet_JournalPortlet_mvcPath=%2Fview_ddm_templates.jsp");
 	}
 
-	@summary = "Teardown templates in the guest site"
-	macro tearDownCP {
+	@summary = "Default summary"
+	macro tearDownCP() {
 		Navigator.openURL();
 
 		ProductMenu.gotoPortlet(
@@ -318,8 +320,8 @@ definition {
 		Portlet.viewEmptyMessage(message = "There are no results.");
 	}
 
-	@summary = "Assert that the cards entry for template '${templateName}' is present"
-	macro viewCardsEntryCP {
+	@summary = "Default summary"
+	macro viewCardsEntryCP(templateName = null, templateSmallImage = null) {
 		LexiconCard.viewCardTitle(card = ${templateName});
 
 		if (isSet(templateSmallImage)) {
@@ -329,8 +331,8 @@ definition {
 		}
 	}
 
-	@summary = "Assert that the cards entry for template '${templateName}' is present with alternate path"
-	macro viewCardsEntryCP2 {
+	@summary = "Default summary"
+	macro viewCardsEntryCP2(templateName = null, templateSmallImage = null) {
 		LexiconCard.viewCardTitle(card = ${templateName});
 
 		if (isSet(templateSmallImage)) {
@@ -344,8 +346,8 @@ definition {
 		}
 	}
 
-	@summary = "Assert that certain template attributes are present for the template '${templateName}'"
-	macro viewCP {
+	@summary = "Default summary"
+	macro viewCP(templateScript = null, templateName = null, structureName = null, templateDescription = null, userEditPermission = null) {
 		var key_ddlStructureName = ${structureName};
 		var key_ddlTemplateDescription = ${templateDescription};
 		var key_ddlTemplateName = ${templateName};
@@ -356,11 +358,13 @@ definition {
 			key_tableEntry = ${templateName},
 			locator1 = "LexiconTable#TABLE_ENTRY");
 
-		AssertTextEquals(
-			key_columnName = "description",
-			key_tableEntry = ${templateName},
-			locator1 = "LexiconTable#TABLE_ENTRY_INFO",
-			value1 = ${templateDescription});
+		if (isSet(templateDescription)) {
+			AssertTextEquals(
+				key_columnName = "description",
+				key_tableEntry = ${templateName},
+				locator1 = "LexiconTable#TABLE_ENTRY_INFO",
+				value1 = ${templateDescription});
+		}
 
 		if (isSet(structureName)) {
 			AssertTextEquals(
@@ -379,9 +383,11 @@ definition {
 
 			Navigator.gotoSidebarTab(tabName = "Properties");
 
-			AssertTextEquals(
-				locator1 = "TextArea#DESCRIPTION",
-				value1 = ${templateDescription});
+			if (isSet(templateDescription)) {
+				AssertTextEquals(
+					locator1 = "TextArea#DESCRIPTION",
+					value1 = ${templateDescription});
+			}
 
 			if (isSet(structureName)) {
 				AssertTextEquals(
@@ -398,8 +404,8 @@ definition {
 		}
 	}
 
-	@summary = "Assert that the table entry for template '${templateName}' is present"
-	macro viewTableEntryCP {
+	@summary = "Default summary"
+	macro viewTableEntryCP(templateName = null, templateDescription = null, templateSmallImage = null) {
 		var key_ddlTemplateName = ${templateName};
 
 		AssertVisible(

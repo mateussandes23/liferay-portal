@@ -1,7 +1,7 @@
 definition {
 
-	@summary = "Get a status of layoutPageTemplate"
-	macro _getStatus {
+	@summary = "Default summary"
+	macro _getStatus(layoutPageTemplateStatus = null) {
 		Variables.assertDefined(parameterList = ${layoutPageTemplateStatus});
 
 		if (${layoutPageTemplateStatus} == "Draft") {
@@ -17,8 +17,8 @@ definition {
 		return ${status};
 	}
 
-	@summary = "Get a type of layoutPageTemplate"
-	macro _getType {
+	@summary = "Default summary"
+	macro _getType(layoutPageTemplateType = null) {
 		Variables.assertDefined(parameterList = ${layoutPageTemplateType});
 
 		if (${layoutPageTemplateType} == "Widget Page Template") {

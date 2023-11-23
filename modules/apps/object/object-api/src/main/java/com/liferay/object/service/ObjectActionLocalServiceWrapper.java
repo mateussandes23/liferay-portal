@@ -1,20 +1,12 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.service;
 
 import com.liferay.portal.kernel.service.ServiceWrapper;
+import com.liferay.portal.kernel.service.persistence.BasePersistence;
 
 /**
  * Provides a wrapper for {@link ObjectActionLocalService}.
@@ -62,14 +54,15 @@ public class ObjectActionLocalServiceWrapper
 			java.util.Map<java.util.Locale, String> labelMap, String name,
 			String objectActionExecutorKey, String objectActionTriggerKey,
 			com.liferay.portal.kernel.util.UnicodeProperties
-				parametersUnicodeProperties)
+				parametersUnicodeProperties,
+			boolean system)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectActionLocalService.addObjectAction(
 			externalReferenceCode, userId, objectDefinitionId, active,
 			conditionExpression, description, errorMessageMap, labelMap, name,
 			objectActionExecutorKey, objectActionTriggerKey,
-			parametersUnicodeProperties);
+			parametersUnicodeProperties, system);
 	}
 
 	@Override
@@ -81,14 +74,15 @@ public class ObjectActionLocalServiceWrapper
 			java.util.Map<java.util.Locale, String> labelMap, String name,
 			String objectActionExecutorKey, String objectActionTriggerKey,
 			com.liferay.portal.kernel.util.UnicodeProperties
-				parametersUnicodeProperties)
+				parametersUnicodeProperties,
+			boolean system)
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectActionLocalService.addOrUpdateObjectAction(
 			externalReferenceCode, objectActionId, userId, objectDefinitionId,
 			active, conditionExpression, description, errorMessageMap, labelMap,
 			name, objectActionExecutorKey, objectActionTriggerKey,
-			parametersUnicodeProperties);
+			parametersUnicodeProperties, system);
 	}
 
 	/**
@@ -143,10 +137,12 @@ public class ObjectActionLocalServiceWrapper
 	 *
 	 * @param objectAction the object action
 	 * @return the object action that was removed
+	 * @throws PortalException
 	 */
 	@Override
 	public com.liferay.object.model.ObjectAction deleteObjectAction(
-		com.liferay.object.model.ObjectAction objectAction) {
+			com.liferay.object.model.ObjectAction objectAction)
+		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectActionLocalService.deleteObjectAction(objectAction);
 	}
@@ -276,6 +272,14 @@ public class ObjectActionLocalServiceWrapper
 		long objectActionId) {
 
 		return _objectActionLocalService.fetchObjectAction(objectActionId);
+	}
+
+	@Override
+	public com.liferay.object.model.ObjectAction fetchObjectAction(
+		String externalReferenceCode, long objectDefinitionId) {
+
+		return _objectActionLocalService.fetchObjectAction(
+			externalReferenceCode, objectDefinitionId);
 	}
 
 	/**
@@ -464,6 +468,11 @@ public class ObjectActionLocalServiceWrapper
 		throws com.liferay.portal.kernel.exception.PortalException {
 
 		return _objectActionLocalService.updateStatus(objectActionId, status);
+	}
+
+	@Override
+	public BasePersistence<?> getBasePersistence() {
+		return _objectActionLocalService.getBasePersistence();
 	}
 
 	@Override

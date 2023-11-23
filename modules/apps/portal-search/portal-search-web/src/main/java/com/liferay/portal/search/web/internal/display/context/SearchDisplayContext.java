@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.search.web.internal.display.context;
@@ -32,7 +23,7 @@ import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.Html;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
@@ -49,7 +40,7 @@ import com.liferay.portal.search.summary.SummaryBuilderFactory;
 import com.liferay.portal.search.web.constants.SearchPortletParameterNames;
 import com.liferay.portal.search.web.facet.SearchFacet;
 import com.liferay.portal.search.web.internal.facet.AssetEntriesSearchFacet;
-import com.liferay.portal.search.web.internal.facet.SearchFacetRegistry;
+import com.liferay.portal.search.web.internal.facet.util.SearchFacetRegistryUtil;
 import com.liferay.portal.search.web.internal.portlet.SearchPortletSearchResultPreferences;
 import com.liferay.portal.search.web.internal.search.request.SearchRequestImpl;
 import com.liferay.portal.search.web.internal.search.request.SearchResponseImpl;
@@ -76,13 +67,13 @@ public class SearchDisplayContext {
 
 	public SearchDisplayContext(
 			RenderRequest renderRequest, PortletPreferences portletPreferences,
-			Portal portal, Html html, Language language, Searcher searcher,
+			Portal portal, Language language, Searcher searcher,
 			IndexSearchPropsValues indexSearchPropsValues,
 			PortletURLFactory portletURLFactory,
 			SummaryBuilderFactory summaryBuilderFactory,
 			SearchContextFactory searchContextFactory,
 			SearchRequestBuilderFactory searchRequestBuilderFactory,
-			SearchFacetRegistry searchFacetRegistry, JSONFactory jsonFactory)
+			JSONFactory jsonFactory)
 		throws PortletException {
 
 		_renderRequest = renderRequest;
@@ -91,7 +82,6 @@ public class SearchDisplayContext {
 		_portletURLFactory = portletURLFactory;
 		_summaryBuilderFactory = summaryBuilderFactory;
 		_searchContextFactory = searchContextFactory;
-		_searchFacetRegistry = searchFacetRegistry;
 
 		ThemeDisplaySupplier themeDisplaySupplier =
 			new PortletRequestThemeDisplaySupplier(renderRequest);
@@ -124,7 +114,7 @@ public class SearchDisplayContext {
 		String emptyResultMessage = language.format(
 			httpServletRequest,
 			"no-results-were-found-that-matched-the-keywords-x",
-			"<strong>" + html.escape(keywords) + "</strong>", false);
+			"<strong>" + HtmlUtil.escape(keywords) + "</strong>", false);
 
 		SearchContainer<Document> searchContainer = new SearchContainer<>(
 			_renderRequest, getPortletURL(), null, emptyResultMessage);
@@ -159,10 +149,9 @@ public class SearchDisplayContext {
 				Boolean.TRUE);
 		}
 
-		searchContext.setKeywords(_keywords.getKeywords());
-
 		searchContext.setEntryClassNames(
 			_getEntryClassNames(getSearchConfiguration(), jsonFactory));
+		searchContext.setKeywords(_keywords.getKeywords());
 
 		SearchRequestImpl searchRequestImpl = new SearchRequestImpl(
 			() -> searchContext, searchContainerOptions -> searchContainer,
@@ -338,7 +327,7 @@ public class SearchDisplayContext {
 	}
 
 	public List<SearchFacet> getSearchFacets() {
-		return _searchFacetRegistry.getSearchFacets();
+		return SearchFacetRegistryUtil.getSearchFacets();
 	}
 
 	public SearchResultPreferences getSearchResultPreferences() {
@@ -709,7 +698,6 @@ public class SearchDisplayContext {
 	private final SearchContainer<Document> _searchContainer;
 	private final SearchContext _searchContext;
 	private final SearchContextFactory _searchContextFactory;
-	private final SearchFacetRegistry _searchFacetRegistry;
 	private final SearchResultPreferences _searchResultPreferences;
 	private String _searchScopePreferenceString;
 	private final SummaryBuilderFactory _summaryBuilderFactory;

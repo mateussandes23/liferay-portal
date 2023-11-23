@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.template.velocity.internal;
@@ -23,7 +14,7 @@ import com.liferay.portal.kernel.template.TemplateConstants;
 import com.liferay.portal.kernel.template.TemplateException;
 import com.liferay.portal.kernel.template.TemplateResource;
 import com.liferay.portal.kernel.template.TemplateResourceCache;
-import com.liferay.portal.kernel.test.ReflectionTestUtil;
+import com.liferay.portal.kernel.template.TemplateResourceLoader;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -72,31 +63,32 @@ public class VelocityTemplateTest {
 
 	@BeforeClass
 	public static void setUpClass() throws Exception {
-		_templateResourceCache = new VelocityTemplateResourceCache() {
+		VelocityManager velocityManager = new VelocityManager();
 
-			@Override
-			public boolean isEnabled() {
-				return false;
-			}
+		_templateResourceCache =
+			velocityManager.new VelocityTemplateResourceCache(
+				ConfigurableUtil.createConfigurable(
+					VelocityEngineConfiguration.class,
+					Collections.emptyMap())) {
 
-		};
+				@Override
+				public boolean isEnabled() {
+					return false;
+				}
 
-		_velocityTemplateResourceLoader = new VelocityTemplateResourceLoader();
-
-		ReflectionTestUtil.setFieldValue(
-			_velocityTemplateResourceLoader, "_velocityTemplateResourceCache",
-			_templateResourceCache);
+			};
 
 		BundleContext bundleContext = SystemBundleUtil.getBundleContext();
+
+		_templateResourceLoader =
+			velocityManager.new VelocityTemplateResourceLoader(
+				bundleContext, _templateResourceCache);
 
 		_templateResourceParserServiceRegistration =
 			bundleContext.registerService(
 				TemplateResourceParser.class, new ClassLoaderResourceParser(),
 				MapUtil.singletonDictionary(
 					"lang.type", TemplateConstants.LANG_TYPE_VM));
-
-		_velocityTemplateResourceLoader.activate(
-			bundleContext, Collections.emptyMap());
 	}
 
 	@AfterClass
@@ -105,8 +97,8 @@ public class VelocityTemplateTest {
 			_templateResourceParserServiceRegistration.unregister();
 		}
 
-		if (_velocityTemplateResourceLoader != null) {
-			_velocityTemplateResourceLoader.deactivate();
+		if (_templateResourceLoader != null) {
+			_templateResourceLoader.destroy();
 		}
 	}
 
@@ -158,8 +150,8 @@ public class VelocityTemplateTest {
 			velocityEngineConfiguration.resourceModificationCheckInterval() +
 				"");
 		extendedProperties.setProperty(
-			VelocityTemplateResourceLoader.class.getName(),
-			_velocityTemplateResourceLoader);
+			VelocityManager.VelocityTemplateResourceLoader.class.getName(),
+			_templateResourceLoader);
 		extendedProperties.setProperty(
 			VelocityEngine.RUNTIME_LOG_LOGSYSTEM_CLASS,
 			velocityEngineConfiguration.logger());
@@ -402,10 +394,9 @@ public class VelocityTemplateTest {
 	private static final String _WRONG_TEMPLATE_ID = "WRONG_TEMPLATE_ID";
 
 	private static TemplateResourceCache _templateResourceCache;
+	private static TemplateResourceLoader _templateResourceLoader;
 	private static ServiceRegistration<TemplateResourceParser>
 		_templateResourceParserServiceRegistration;
-	private static VelocityTemplateResourceLoader
-		_velocityTemplateResourceLoader;
 
 	private TemplateContextHelper _templateContextHelper;
 	private VelocityEngine _velocityEngine;

@@ -1,20 +1,14 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
- *
- *
- *
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.search.tuning.rankings.web.internal.util;
 
+import com.liferay.journal.model.JournalArticle;
+import com.liferay.journal.service.JournalArticleLocalServiceUtil;
 import com.liferay.portal.kernel.util.ListUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
 import java.util.ArrayList;
@@ -27,6 +21,28 @@ import java.util.Set;
  * @author Dante Wang
  */
 public class RankingUtil {
+
+	public static final String JOURNAL_ARTICLE_DOCUMENT_PREFIX =
+		"com.liferay.journal.model.JournalArticle_PORTLET_";
+
+	public static String getDocumentId(String documentId) {
+		if (!documentId.startsWith(JOURNAL_ARTICLE_DOCUMENT_PREFIX)) {
+			return documentId;
+		}
+
+		String[] parts = StringUtil.split(
+			documentId, JOURNAL_ARTICLE_DOCUMENT_PREFIX);
+
+		JournalArticle journalArticle =
+			JournalArticleLocalServiceUtil.fetchJournalArticle(
+				Long.valueOf(parts[1]));
+
+		JournalArticle latestJournalArticle =
+			JournalArticleLocalServiceUtil.fetchLatestArticle(
+				journalArticle.getResourcePrimKey());
+
+		return JOURNAL_ARTICLE_DOCUMENT_PREFIX + latestJournalArticle.getId();
+	}
 
 	public static Collection<String> getQueryStrings(
 		String queryString, List<String> aliases) {
@@ -44,6 +60,16 @@ public class RankingUtil {
 		}
 
 		return ListUtil.sort(new ArrayList<>(queryStrings));
+	}
+
+	public static List<String> translateDocumentIds(List<String> documentIds) {
+		List<String> ids = new ArrayList<>();
+
+		for (String documentId : documentIds) {
+			ids.add(getDocumentId(documentId));
+		}
+
+		return ids;
 	}
 
 }

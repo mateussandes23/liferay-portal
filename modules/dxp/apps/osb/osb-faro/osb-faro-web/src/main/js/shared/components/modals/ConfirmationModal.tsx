@@ -1,8 +1,7 @@
 import ClayButton from '@clayui/button';
-import ClayLoadingIndicator from '@clayui/loading-indicator';
 import getCN from 'classnames';
+import Loading, {Align} from 'shared/components/Loading';
 import Modal from 'shared/components/modal';
-import Promise from 'metal-promise';
 import React, {useState} from 'react';
 import {DisplayType} from '@clayui/button/lib/Button';
 import {noop} from 'lodash';
@@ -69,7 +68,7 @@ const ConfirmationModal: React.FC<IConfirmationModalProps> = ({
 						const submitVal: any = onSubmit();
 
 						if (submitVal instanceof Promise) {
-							(submitVal as typeof Promise)
+							submitVal
 								.then(() => {
 									setSubmitting(false);
 
@@ -85,13 +84,7 @@ const ConfirmationModal: React.FC<IConfirmationModalProps> = ({
 						}
 					}}
 				>
-					{submitting && (
-						<ClayLoadingIndicator
-							className='d-inline-block mr-2'
-							displayType='secondary'
-							size='sm'
-						/>
-					)}
+					{submitting && <Loading align={Align.Left} />}
 
 					{submitMessage}
 				</ClayButton>

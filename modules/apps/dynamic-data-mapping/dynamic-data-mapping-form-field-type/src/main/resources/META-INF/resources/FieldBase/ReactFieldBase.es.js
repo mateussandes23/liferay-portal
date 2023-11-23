@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayButton from '@clayui/button';
@@ -244,24 +235,26 @@ export function FieldBase({
 		type === 'radio';
 	const showPopover = fieldName === 'inputMaskFormat';
 	const showFor =
+		type === 'date' ||
+		type === 'document_library' ||
 		type === 'text' ||
 		type === 'numeric' ||
 		type === 'image' ||
 		type === 'rich_text' ||
 		type === 'search_location' ||
 		type === 'select';
-	const readFieldDetails = !showFor || type === 'select';
+	const readFieldDetails = !showFor;
 	const hasFieldDetails = accessible && fieldDetails && readFieldDetails;
 
 	const accessiblePropsGroup = {
-		...(!renderLabel && {'aria-labelledby': fieldDetailsId, 'tabIndex': 0}),
+		...(!renderLabel && {'aria-labelledby': fieldDetailsId}),
 		...(type === 'fieldset' && {role: 'group'}),
 	};
 
 	const accessiblePropsFields = {
 		...(hasFieldDetails && {'aria-labelledby': fieldDetailsId}),
 		...(showFor && {htmlFor: id ?? name}),
-		...(readFieldDetails && {tabIndex: 0}),
+		...readFieldDetails,
 	};
 
 	const defaultRows = nestedFields?.map((field) => ({
@@ -273,13 +266,12 @@ export function FieldBase({
 
 		const visitor = new PagesVisitor(pages);
 
-		const newFieldName = fieldName ?? fieldReference;
 		const newParentInstanceId = parentInstanceId;
 
 		visitor.mapFields(
 			(field) => {
 				if (
-					newFieldName === field.fieldName &&
+					fieldReference === field.fieldReference &&
 					newParentInstanceId === field.parentInstanceId
 				) {
 					repetitionsCounter++;
@@ -342,10 +334,12 @@ export function FieldBase({
 						)}
 						disabled={readOnly}
 						onClick={() =>
-							dispatch({
-								payload: name,
-								type: CORE_EVENT_TYPES.FIELD.REPEATED,
-							})
+							setTimeout(() => {
+								dispatch({
+									payload: name,
+									type: CORE_EVENT_TYPES.FIELD.REPEATED,
+								});
+							}, 200)
 						}
 						small
 						title={Liferay.Language.get('duplicate')}

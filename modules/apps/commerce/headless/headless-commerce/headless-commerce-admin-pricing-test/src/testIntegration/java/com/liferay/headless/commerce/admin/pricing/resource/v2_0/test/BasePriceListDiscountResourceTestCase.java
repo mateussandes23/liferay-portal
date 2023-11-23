@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.pricing.resource.v2_0.test;
@@ -42,6 +33,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -222,7 +214,7 @@ public abstract class BasePriceListDiscountResourceTestCase {
 				getPriceListByExternalReferenceCodePriceListDiscountsPage(
 					externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantExternalReferenceCode != null) {
 			PriceListDiscount irrelevantPriceListDiscount =
@@ -233,12 +225,13 @@ public abstract class BasePriceListDiscountResourceTestCase {
 			page =
 				priceListDiscountResource.
 					getPriceListByExternalReferenceCodePriceListDiscountsPage(
-						irrelevantExternalReferenceCode, Pagination.of(1, 2));
+						irrelevantExternalReferenceCode,
+						Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantPriceListDiscount),
+			assertContains(
+				irrelevantPriceListDiscount,
 				(List<PriceListDiscount>)page.getItems());
 			assertValid(
 				page,
@@ -259,11 +252,12 @@ public abstract class BasePriceListDiscountResourceTestCase {
 				getPriceListByExternalReferenceCodePriceListDiscountsPage(
 					externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(priceListDiscount1, priceListDiscount2),
-			(List<PriceListDiscount>)page.getItems());
+		assertContains(
+			priceListDiscount1, (List<PriceListDiscount>)page.getItems());
+		assertContains(
+			priceListDiscount2, (List<PriceListDiscount>)page.getItems());
 		assertValid(
 			page,
 			testGetPriceListByExternalReferenceCodePriceListDiscountsPage_getExpectedActions(
@@ -287,6 +281,14 @@ public abstract class BasePriceListDiscountResourceTestCase {
 		String externalReferenceCode =
 			testGetPriceListByExternalReferenceCodePriceListDiscountsPage_getExternalReferenceCode();
 
+		Page<PriceListDiscount> priceListDiscountPage =
+			priceListDiscountResource.
+				getPriceListByExternalReferenceCodePriceListDiscountsPage(
+					externalReferenceCode, null);
+
+		int totalCount = GetterUtil.getInteger(
+			priceListDiscountPage.getTotalCount());
+
 		PriceListDiscount priceListDiscount1 =
 			testGetPriceListByExternalReferenceCodePriceListDiscountsPage_addPriceListDiscount(
 				externalReferenceCode, randomPriceListDiscount());
@@ -302,20 +304,21 @@ public abstract class BasePriceListDiscountResourceTestCase {
 		Page<PriceListDiscount> page1 =
 			priceListDiscountResource.
 				getPriceListByExternalReferenceCodePriceListDiscountsPage(
-					externalReferenceCode, Pagination.of(1, 2));
+					externalReferenceCode, Pagination.of(1, totalCount + 2));
 
 		List<PriceListDiscount> priceListDiscounts1 =
 			(List<PriceListDiscount>)page1.getItems();
 
 		Assert.assertEquals(
-			priceListDiscounts1.toString(), 2, priceListDiscounts1.size());
+			priceListDiscounts1.toString(), totalCount + 2,
+			priceListDiscounts1.size());
 
 		Page<PriceListDiscount> page2 =
 			priceListDiscountResource.
 				getPriceListByExternalReferenceCodePriceListDiscountsPage(
-					externalReferenceCode, Pagination.of(2, 2));
+					externalReferenceCode, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<PriceListDiscount> priceListDiscounts2 =
 			(List<PriceListDiscount>)page2.getItems();
@@ -326,12 +329,15 @@ public abstract class BasePriceListDiscountResourceTestCase {
 		Page<PriceListDiscount> page3 =
 			priceListDiscountResource.
 				getPriceListByExternalReferenceCodePriceListDiscountsPage(
-					externalReferenceCode, Pagination.of(1, 3));
+					externalReferenceCode,
+					Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				priceListDiscount1, priceListDiscount2, priceListDiscount3),
-			(List<PriceListDiscount>)page3.getItems());
+		assertContains(
+			priceListDiscount1, (List<PriceListDiscount>)page3.getItems());
+		assertContains(
+			priceListDiscount2, (List<PriceListDiscount>)page3.getItems());
+		assertContains(
+			priceListDiscount3, (List<PriceListDiscount>)page3.getItems());
 	}
 
 	protected PriceListDiscount
@@ -392,7 +398,7 @@ public abstract class BasePriceListDiscountResourceTestCase {
 			priceListDiscountResource.getPriceListIdPriceListDiscountsPage(
 				id, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantId != null) {
 			PriceListDiscount irrelevantPriceListDiscount =
@@ -401,12 +407,12 @@ public abstract class BasePriceListDiscountResourceTestCase {
 
 			page =
 				priceListDiscountResource.getPriceListIdPriceListDiscountsPage(
-					irrelevantId, Pagination.of(1, 2));
+					irrelevantId, Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantPriceListDiscount),
+			assertContains(
+				irrelevantPriceListDiscount,
 				(List<PriceListDiscount>)page.getItems());
 			assertValid(
 				page,
@@ -425,11 +431,12 @@ public abstract class BasePriceListDiscountResourceTestCase {
 		page = priceListDiscountResource.getPriceListIdPriceListDiscountsPage(
 			id, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(priceListDiscount1, priceListDiscount2),
-			(List<PriceListDiscount>)page.getItems());
+		assertContains(
+			priceListDiscount1, (List<PriceListDiscount>)page.getItems());
+		assertContains(
+			priceListDiscount2, (List<PriceListDiscount>)page.getItems());
 		assertValid(
 			page,
 			testGetPriceListIdPriceListDiscountsPage_getExpectedActions(id));
@@ -450,6 +457,13 @@ public abstract class BasePriceListDiscountResourceTestCase {
 
 		Long id = testGetPriceListIdPriceListDiscountsPage_getId();
 
+		Page<PriceListDiscount> priceListDiscountPage =
+			priceListDiscountResource.getPriceListIdPriceListDiscountsPage(
+				id, null);
+
+		int totalCount = GetterUtil.getInteger(
+			priceListDiscountPage.getTotalCount());
+
 		PriceListDiscount priceListDiscount1 =
 			testGetPriceListIdPriceListDiscountsPage_addPriceListDiscount(
 				id, randomPriceListDiscount());
@@ -464,19 +478,20 @@ public abstract class BasePriceListDiscountResourceTestCase {
 
 		Page<PriceListDiscount> page1 =
 			priceListDiscountResource.getPriceListIdPriceListDiscountsPage(
-				id, Pagination.of(1, 2));
+				id, Pagination.of(1, totalCount + 2));
 
 		List<PriceListDiscount> priceListDiscounts1 =
 			(List<PriceListDiscount>)page1.getItems();
 
 		Assert.assertEquals(
-			priceListDiscounts1.toString(), 2, priceListDiscounts1.size());
+			priceListDiscounts1.toString(), totalCount + 2,
+			priceListDiscounts1.size());
 
 		Page<PriceListDiscount> page2 =
 			priceListDiscountResource.getPriceListIdPriceListDiscountsPage(
-				id, Pagination.of(2, 2));
+				id, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<PriceListDiscount> priceListDiscounts2 =
 			(List<PriceListDiscount>)page2.getItems();
@@ -486,12 +501,14 @@ public abstract class BasePriceListDiscountResourceTestCase {
 
 		Page<PriceListDiscount> page3 =
 			priceListDiscountResource.getPriceListIdPriceListDiscountsPage(
-				id, Pagination.of(1, 3));
+				id, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				priceListDiscount1, priceListDiscount2, priceListDiscount3),
-			(List<PriceListDiscount>)page3.getItems());
+		assertContains(
+			priceListDiscount1, (List<PriceListDiscount>)page3.getItems());
+		assertContains(
+			priceListDiscount2, (List<PriceListDiscount>)page3.getItems());
+		assertContains(
+			priceListDiscount3, (List<PriceListDiscount>)page3.getItems());
 	}
 
 	protected PriceListDiscount
@@ -720,14 +737,19 @@ public abstract class BasePriceListDiscountResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -996,11 +1018,48 @@ public abstract class BasePriceListDiscountResourceTestCase {
 		sb.append(" ");
 
 		if (entityFieldName.equals("discountExternalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					priceListDiscount.getDiscountExternalReferenceCode()));
-			sb.append("'");
+			Object object =
+				priceListDiscount.getDiscountExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1011,9 +1070,47 @@ public abstract class BasePriceListDiscountResourceTestCase {
 		}
 
 		if (entityFieldName.equals("discountName")) {
-			sb.append("'");
-			sb.append(String.valueOf(priceListDiscount.getDiscountName()));
-			sb.append("'");
+			Object object = priceListDiscount.getDiscountName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1030,11 +1127,48 @@ public abstract class BasePriceListDiscountResourceTestCase {
 		}
 
 		if (entityFieldName.equals("priceListExternalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					priceListDiscount.getPriceListExternalReferenceCode()));
-			sb.append("'");
+			Object object =
+				priceListDiscount.getPriceListExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

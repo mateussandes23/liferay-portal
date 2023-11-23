@@ -99,7 +99,7 @@ exports[`Event Analysis Create should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#pencil"
+                        href="#pencil"
                       />
                     </svg>
                   </button>
@@ -160,6 +160,7 @@ exports[`Event Analysis Create should render 1`] = `
                     aria-controls="clay-dropdown-menu-1"
                     aria-expanded="false"
                     aria-haspopup="true"
+                    aria-label="Add"
                     class="dropdown-toggle button-root add-event-button btn btn-sm btn-primary"
                     type="button"
                   >
@@ -168,7 +169,7 @@ exports[`Event Analysis Create should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#plus"
+                        href="#plus"
                       />
                     </svg>
                   </button>
@@ -288,7 +289,7 @@ exports[`Event Analysis Create should render 1`] = `
                     role="presentation"
                   >
                     <use
-                      xlink:href="#caret-bottom"
+                      href="#caret-bottom"
                     />
                   </svg>
                 </button>

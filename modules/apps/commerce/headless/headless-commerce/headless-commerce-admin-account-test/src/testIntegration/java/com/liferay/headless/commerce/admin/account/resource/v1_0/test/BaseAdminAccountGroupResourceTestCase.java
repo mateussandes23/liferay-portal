@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.account.resource.v1_0.test;
@@ -206,7 +197,7 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 	public void testGetAccountGroupsPage() throws Exception {
 		Page<AdminAccountGroup> page =
 			adminAccountGroupResource.getAccountGroupsPage(
-				null, Pagination.of(1, 10), null);
+				null, null, Pagination.of(1, 10), null);
 
 		long totalCount = page.getTotalCount();
 
@@ -219,7 +210,7 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 				randomAdminAccountGroup());
 
 		page = adminAccountGroupResource.getAccountGroupsPage(
-			null, Pagination.of(1, 10), null);
+			null, null, Pagination.of(1, 10), null);
 
 		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
@@ -258,6 +249,7 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 		for (EntityField entityField : entityFields) {
 			Page<AdminAccountGroup> page =
 				adminAccountGroupResource.getAccountGroupsPage(
+					null,
 					getFilterString(entityField, "between", adminAccountGroup1),
 					Pagination.of(1, 2), null);
 
@@ -271,40 +263,36 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 	public void testGetAccountGroupsPageWithFilterDoubleEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.DOUBLE);
+		testGetAccountGroupsPageWithFilter("eq", EntityField.Type.DOUBLE);
+	}
 
-		if (entityFields.isEmpty()) {
-			return;
-		}
+	@Test
+	public void testGetAccountGroupsPageWithFilterStringContains()
+		throws Exception {
 
-		AdminAccountGroup adminAccountGroup1 =
-			testGetAccountGroupsPage_addAdminAccountGroup(
-				randomAdminAccountGroup());
-
-		@SuppressWarnings("PMD.UnusedLocalVariable")
-		AdminAccountGroup adminAccountGroup2 =
-			testGetAccountGroupsPage_addAdminAccountGroup(
-				randomAdminAccountGroup());
-
-		for (EntityField entityField : entityFields) {
-			Page<AdminAccountGroup> page =
-				adminAccountGroupResource.getAccountGroupsPage(
-					getFilterString(entityField, "eq", adminAccountGroup1),
-					Pagination.of(1, 2), null);
-
-			assertEquals(
-				Collections.singletonList(adminAccountGroup1),
-				(List<AdminAccountGroup>)page.getItems());
-		}
+		testGetAccountGroupsPageWithFilter("contains", EntityField.Type.STRING);
 	}
 
 	@Test
 	public void testGetAccountGroupsPageWithFilterStringEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.STRING);
+		testGetAccountGroupsPageWithFilter("eq", EntityField.Type.STRING);
+	}
+
+	@Test
+	public void testGetAccountGroupsPageWithFilterStringStartsWith()
+		throws Exception {
+
+		testGetAccountGroupsPageWithFilter(
+			"startswith", EntityField.Type.STRING);
+	}
+
+	protected void testGetAccountGroupsPageWithFilter(
+			String operator, EntityField.Type type)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
 
 		if (entityFields.isEmpty()) {
 			return;
@@ -322,7 +310,8 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 		for (EntityField entityField : entityFields) {
 			Page<AdminAccountGroup> page =
 				adminAccountGroupResource.getAccountGroupsPage(
-					getFilterString(entityField, "eq", adminAccountGroup1),
+					null,
+					getFilterString(entityField, operator, adminAccountGroup1),
 					Pagination.of(1, 2), null);
 
 			assertEquals(
@@ -333,10 +322,12 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 
 	@Test
 	public void testGetAccountGroupsPageWithPagination() throws Exception {
-		Page<AdminAccountGroup> totalPage =
-			adminAccountGroupResource.getAccountGroupsPage(null, null, null);
+		Page<AdminAccountGroup> adminAccountGroupPage =
+			adminAccountGroupResource.getAccountGroupsPage(
+				null, null, null, null);
 
-		int totalCount = GetterUtil.getInteger(totalPage.getTotalCount());
+		int totalCount = GetterUtil.getInteger(
+			adminAccountGroupPage.getTotalCount());
 
 		AdminAccountGroup adminAccountGroup1 =
 			testGetAccountGroupsPage_addAdminAccountGroup(
@@ -352,7 +343,7 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 
 		Page<AdminAccountGroup> page1 =
 			adminAccountGroupResource.getAccountGroupsPage(
-				null, Pagination.of(1, totalCount + 2), null);
+				null, null, Pagination.of(1, totalCount + 2), null);
 
 		List<AdminAccountGroup> adminAccountGroups1 =
 			(List<AdminAccountGroup>)page1.getItems();
@@ -363,7 +354,7 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 
 		Page<AdminAccountGroup> page2 =
 			adminAccountGroupResource.getAccountGroupsPage(
-				null, Pagination.of(2, totalCount + 2), null);
+				null, null, Pagination.of(2, totalCount + 2), null);
 
 		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
@@ -375,7 +366,7 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 
 		Page<AdminAccountGroup> page3 =
 			adminAccountGroupResource.getAccountGroupsPage(
-				null, Pagination.of(1, totalCount + 3), null);
+				null, null, Pagination.of(1, (int)totalCount + 3), null);
 
 		assertContains(
 			adminAccountGroup1, (List<AdminAccountGroup>)page3.getItems());
@@ -498,21 +489,33 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 		adminAccountGroup2 = testGetAccountGroupsPage_addAdminAccountGroup(
 			adminAccountGroup2);
 
+		Page<AdminAccountGroup> page =
+			adminAccountGroupResource.getAccountGroupsPage(
+				null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<AdminAccountGroup> ascPage =
 				adminAccountGroupResource.getAccountGroupsPage(
-					null, Pagination.of(1, 2), entityField.getName() + ":asc");
+					null, null, Pagination.of(1, (int)page.getTotalCount() + 1),
+					entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(adminAccountGroup1, adminAccountGroup2),
+			assertContains(
+				adminAccountGroup1,
+				(List<AdminAccountGroup>)ascPage.getItems());
+			assertContains(
+				adminAccountGroup2,
 				(List<AdminAccountGroup>)ascPage.getItems());
 
 			Page<AdminAccountGroup> descPage =
 				adminAccountGroupResource.getAccountGroupsPage(
-					null, Pagination.of(1, 2), entityField.getName() + ":desc");
+					null, null, Pagination.of(1, (int)page.getTotalCount() + 1),
+					entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(adminAccountGroup2, adminAccountGroup1),
+			assertContains(
+				adminAccountGroup2,
+				(List<AdminAccountGroup>)descPage.getItems());
+			assertContains(
+				adminAccountGroup1,
 				(List<AdminAccountGroup>)descPage.getItems());
 		}
 	}
@@ -786,7 +789,7 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 				getAccountByExternalReferenceCodeAccountGroupsPage(
 					externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantExternalReferenceCode != null) {
 			AdminAccountGroup irrelevantAdminAccountGroup =
@@ -797,12 +800,13 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 			page =
 				adminAccountGroupResource.
 					getAccountByExternalReferenceCodeAccountGroupsPage(
-						irrelevantExternalReferenceCode, Pagination.of(1, 2));
+						irrelevantExternalReferenceCode,
+						Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantAdminAccountGroup),
+			assertContains(
+				irrelevantAdminAccountGroup,
 				(List<AdminAccountGroup>)page.getItems());
 			assertValid(
 				page,
@@ -823,11 +827,12 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 				getAccountByExternalReferenceCodeAccountGroupsPage(
 					externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(adminAccountGroup1, adminAccountGroup2),
-			(List<AdminAccountGroup>)page.getItems());
+		assertContains(
+			adminAccountGroup1, (List<AdminAccountGroup>)page.getItems());
+		assertContains(
+			adminAccountGroup2, (List<AdminAccountGroup>)page.getItems());
 		assertValid(
 			page,
 			testGetAccountByExternalReferenceCodeAccountGroupsPage_getExpectedActions(
@@ -851,6 +856,14 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 		String externalReferenceCode =
 			testGetAccountByExternalReferenceCodeAccountGroupsPage_getExternalReferenceCode();
 
+		Page<AdminAccountGroup> adminAccountGroupPage =
+			adminAccountGroupResource.
+				getAccountByExternalReferenceCodeAccountGroupsPage(
+					externalReferenceCode, null);
+
+		int totalCount = GetterUtil.getInteger(
+			adminAccountGroupPage.getTotalCount());
+
 		AdminAccountGroup adminAccountGroup1 =
 			testGetAccountByExternalReferenceCodeAccountGroupsPage_addAdminAccountGroup(
 				externalReferenceCode, randomAdminAccountGroup());
@@ -866,20 +879,21 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 		Page<AdminAccountGroup> page1 =
 			adminAccountGroupResource.
 				getAccountByExternalReferenceCodeAccountGroupsPage(
-					externalReferenceCode, Pagination.of(1, 2));
+					externalReferenceCode, Pagination.of(1, totalCount + 2));
 
 		List<AdminAccountGroup> adminAccountGroups1 =
 			(List<AdminAccountGroup>)page1.getItems();
 
 		Assert.assertEquals(
-			adminAccountGroups1.toString(), 2, adminAccountGroups1.size());
+			adminAccountGroups1.toString(), totalCount + 2,
+			adminAccountGroups1.size());
 
 		Page<AdminAccountGroup> page2 =
 			adminAccountGroupResource.
 				getAccountByExternalReferenceCodeAccountGroupsPage(
-					externalReferenceCode, Pagination.of(2, 2));
+					externalReferenceCode, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<AdminAccountGroup> adminAccountGroups2 =
 			(List<AdminAccountGroup>)page2.getItems();
@@ -890,12 +904,15 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 		Page<AdminAccountGroup> page3 =
 			adminAccountGroupResource.
 				getAccountByExternalReferenceCodeAccountGroupsPage(
-					externalReferenceCode, Pagination.of(1, 3));
+					externalReferenceCode,
+					Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				adminAccountGroup1, adminAccountGroup2, adminAccountGroup3),
-			(List<AdminAccountGroup>)page3.getItems());
+		assertContains(
+			adminAccountGroup1, (List<AdminAccountGroup>)page3.getItems());
+		assertContains(
+			adminAccountGroup2, (List<AdminAccountGroup>)page3.getItems());
+		assertContains(
+			adminAccountGroup3, (List<AdminAccountGroup>)page3.getItems());
 	}
 
 	protected AdminAccountGroup
@@ -932,7 +949,7 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 			adminAccountGroupResource.getAccountIdAccountGroupsPage(
 				id, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantId != null) {
 			AdminAccountGroup irrelevantAdminAccountGroup =
@@ -940,12 +957,12 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 					irrelevantId, randomIrrelevantAdminAccountGroup());
 
 			page = adminAccountGroupResource.getAccountIdAccountGroupsPage(
-				irrelevantId, Pagination.of(1, 2));
+				irrelevantId, Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantAdminAccountGroup),
+			assertContains(
+				irrelevantAdminAccountGroup,
 				(List<AdminAccountGroup>)page.getItems());
 			assertValid(
 				page,
@@ -964,11 +981,12 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 		page = adminAccountGroupResource.getAccountIdAccountGroupsPage(
 			id, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(adminAccountGroup1, adminAccountGroup2),
-			(List<AdminAccountGroup>)page.getItems());
+		assertContains(
+			adminAccountGroup1, (List<AdminAccountGroup>)page.getItems());
+		assertContains(
+			adminAccountGroup2, (List<AdminAccountGroup>)page.getItems());
 		assertValid(
 			page, testGetAccountIdAccountGroupsPage_getExpectedActions(id));
 	}
@@ -988,6 +1006,12 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 
 		Long id = testGetAccountIdAccountGroupsPage_getId();
 
+		Page<AdminAccountGroup> adminAccountGroupPage =
+			adminAccountGroupResource.getAccountIdAccountGroupsPage(id, null);
+
+		int totalCount = GetterUtil.getInteger(
+			adminAccountGroupPage.getTotalCount());
+
 		AdminAccountGroup adminAccountGroup1 =
 			testGetAccountIdAccountGroupsPage_addAdminAccountGroup(
 				id, randomAdminAccountGroup());
@@ -1002,19 +1026,20 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 
 		Page<AdminAccountGroup> page1 =
 			adminAccountGroupResource.getAccountIdAccountGroupsPage(
-				id, Pagination.of(1, 2));
+				id, Pagination.of(1, totalCount + 2));
 
 		List<AdminAccountGroup> adminAccountGroups1 =
 			(List<AdminAccountGroup>)page1.getItems();
 
 		Assert.assertEquals(
-			adminAccountGroups1.toString(), 2, adminAccountGroups1.size());
+			adminAccountGroups1.toString(), totalCount + 2,
+			adminAccountGroups1.size());
 
 		Page<AdminAccountGroup> page2 =
 			adminAccountGroupResource.getAccountIdAccountGroupsPage(
-				id, Pagination.of(2, 2));
+				id, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<AdminAccountGroup> adminAccountGroups2 =
 			(List<AdminAccountGroup>)page2.getItems();
@@ -1024,12 +1049,14 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 
 		Page<AdminAccountGroup> page3 =
 			adminAccountGroupResource.getAccountIdAccountGroupsPage(
-				id, Pagination.of(1, 3));
+				id, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				adminAccountGroup1, adminAccountGroup2, adminAccountGroup3),
-			(List<AdminAccountGroup>)page3.getItems());
+		assertContains(
+			adminAccountGroup1, (List<AdminAccountGroup>)page3.getItems());
+		assertContains(
+			adminAccountGroup2, (List<AdminAccountGroup>)page3.getItems());
+		assertContains(
+			adminAccountGroup3, (List<AdminAccountGroup>)page3.getItems());
 	}
 
 	protected AdminAccountGroup
@@ -1216,14 +1243,19 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1467,18 +1499,93 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 		}
 
 		if (entityFieldName.equals("description")) {
-			sb.append("'");
-			sb.append(String.valueOf(adminAccountGroup.getDescription()));
-			sb.append("'");
+			Object object = adminAccountGroup.getDescription();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("externalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(adminAccountGroup.getExternalReferenceCode()));
-			sb.append("'");
+			Object object = adminAccountGroup.getExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1489,9 +1596,47 @@ public abstract class BaseAdminAccountGroupResourceTestCase {
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(adminAccountGroup.getName()));
-			sb.append("'");
+			Object object = adminAccountGroup.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.data.engine.rest.resource.v2_0.test;
@@ -207,7 +198,7 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 				getDataDefinitionDataDefinitionFieldLinksPage(
 					dataDefinitionId, RandomTestUtil.randomString());
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantDataDefinitionId != null) {
 			DataDefinitionFieldLink irrelevantDataDefinitionFieldLink =
@@ -220,10 +211,10 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 					getDataDefinitionDataDefinitionFieldLinksPage(
 						irrelevantDataDefinitionId, null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantDataDefinitionFieldLink),
+			assertContains(
+				irrelevantDataDefinitionFieldLink,
 				(List<DataDefinitionFieldLink>)page.getItems());
 			assertValid(
 				page,
@@ -244,10 +235,13 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 				getDataDefinitionDataDefinitionFieldLinksPage(
 					dataDefinitionId, null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(dataDefinitionFieldLink1, dataDefinitionFieldLink2),
+		assertContains(
+			dataDefinitionFieldLink1,
+			(List<DataDefinitionFieldLink>)page.getItems());
+		assertContains(
+			dataDefinitionFieldLink2,
 			(List<DataDefinitionFieldLink>)page.getItems());
 		assertValid(
 			page,
@@ -440,14 +434,19 @@ public abstract class BaseDataDefinitionFieldLinkResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));

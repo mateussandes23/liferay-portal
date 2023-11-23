@@ -14,9 +14,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -36,7 +36,8 @@ definition {
 	@priority = 5
 	test CanBeCollapsed {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "FormsFieldsGroup#CanBeCollapsed";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		FormsAdmin.addForm();
 
@@ -359,7 +360,7 @@ definition {
 		}
 
 		task ("Then assert the entry fields are shown after clicking the form creates before via the view entry action") {
-			FormsAdmin.openFormsAdmin(siteURLKey = "guest");
+			FormsAdminNavigator.openFormsAdmin(siteURLKey = "guest");
 
 			FormsAdminNavigator.gotoViewEntries();
 

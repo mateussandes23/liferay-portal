@@ -27,6 +27,7 @@ exports[`ModalRenderer should pass props to modal: should render with title 'Foo
               FooBar
             </h4>
             <button
+              aria-label="Close"
               class="button-root close btn btn-secondary"
               type="button"
             >
@@ -35,7 +36,7 @@ exports[`ModalRenderer should pass props to modal: should render with title 'Foo
                 role="presentation"
               >
                 <use
-                  xlink:href="#times"
+                  href="#times"
                 />
               </svg>
             </button>
@@ -108,6 +109,7 @@ exports[`ModalRenderer should render multiple modals 1`] = `
               Modal
             </h4>
             <button
+              aria-label="Close"
               class="button-root close btn btn-secondary"
               type="button"
             >
@@ -116,7 +118,7 @@ exports[`ModalRenderer should render multiple modals 1`] = `
                 role="presentation"
               >
                 <use
-                  xlink:href="#times"
+                  href="#times"
                 />
               </svg>
             </button>
@@ -169,6 +171,7 @@ exports[`ModalRenderer should render multiple modals 1`] = `
               Modal
             </h4>
             <button
+              aria-label="Close"
               class="button-root close btn btn-secondary"
               type="button"
             >
@@ -177,7 +180,7 @@ exports[`ModalRenderer should render multiple modals 1`] = `
                 role="presentation"
               >
                 <use
-                  xlink:href="#times"
+                  href="#times"
                 />
               </svg>
             </button>
@@ -242,6 +245,7 @@ exports[`ModalRenderer should render test modal 1`] = `
               Modal
             </h4>
             <button
+              aria-label="Close"
               class="button-root close btn btn-secondary"
               type="button"
             >
@@ -250,7 +254,7 @@ exports[`ModalRenderer should render test modal 1`] = `
                 role="presentation"
               >
                 <use
-                  xlink:href="#times"
+                  href="#times"
                 />
               </svg>
             </button>

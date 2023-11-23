@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.dynamic.data.mapping.service.impl;
@@ -613,9 +604,8 @@ public class DDMFormInstanceLocalServiceImpl
 
 		boolean updateVersion = false;
 
-		if ((latestDDMFormInstanceVersion.getStatus() ==
-				WorkflowConstants.STATUS_DRAFT) &&
-			(status == WorkflowConstants.STATUS_DRAFT)) {
+		if (latestDDMFormInstanceVersion.getStatus() ==
+				WorkflowConstants.STATUS_DRAFT) {
 
 			updateVersion = true;
 		}
@@ -648,7 +638,7 @@ public class DDMFormInstanceLocalServiceImpl
 
 		if (updateVersion) {
 			_updateFormInstanceVersion(
-				ddmStructureVersionId, user, ddmFormInstance);
+				ddmStructureVersionId, user, ddmFormInstance, status);
 		}
 		else {
 			_addFormInstanceVersion(
@@ -661,7 +651,7 @@ public class DDMFormInstanceLocalServiceImpl
 
 	private void _updateFormInstanceVersion(
 			long ddmStructureVersionId, User user,
-			DDMFormInstance ddmFormInstance)
+			DDMFormInstance ddmFormInstance, int status)
 		throws PortalException {
 
 		DDMFormInstanceVersion ddmFormInstanceVersion =
@@ -674,6 +664,7 @@ public class DDMFormInstanceLocalServiceImpl
 		ddmFormInstanceVersion.setName(ddmFormInstance.getName());
 		ddmFormInstanceVersion.setDescription(ddmFormInstance.getDescription());
 		ddmFormInstanceVersion.setSettings(ddmFormInstance.getSettings());
+		ddmFormInstanceVersion.setStatus(status);
 		ddmFormInstanceVersion.setStatusByUserId(user.getUserId());
 		ddmFormInstanceVersion.setStatusByUserName(user.getFullName());
 		ddmFormInstanceVersion.setStatusDate(ddmFormInstance.getModifiedDate());

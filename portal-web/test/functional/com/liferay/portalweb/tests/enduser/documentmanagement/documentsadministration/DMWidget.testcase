@@ -30,9 +30,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -145,7 +145,7 @@ definition {
 	}
 
 	@description = "This test covers LPS-104252. It validates that the search bar in the DM widget cannot execute XSS."
-	@priority = 4
+	@priority = 3
 	test SearchBarDoesNotExecuteXSS {
 		JSONDocument.addFileWithUploadedFile(
 			dmDocumentDescription = "DM Document Description",
@@ -164,9 +164,8 @@ definition {
 	}
 
 	@description = "This is a use case for LPS-95662. Selecting an asset from the second does not invoke the management toolbar on the first."
-	@priority = 4
+	@priority = 3
 	test SelectAssetFromSecondWidgetInvokesSecondManagementToolbar {
-		property portal.acceptance = "true";
 		property test.assert.javascript.errors = "true";
 		property test.assert.warning.exceptions = "true";
 
@@ -189,11 +188,9 @@ definition {
 	}
 
 	@description = "This test covers LPS-91595. It ensures that the document selection persists when navigating through the pagination in the DM widget."
-	@priority = 4
+	@priority = 3
 	@refactordone
 	test SelectionPersistsWhenTraversingPages {
-		property portal.acceptance = "true";
-
 		HeadlessSite.addSite(siteName = "Site Name");
 
 		JSONLayout.addPublicLayout(
@@ -206,29 +203,9 @@ definition {
 			layoutName = "Documents and Media Page",
 			widgetName = "Documents and Media");
 
-		for (var documentName : list "Document_2.doc,Document_1.xls,Document_4.jpg,Document_3.jpg,Document_2.xls,Document_1.txt,Document_4.txt,Document_3.xls,Document_2.jpg,Document_1.doc") {
-			var extension = StringUtil.extractLast(${documentName}, ".");
-
-			if (${extension} == "doc") {
-				var mimeType = "application/msword";
-			}
-			else if (${extension} == "jpg") {
-				var mimeType = "image/jpg";
-			}
-			else if (${extension} == "xls") {
-				var mimeType = "application/vnd.ms-excel";
-			}
-			else if (${extension} == "txt") {
-				var mimeType = "text/plain";
-			}
-
-			JSONDocument.addFileWithUploadedFile(
-				dmDocumentDescription = "DM Document Description",
-				dmDocumentTitle = ${documentName},
-				groupName = "Site Name",
-				mimeType = ${mimeType},
-				sourceFileName = ${documentName});
-		}
+		JSONDocument.addMultipleFilesWithUploadedFile(
+			documentFileNames = "Document_2.doc,Document_1.xls,Document_4.jpg,Document_3.jpg,Document_2.xls,Document_1.txt,Document_4.txt,Document_3.xls,Document_2.jpg,Document_1.doc",
+			groupName = "Site Name");
 
 		Navigator.openSitePage(
 			pageName = "Documents and Media Page",
@@ -238,7 +215,9 @@ definition {
 
 		Pagination.viewResults(results = "Showing 1 to 4 of 10 entries.");
 
-		DMDocument.checkDocumentCheckboxPG(dmDocumentTitle = "Document_2.jpg");
+		DMDocument.checkDocumentCheckboxPG(dmDocumentTitle = "DM Document Title8");
+
+		SetWindowSize.maximizeWindow();
 
 		AssertTextEquals.assertPartialText(
 			locator1 = "ManagementBar#NAVBAR_TEXT",
@@ -246,7 +225,7 @@ definition {
 
 		Click(locator1 = "Pagination#NEXT_LINK");
 
-		DMDocument.checkDocumentCheckboxPG(dmDocumentTitle = "Document_4.jpg");
+		DMDocument.checkDocumentCheckboxPG(dmDocumentTitle = "DM Document Title4");
 
 		AssertTextEquals.assertPartialText(
 			locator1 = "ManagementBar#NAVBAR_TEXT",
@@ -255,7 +234,7 @@ definition {
 
 	@description = "This test ensures that the DM widgets follow W3C accessibility standards."
 	@ignore = "true"
-	@priority = 4
+	@priority = 3
 	test WidgetsFollowAccessibilityStandards {
 		JSONLayout.addWidgetToPublicLayout(
 			column = 1,

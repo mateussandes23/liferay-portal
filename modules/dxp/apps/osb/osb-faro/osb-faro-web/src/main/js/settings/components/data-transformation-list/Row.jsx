@@ -418,6 +418,9 @@ export class DataTransformationListRow extends React.Component {
 
 						<Form.GroupItem className='add-on' shrink>
 							<ClayButton
+								aria-label={Liferay.Language.get(
+									'remove-field'
+								)}
 								className='button-root'
 								data-tooltip
 								displayType='unstyled'
@@ -444,7 +447,6 @@ export default compose(
 			close,
 			open
 		},
-		null,
-		{pure: false}
+		null
 	)
 )(DataTransformationListRow);

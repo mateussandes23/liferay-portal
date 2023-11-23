@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.data.engine.rest.internal.resource.v2_0;
@@ -36,6 +27,7 @@ import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourceLocalServiceUtil;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
+import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.GroupThreadLocal;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -43,6 +35,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.odata.filter.ExpressionConvert;
 import com.liferay.portal.odata.filter.FilterParser;
@@ -645,6 +638,7 @@ public abstract class BaseDataRecordCollectionResourceImpl
 			)
 		}
 	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
 	@javax.ws.rs.Path(
 		"/data-record-collections/{dataRecordCollectionId}/permissions"
 	)
@@ -782,15 +776,15 @@ public abstract class BaseDataRecordCollectionResourceImpl
 			Map<String, Serializable> parameters)
 		throws Exception {
 
-		UnsafeConsumer<DataRecordCollection, Exception>
-			dataRecordCollectionUnsafeConsumer = null;
+		UnsafeFunction<DataRecordCollection, DataRecordCollection, Exception>
+			dataRecordCollectionUnsafeFunction = null;
 
 		String createStrategy = (String)parameters.getOrDefault(
 			"createStrategy", "INSERT");
 
-		if ("INSERT".equalsIgnoreCase(createStrategy)) {
+		if (StringUtil.equalsIgnoreCase(createStrategy, "INSERT")) {
 			if (parameters.containsKey("dataDefinitionId")) {
-				dataRecordCollectionUnsafeConsumer =
+				dataRecordCollectionUnsafeFunction =
 					dataRecordCollection ->
 						postDataDefinitionDataRecordCollection(
 							_parseLong(
@@ -803,21 +797,26 @@ public abstract class BaseDataRecordCollectionResourceImpl
 			}
 		}
 
-		if (dataRecordCollectionUnsafeConsumer == null) {
+		if (dataRecordCollectionUnsafeFunction == null) {
 			throw new NotSupportedException(
 				"Create strategy \"" + createStrategy +
 					"\" is not supported for DataRecordCollection");
 		}
 
-		if (contextBatchUnsafeConsumer != null) {
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(
+				dataRecordCollections, dataRecordCollectionUnsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
 			contextBatchUnsafeConsumer.accept(
-				dataRecordCollections, dataRecordCollectionUnsafeConsumer);
+				dataRecordCollections,
+				dataRecordCollectionUnsafeFunction::apply);
 		}
 		else {
 			for (DataRecordCollection dataRecordCollection :
 					dataRecordCollections) {
 
-				dataRecordCollectionUnsafeConsumer.accept(dataRecordCollection);
+				dataRecordCollectionUnsafeFunction.apply(dataRecordCollection);
 			}
 		}
 	}
@@ -907,14 +906,14 @@ public abstract class BaseDataRecordCollectionResourceImpl
 			Map<String, Serializable> parameters)
 		throws Exception {
 
-		UnsafeConsumer<DataRecordCollection, Exception>
-			dataRecordCollectionUnsafeConsumer = null;
+		UnsafeFunction<DataRecordCollection, DataRecordCollection, Exception>
+			dataRecordCollectionUnsafeFunction = null;
 
 		String updateStrategy = (String)parameters.getOrDefault(
 			"updateStrategy", "UPDATE");
 
-		if ("UPDATE".equalsIgnoreCase(updateStrategy)) {
-			dataRecordCollectionUnsafeConsumer =
+		if (StringUtil.equalsIgnoreCase(updateStrategy, "UPDATE")) {
+			dataRecordCollectionUnsafeFunction =
 				dataRecordCollection -> putDataRecordCollection(
 					dataRecordCollection.getId() != null ?
 						dataRecordCollection.getId() :
@@ -924,21 +923,26 @@ public abstract class BaseDataRecordCollectionResourceImpl
 					dataRecordCollection);
 		}
 
-		if (dataRecordCollectionUnsafeConsumer == null) {
+		if (dataRecordCollectionUnsafeFunction == null) {
 			throw new NotSupportedException(
 				"Update strategy \"" + updateStrategy +
 					"\" is not supported for DataRecordCollection");
 		}
 
-		if (contextBatchUnsafeConsumer != null) {
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(
+				dataRecordCollections, dataRecordCollectionUnsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
 			contextBatchUnsafeConsumer.accept(
-				dataRecordCollections, dataRecordCollectionUnsafeConsumer);
+				dataRecordCollections,
+				dataRecordCollectionUnsafeFunction::apply);
 		}
 		else {
 			for (DataRecordCollection dataRecordCollection :
 					dataRecordCollections) {
 
-				dataRecordCollectionUnsafeConsumer.accept(dataRecordCollection);
+				dataRecordCollectionUnsafeFunction.apply(dataRecordCollection);
 			}
 		}
 	}
@@ -1118,6 +1122,16 @@ public abstract class BaseDataRecordCollectionResourceImpl
 		this.contextAcceptLanguage = contextAcceptLanguage;
 	}
 
+	public void setContextBatchUnsafeBiConsumer(
+		UnsafeBiConsumer
+			<Collection<DataRecordCollection>,
+			 UnsafeFunction
+				 <DataRecordCollection, DataRecordCollection, Exception>,
+			 Exception> contextBatchUnsafeBiConsumer) {
+
+		this.contextBatchUnsafeBiConsumer = contextBatchUnsafeBiConsumer;
+	}
+
 	public void setContextBatchUnsafeConsumer(
 		UnsafeBiConsumer
 			<Collection<DataRecordCollection>,
@@ -1135,6 +1149,13 @@ public abstract class BaseDataRecordCollectionResourceImpl
 
 	public void setContextHttpServletRequest(
 		HttpServletRequest contextHttpServletRequest) {
+
+		if ((contextHttpServletRequest != null) &&
+			(contextHttpServletRequest.getAttribute(WebKeys.CTX) == null)) {
+
+			contextHttpServletRequest.setAttribute(
+				WebKeys.CTX, ServletContextPool.get(StringPool.BLANK));
+		}
 
 		this.contextHttpServletRequest = contextHttpServletRequest;
 	}
@@ -1377,6 +1398,10 @@ public abstract class BaseDataRecordCollectionResourceImpl
 	}
 
 	protected AcceptLanguage contextAcceptLanguage;
+	protected UnsafeBiConsumer
+		<Collection<DataRecordCollection>,
+		 UnsafeFunction<DataRecordCollection, DataRecordCollection, Exception>,
+		 Exception> contextBatchUnsafeBiConsumer;
 	protected UnsafeBiConsumer
 		<Collection<DataRecordCollection>,
 		 UnsafeConsumer<DataRecordCollection, Exception>, Exception>

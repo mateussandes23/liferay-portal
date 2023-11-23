@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.batch.planner.rest.resource.v1_0.test;
@@ -184,6 +175,7 @@ public abstract class BasePlanResourceTestCase {
 		plan.setExternalType(regex);
 		plan.setExternalURL(regex);
 		plan.setInternalClassName(regex);
+		plan.setInternalClassNameKey(regex);
 		plan.setName(regex);
 		plan.setTaskItemDelegateName(regex);
 
@@ -196,6 +188,7 @@ public abstract class BasePlanResourceTestCase {
 		Assert.assertEquals(regex, plan.getExternalType());
 		Assert.assertEquals(regex, plan.getExternalURL());
 		Assert.assertEquals(regex, plan.getInternalClassName());
+		Assert.assertEquals(regex, plan.getInternalClassNameKey());
 		Assert.assertEquals(regex, plan.getName());
 		Assert.assertEquals(regex, plan.getTaskItemDelegateName());
 	}
@@ -234,9 +227,9 @@ public abstract class BasePlanResourceTestCase {
 
 	@Test
 	public void testGetPlansPageWithPagination() throws Exception {
-		Page<Plan> totalPage = planResource.getPlansPage(null);
+		Page<Plan> planPage = planResource.getPlansPage(null);
 
-		int totalCount = GetterUtil.getInteger(totalPage.getTotalCount());
+		int totalCount = GetterUtil.getInteger(planPage.getTotalCount());
 
 		Plan plan1 = testGetPlansPage_addPlan(randomPlan());
 
@@ -261,7 +254,7 @@ public abstract class BasePlanResourceTestCase {
 		Assert.assertEquals(plans2.toString(), 1, plans2.size());
 
 		Page<Plan> page3 = planResource.getPlansPage(
-			Pagination.of(1, totalCount + 3));
+			Pagination.of(1, (int)totalCount + 3));
 
 		assertContains(plan1, (List<Plan>)page3.getItems());
 		assertContains(plan2, (List<Plan>)page3.getItems());
@@ -467,6 +460,16 @@ public abstract class BasePlanResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals(
+					"internalClassNameKey", additionalAssertFieldName)) {
+
+				if (plan.getInternalClassNameKey() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("mappings", additionalAssertFieldName)) {
 				if (plan.getMappings() == null) {
 					valid = false;
@@ -563,14 +566,19 @@ public abstract class BasePlanResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -693,6 +701,19 @@ public abstract class BasePlanResourceTestCase {
 				if (!Objects.deepEquals(
 						plan1.getInternalClassName(),
 						plan2.getInternalClassName())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals(
+					"internalClassNameKey", additionalAssertFieldName)) {
+
+				if (!Objects.deepEquals(
+						plan1.getInternalClassNameKey(),
+						plan2.getInternalClassNameKey())) {
 
 					return false;
 				}
@@ -889,17 +910,93 @@ public abstract class BasePlanResourceTestCase {
 		}
 
 		if (entityFieldName.equals("externalType")) {
-			sb.append("'");
-			sb.append(String.valueOf(plan.getExternalType()));
-			sb.append("'");
+			Object object = plan.getExternalType();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("externalURL")) {
-			sb.append("'");
-			sb.append(String.valueOf(plan.getExternalURL()));
-			sb.append("'");
+			Object object = plan.getExternalURL();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -910,9 +1007,93 @@ public abstract class BasePlanResourceTestCase {
 		}
 
 		if (entityFieldName.equals("internalClassName")) {
-			sb.append("'");
-			sb.append(String.valueOf(plan.getInternalClassName()));
-			sb.append("'");
+			Object object = plan.getInternalClassName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
+
+			return sb.toString();
+		}
+
+		if (entityFieldName.equals("internalClassNameKey")) {
+			Object object = plan.getInternalClassNameKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -923,9 +1104,47 @@ public abstract class BasePlanResourceTestCase {
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(plan.getName()));
-			sb.append("'");
+			Object object = plan.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -948,9 +1167,47 @@ public abstract class BasePlanResourceTestCase {
 		}
 
 		if (entityFieldName.equals("taskItemDelegateName")) {
-			sb.append("'");
-			sb.append(String.valueOf(plan.getTaskItemDelegateName()));
-			sb.append("'");
+			Object object = plan.getTaskItemDelegateName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1018,6 +1275,8 @@ public abstract class BasePlanResourceTestCase {
 					RandomTestUtil.randomString());
 				id = RandomTestUtil.randomLong();
 				internalClassName = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
+				internalClassNameKey = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
 				name = StringUtil.toLowerCase(RandomTestUtil.randomString());
 				size = RandomTestUtil.randomInt();

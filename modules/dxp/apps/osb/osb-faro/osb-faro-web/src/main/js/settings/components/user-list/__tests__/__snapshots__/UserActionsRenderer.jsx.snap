@@ -12,6 +12,7 @@ exports[`UserActionsRenderer should render 1`] = `
       Edit
     </button>
     <button
+      aria-label="Delete"
       class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
       type="button"
     >
@@ -20,7 +21,7 @@ exports[`UserActionsRenderer should render 1`] = `
         role="presentation"
       >
         <use
-          xlink:href="#trash"
+          href="#trash"
         />
       </svg>
     </button>

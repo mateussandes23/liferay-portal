@@ -1,22 +1,13 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.action;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.exception.NoSuchUserException;
-import com.liferay.portal.kernel.exception.UserLockoutException;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.UserPasswordException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -27,7 +18,7 @@ import com.liferay.portal.kernel.model.TicketConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.AuthTokenUtil;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
-import com.liferay.portal.kernel.security.auth.session.AuthenticatedSessionManagerUtil;
+import com.liferay.portal.kernel.security.pwd.PasswordEncryptorUtil;
 import com.liferay.portal.kernel.service.CompanyLocalServiceUtil;
 import com.liferay.portal.kernel.service.TicketLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
@@ -35,6 +26,7 @@ import com.liferay.portal.kernel.servlet.HttpMethods;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
@@ -43,6 +35,7 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.security.DefaultAdminUtil;
+import com.liferay.portal.security.auth.session.AuthenticatedSessionManagerUtil;
 import com.liferay.portal.security.pwd.PwdToolkitUtilThreadLocal;
 import com.liferay.portal.struts.Action;
 import com.liferay.portal.struts.model.ActionForward;
@@ -89,17 +82,8 @@ public class UpdatePasswordAction implements Action {
 			if (ticket != null) {
 				User user = UserLocalServiceUtil.getUser(ticket.getClassPK());
 
-				try {
-					UserLocalServiceUtil.checkLockout(user);
-
-					UserLocalServiceUtil.updatePasswordReset(
-						user.getUserId(), true);
-				}
-				catch (UserLockoutException userLockoutException) {
-					SessionErrors.add(
-						httpServletRequest, userLockoutException.getClass(),
-						userLockoutException);
-				}
+				UserLocalServiceUtil.updatePasswordReset(
+					user.getUserId(), true);
 			}
 
 			User user = PortalUtil.getUser(httpServletRequest);
@@ -164,15 +148,20 @@ public class UpdatePasswordAction implements Action {
 		}
 	}
 
-	protected Ticket getTicket(HttpServletRequest httpServletRequest) {
+	protected Ticket getTicket(HttpServletRequest httpServletRequest)
+		throws PortalException {
+
+		String ticketId = ParamUtil.getString(httpServletRequest, "ticketId");
+
 		String ticketKey = ParamUtil.getString(httpServletRequest, "ticketKey");
 
-		if (Validator.isNull(ticketKey)) {
+		if (Validator.isNull(ticketId) || Validator.isNull(ticketKey)) {
 			return null;
 		}
 
 		try {
-			Ticket ticket = TicketLocalServiceUtil.fetchTicket(ticketKey);
+			Ticket ticket = TicketLocalServiceUtil.fetchTicket(
+				GetterUtil.getLong(ticketId));
 
 			if ((ticket == null) ||
 				(ticket.getType() != TicketConstants.TYPE_PASSWORD)) {
@@ -180,7 +169,12 @@ public class UpdatePasswordAction implements Action {
 				return null;
 			}
 
-			if (!ticket.isExpired()) {
+			String encryptedTicketKey = PasswordEncryptorUtil.encrypt(
+				ticketKey, ticket.getKey());
+
+			if (!ticket.isExpired() &&
+				encryptedTicketKey.equals(ticket.getKey())) {
+
 				return ticket;
 			}
 
@@ -263,6 +257,8 @@ public class UpdatePasswordAction implements Action {
 		AuthTokenUtil.checkCSRFToken(
 			httpServletRequest, UpdatePasswordAction.class.getName());
 
+		HttpSession httpSession = httpServletRequest.getSession();
+
 		long userId = 0;
 
 		if (ticket != null) {
@@ -294,10 +290,8 @@ public class UpdatePasswordAction implements Action {
 
 				user.setReminderQueryAnswer(null);
 
-				UserLocalServiceUtil.updateUser(user);
+				user = UserLocalServiceUtil.updateUser(user);
 			}
-
-			HttpSession httpSession = httpServletRequest.getSession();
 
 			Date passwordModifiedDate = user.getPasswordModifiedDate();
 
@@ -317,11 +311,19 @@ public class UpdatePasswordAction implements Action {
 		if (ticket != null) {
 			TicketLocalServiceUtil.deleteTicket(ticket);
 
+			UserLocalServiceUtil.updateLockout(user, false);
+
 			UserLocalServiceUtil.updatePasswordReset(userId, false);
 
 			if (company.isStrangersVerify()) {
 				UserLocalServiceUtil.updateEmailAddressVerified(userId, true);
 			}
+		}
+
+		if (GetterUtil.getBoolean(
+				httpSession.getAttribute(WebKeys.MFA_ENABLED))) {
+
+			return;
 		}
 
 		String login = null;

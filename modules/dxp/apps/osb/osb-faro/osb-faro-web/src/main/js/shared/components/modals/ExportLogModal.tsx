@@ -1,9 +1,8 @@
 import ClayButton from '@clayui/button';
-import ClayLoadingIndicator from '@clayui/loading-indicator';
 import DateRangeInput, {DateRange} from 'shared/components/DateRangeInput';
+import Loading, {Align} from 'shared/components/Loading';
 import Modal from 'shared/components/modal';
 import moment from 'moment';
-import Promise from 'metal-promise';
 import React, {useState} from 'react';
 import {downloadDataAsFile} from 'shared/util/util';
 
@@ -17,7 +16,7 @@ interface IExportLogModalProps {
 	}: {
 		fromDate: string;
 		toDate: string;
-	}) => typeof Promise;
+	}) => Promise<any>;
 	title: string;
 }
 
@@ -76,13 +75,7 @@ const ExportLogModal: React.FC<IExportLogModalProps> = ({
 								});
 						}}
 					>
-						{loading && (
-							<ClayLoadingIndicator
-								className='d-inline-block mr-2'
-								displayType='secondary'
-								size='sm'
-							/>
-						)}
+						{loading && <Loading align={Align.Left} />}
 
 						{Liferay.Language.get('download')}
 					</ClayButton>

@@ -10,15 +10,15 @@ definition {
 
 		User.firstLoginPG();
 
-		JSONGroup.addGroup(groupName = "Test Site Name");
+		HeadlessSite.addSite(siteName = "Test Site Name");
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -146,6 +146,8 @@ definition {
 	@description = "This is a test for LRQA-68737. This test verifies that the field reference can not be the same for two fields."
 	@priority = 5
 	test CanNotBeTheSameForTwoFields {
+		property ci.retries.disabled = "true";
+
 		NavItem.gotoStructures();
 
 		WebContentStructures.addCP(structureName = "WC Structure Title");
@@ -166,10 +168,20 @@ definition {
 
 		var originalFieldReference = DEBuilder.getFieldReference(fieldLabel = "Second Text");
 
-		DEBuilder.editFieldReference(
-			assertErrorMessage = "This reference is already being used. Try a different one.",
+		DEBuilder.openField(
 			fieldLabel = "Second Text",
-			fieldReference = ${textReference});
+			index = 1);
+
+		Navigator.gotoNavTab(navTab = "Advanced");
+
+		Type(
+			key_fieldLabel = "Field Reference",
+			locator1 = "TextInput#GENERIC_TEXT_INPUT",
+			value1 = ${textReference});
+
+		AssertTextEquals(
+			locator1 = "DataEngineBuilder#FIELD_REFERENCE_ERROR",
+			value1 = "This reference is already being used. Try a different one.");
 
 		Button.click(button = "Save");
 

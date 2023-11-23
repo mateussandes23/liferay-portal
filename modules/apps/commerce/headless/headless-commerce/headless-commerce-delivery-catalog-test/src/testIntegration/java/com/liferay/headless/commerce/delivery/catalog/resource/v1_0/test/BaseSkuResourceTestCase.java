@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.delivery.catalog.resource.v1_0.test;
@@ -42,6 +33,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -213,7 +205,7 @@ public abstract class BaseSkuResourceTestCase {
 		Page<Sku> page = skuResource.getChannelProductSkusPage(
 			channelId, productId, null, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if ((irrelevantChannelId != null) && (irrelevantProductId != null)) {
 			Sku irrelevantSku = testGetChannelProductSkusPage_addSku(
@@ -222,12 +214,11 @@ public abstract class BaseSkuResourceTestCase {
 
 			page = skuResource.getChannelProductSkusPage(
 				irrelevantChannelId, irrelevantProductId, null,
-				Pagination.of(1, 2));
+				Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantSku), (List<Sku>)page.getItems());
+			assertContains(irrelevantSku, (List<Sku>)page.getItems());
 			assertValid(
 				page,
 				testGetChannelProductSkusPage_getExpectedActions(
@@ -243,10 +234,10 @@ public abstract class BaseSkuResourceTestCase {
 		page = skuResource.getChannelProductSkusPage(
 			channelId, productId, null, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(sku1, sku2), (List<Sku>)page.getItems());
+		assertContains(sku1, (List<Sku>)page.getItems());
+		assertContains(sku2, (List<Sku>)page.getItems());
 		assertValid(
 			page,
 			testGetChannelProductSkusPage_getExpectedActions(
@@ -268,6 +259,11 @@ public abstract class BaseSkuResourceTestCase {
 		Long channelId = testGetChannelProductSkusPage_getChannelId();
 		Long productId = testGetChannelProductSkusPage_getProductId();
 
+		Page<Sku> skuPage = skuResource.getChannelProductSkusPage(
+			channelId, productId, null, null);
+
+		int totalCount = GetterUtil.getInteger(skuPage.getTotalCount());
+
 		Sku sku1 = testGetChannelProductSkusPage_addSku(
 			channelId, productId, randomSku());
 
@@ -278,26 +274,27 @@ public abstract class BaseSkuResourceTestCase {
 			channelId, productId, randomSku());
 
 		Page<Sku> page1 = skuResource.getChannelProductSkusPage(
-			channelId, productId, null, Pagination.of(1, 2));
+			channelId, productId, null, Pagination.of(1, totalCount + 2));
 
 		List<Sku> skus1 = (List<Sku>)page1.getItems();
 
-		Assert.assertEquals(skus1.toString(), 2, skus1.size());
+		Assert.assertEquals(skus1.toString(), totalCount + 2, skus1.size());
 
 		Page<Sku> page2 = skuResource.getChannelProductSkusPage(
-			channelId, productId, null, Pagination.of(2, 2));
+			channelId, productId, null, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<Sku> skus2 = (List<Sku>)page2.getItems();
 
 		Assert.assertEquals(skus2.toString(), 1, skus2.size());
 
 		Page<Sku> page3 = skuResource.getChannelProductSkusPage(
-			channelId, productId, null, Pagination.of(1, 3));
+			channelId, productId, null, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(sku1, sku2, sku3), (List<Sku>)page3.getItems());
+		assertContains(sku1, (List<Sku>)page3.getItems());
+		assertContains(sku2, (List<Sku>)page3.getItems());
+		assertContains(sku3, (List<Sku>)page3.getItems());
 	}
 
 	protected Sku testGetChannelProductSkusPage_addSku(
@@ -364,6 +361,106 @@ public abstract class BaseSkuResourceTestCase {
 
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testGetChannelProductSku() throws Exception {
+		Sku postSku = testGetChannelProductSku_addSku();
+
+		Sku getSku = skuResource.getChannelProductSku(
+			testGetChannelProductSku_getChannelId(),
+			testGetChannelProductSku_getProductId(postSku), postSku.getId(),
+			null);
+
+		assertEquals(postSku, getSku);
+		assertValid(getSku);
+	}
+
+	protected Long testGetChannelProductSku_getChannelId() throws Exception {
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	protected Long testGetChannelProductSku_getProductId(Sku sku)
+		throws Exception {
+
+		return sku.getProductId();
+	}
+
+	protected Sku testGetChannelProductSku_addSku() throws Exception {
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testGraphQLGetChannelProductSku() throws Exception {
+		Sku sku = testGraphQLGetChannelProductSku_addSku();
+
+		Assert.assertTrue(
+			equals(
+				sku,
+				SkuSerDes.toDTO(
+					JSONUtil.getValueAsString(
+						invokeGraphQLQuery(
+							new GraphQLField(
+								"channelProductSku",
+								new HashMap<String, Object>() {
+									{
+										put(
+											"channelId",
+											testGraphQLGetChannelProductSku_getChannelId());
+
+										put(
+											"productId",
+											testGraphQLGetChannelProductSku_getProductId(
+												sku));
+
+										put("skuId", sku.getId());
+									}
+								},
+								getGraphQLFields())),
+						"JSONObject/data", "Object/channelProductSku"))));
+	}
+
+	protected Long testGraphQLGetChannelProductSku_getChannelId()
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	protected Long testGraphQLGetChannelProductSku_getProductId(Sku sku)
+		throws Exception {
+
+		return sku.getProductId();
+	}
+
+	@Test
+	public void testGraphQLGetChannelProductSkuNotFound() throws Exception {
+		Long irrelevantChannelId = RandomTestUtil.randomLong();
+		Long irrelevantProductId = RandomTestUtil.randomLong();
+		Long irrelevantSkuId = RandomTestUtil.randomLong();
+
+		Assert.assertEquals(
+			"Not Found",
+			JSONUtil.getValueAsString(
+				invokeGraphQLQuery(
+					new GraphQLField(
+						"channelProductSku",
+						new HashMap<String, Object>() {
+							{
+								put("channelId", irrelevantChannelId);
+								put("productId", irrelevantProductId);
+								put("skuId", irrelevantSkuId);
+							}
+						},
+						getGraphQLFields())),
+				"JSONArray/errors", "Object/0", "JSONObject/extensions",
+				"Object/code"));
+	}
+
+	protected Sku testGraphQLGetChannelProductSku_addSku() throws Exception {
+		return testGraphQLSku_addSku();
 	}
 
 	protected Sku testGraphQLSku_addSku() throws Exception {
@@ -456,6 +553,14 @@ public abstract class BaseSkuResourceTestCase {
 
 			if (Objects.equals("availability", additionalAssertFieldName)) {
 				if (sku.getAvailability() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("backOrderAllowed", additionalAssertFieldName)) {
+				if (sku.getBackOrderAllowed() == null) {
 					valid = false;
 				}
 
@@ -580,6 +685,24 @@ public abstract class BaseSkuResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals(
+					"productConfiguration", additionalAssertFieldName)) {
+
+				if (sku.getProductConfiguration() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("productId", additionalAssertFieldName)) {
+				if (sku.getProductId() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("published", additionalAssertFieldName)) {
 				if (sku.getPublished() == null) {
 					valid = false;
@@ -590,6 +713,14 @@ public abstract class BaseSkuResourceTestCase {
 
 			if (Objects.equals("purchasable", additionalAssertFieldName)) {
 				if (sku.getPurchasable() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("replacementSku", additionalAssertFieldName)) {
+				if (sku.getReplacementSku() == null) {
 					valid = false;
 				}
 
@@ -625,6 +756,24 @@ public abstract class BaseSkuResourceTestCase {
 
 			if (Objects.equals("skuOptions", additionalAssertFieldName)) {
 				if (sku.getSkuOptions() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals(
+					"skuUnitOfMeasures", additionalAssertFieldName)) {
+
+				if (sku.getSkuUnitOfMeasures() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("tierPrices", additionalAssertFieldName)) {
+				if (sku.getTierPrices() == null) {
 					valid = false;
 				}
 
@@ -677,14 +826,19 @@ public abstract class BaseSkuResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -784,6 +938,17 @@ public abstract class BaseSkuResourceTestCase {
 			if (Objects.equals("availability", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						sku1.getAvailability(), sku2.getAvailability())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("backOrderAllowed", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						sku1.getBackOrderAllowed(),
+						sku2.getBackOrderAllowed())) {
 
 					return false;
 				}
@@ -943,6 +1108,29 @@ public abstract class BaseSkuResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals(
+					"productConfiguration", additionalAssertFieldName)) {
+
+				if (!Objects.deepEquals(
+						sku1.getProductConfiguration(),
+						sku2.getProductConfiguration())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("productId", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						sku1.getProductId(), sku2.getProductId())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("published", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						sku1.getPublished(), sku2.getPublished())) {
@@ -956,6 +1144,16 @@ public abstract class BaseSkuResourceTestCase {
 			if (Objects.equals("purchasable", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						sku1.getPurchasable(), sku2.getPurchasable())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("replacementSku", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						sku1.getReplacementSku(), sku2.getReplacementSku())) {
 
 					return false;
 				}
@@ -999,6 +1197,29 @@ public abstract class BaseSkuResourceTestCase {
 			if (Objects.equals("skuOptions", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						sku1.getSkuOptions(), sku2.getSkuOptions())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals(
+					"skuUnitOfMeasures", additionalAssertFieldName)) {
+
+				if (!Objects.deepEquals(
+						sku1.getSkuUnitOfMeasures(),
+						sku2.getSkuUnitOfMeasures())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("tierPrices", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						sku1.getTierPrices(), sku2.getTierPrices())) {
 
 					return false;
 				}
@@ -1140,6 +1361,11 @@ public abstract class BaseSkuResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("backOrderAllowed")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("depth")) {
 			sb.append(String.valueOf(sku.getDepth()));
 
@@ -1250,9 +1476,47 @@ public abstract class BaseSkuResourceTestCase {
 		}
 
 		if (entityFieldName.equals("gtin")) {
-			sb.append("'");
-			sb.append(String.valueOf(sku.getGtin()));
-			sb.append("'");
+			Object object = sku.getGtin();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1269,31 +1533,105 @@ public abstract class BaseSkuResourceTestCase {
 		}
 
 		if (entityFieldName.equals("incomingQuantityLabel")) {
-			sb.append("'");
-			sb.append(String.valueOf(sku.getIncomingQuantityLabel()));
-			sb.append("'");
+			Object object = sku.getIncomingQuantityLabel();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("manufacturerPartNumber")) {
-			sb.append("'");
-			sb.append(String.valueOf(sku.getManufacturerPartNumber()));
-			sb.append("'");
+			Object object = sku.getManufacturerPartNumber();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("maxOrderQuantity")) {
-			sb.append(String.valueOf(sku.getMaxOrderQuantity()));
-
-			return sb.toString();
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
 		}
 
 		if (entityFieldName.equals("minOrderQuantity")) {
-			sb.append(String.valueOf(sku.getMinOrderQuantity()));
-
-			return sb.toString();
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
 		}
 
 		if (entityFieldName.equals("neverExpire")) {
@@ -1302,6 +1640,16 @@ public abstract class BaseSkuResourceTestCase {
 		}
 
 		if (entityFieldName.equals("price")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("productConfiguration")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("productId")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
 		}
@@ -1316,11 +1664,53 @@ public abstract class BaseSkuResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("replacementSku")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("replacementSkuExternalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(sku.getReplacementSkuExternalReferenceCode()));
-			sb.append("'");
+			Object object = sku.getReplacementSkuExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1331,14 +1721,62 @@ public abstract class BaseSkuResourceTestCase {
 		}
 
 		if (entityFieldName.equals("sku")) {
-			sb.append("'");
-			sb.append(String.valueOf(sku.getSku()));
-			sb.append("'");
+			Object object = sku.getSku();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("skuOptions")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("skuUnitOfMeasures")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("tierPrices")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
 		}
@@ -1399,6 +1837,7 @@ public abstract class BaseSkuResourceTestCase {
 	protected Sku randomSku() throws Exception {
 		return new Sku() {
 			{
+				backOrderAllowed = RandomTestUtil.randomBoolean();
 				depth = RandomTestUtil.randomDouble();
 				discontinued = RandomTestUtil.randomBoolean();
 				discontinuedDate = RandomTestUtil.nextDate();
@@ -1412,9 +1851,8 @@ public abstract class BaseSkuResourceTestCase {
 					RandomTestUtil.randomString());
 				manufacturerPartNumber = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
-				maxOrderQuantity = RandomTestUtil.randomInt();
-				minOrderQuantity = RandomTestUtil.randomInt();
 				neverExpire = RandomTestUtil.randomBoolean();
+				productId = RandomTestUtil.randomLong();
 				published = RandomTestUtil.randomBoolean();
 				purchasable = RandomTestUtil.randomBoolean();
 				replacementSkuExternalReferenceCode = StringUtil.toLowerCase(

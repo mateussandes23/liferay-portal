@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.admin.rest.client.serdes.v1_0;
@@ -249,6 +240,34 @@ public class ObjectFieldSerDes {
 			sb.append("]");
 		}
 
+		if (objectField.getReadOnly() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"readOnly\": ");
+
+			sb.append("\"");
+
+			sb.append(objectField.getReadOnly());
+
+			sb.append("\"");
+		}
+
+		if (objectField.getReadOnlyConditionExpression() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"readOnlyConditionExpression\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(objectField.getReadOnlyConditionExpression()));
+
+			sb.append("\"");
+		}
+
 		if (objectField.getRelationshipType() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -305,6 +324,16 @@ public class ObjectFieldSerDes {
 			sb.append(objectField.getType());
 
 			sb.append("\"");
+		}
+
+		if (objectField.getUnique() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"unique\": ");
+
+			sb.append(objectField.getUnique());
 		}
 
 		sb.append("}");
@@ -446,6 +475,22 @@ public class ObjectFieldSerDes {
 				String.valueOf(objectField.getObjectFieldSettings()));
 		}
 
+		if (objectField.getReadOnly() == null) {
+			map.put("readOnly", null);
+		}
+		else {
+			map.put("readOnly", String.valueOf(objectField.getReadOnly()));
+		}
+
+		if (objectField.getReadOnlyConditionExpression() == null) {
+			map.put("readOnlyConditionExpression", null);
+		}
+		else {
+			map.put(
+				"readOnlyConditionExpression",
+				String.valueOf(objectField.getReadOnlyConditionExpression()));
+		}
+
 		if (objectField.getRelationshipType() == null) {
 			map.put("relationshipType", null);
 		}
@@ -481,6 +526,13 @@ public class ObjectFieldSerDes {
 		}
 		else {
 			map.put("type", String.valueOf(objectField.getType()));
+		}
+
+		if (objectField.getUnique() == null) {
+			map.put("unique", null);
+		}
+		else {
+			map.put("unique", String.valueOf(objectField.getUnique()));
 		}
 
 		return map;
@@ -615,6 +667,21 @@ public class ObjectFieldSerDes {
 						objectFieldSettingsArray);
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "readOnly")) {
+				if (jsonParserFieldValue != null) {
+					objectField.setReadOnly(
+						ObjectField.ReadOnly.create(
+							(String)jsonParserFieldValue));
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "readOnlyConditionExpression")) {
+
+				if (jsonParserFieldValue != null) {
+					objectField.setReadOnlyConditionExpression(
+						(String)jsonParserFieldValue);
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "relationshipType")) {
 				if (jsonParserFieldValue != null) {
 					objectField.setRelationshipType(
@@ -641,6 +708,11 @@ public class ObjectFieldSerDes {
 				if (jsonParserFieldValue != null) {
 					objectField.setType(
 						ObjectField.Type.create((String)jsonParserFieldValue));
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "unique")) {
+				if (jsonParserFieldValue != null) {
+					objectField.setUnique((Boolean)jsonParserFieldValue);
 				}
 			}
 		}

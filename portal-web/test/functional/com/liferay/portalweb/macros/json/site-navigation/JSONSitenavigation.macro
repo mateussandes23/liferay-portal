@@ -1,11 +1,16 @@
 definition {
 
-	macro addSiteNavigationMenu {
-		Variables.assertDefined(parameterList = "${groupName},${siteNavigationMenuName}");
+	@summary = "Default summary"
+	macro addSiteNavigationMenu(groupName = null, site = null, siteNavigationMenuName = null, grandParentGroupName = null, parentGroupName = null) {
+		Variables.assertDefined(parameterList = ${siteNavigationMenuName});
 
-		var groupId = JSONSitenavigationSetter.setGroupId(
-			groupName = ${groupName},
-			site = ${site});
+		if (!(isSet(groupId))) {
+			var groupId = JSONSitenavigationSetter.setGroupId(
+				grandParentGroupName = ${grandParentGroupName},
+				groupName = ${groupName},
+				parentGroupName = ${parentGroupName},
+				site = ${site});
+		}
 
 		if (!(isSet(auto))) {
 			var auto = "true";
@@ -17,20 +22,31 @@ definition {
 			siteNavigationMenuName = ${siteNavigationMenuName});
 	}
 
-	macro addSiteNavigationMenuItem {
-		Variables.assertDefined(parameterList = "${groupName},${siteNavigationMenuItemName},${siteNavigationMenuName},${type}");
+	@summary = "Default summary"
+	macro addSiteNavigationMenuItem(grandParentGroupName = null, type = null, parentSiteNavigationMenuItem = null, privateLayout = null, parentGroupName = null, url = null, groupName = null, site = null, siteNavigationMenuName = null, layoutUuid = null, siteNavigationMenuItemName = null, useNewTab = null) {
+		Variables.assertDefined(parameterList = "${siteNavigationMenuItemName},${siteNavigationMenuName},${type}");
 
-		var groupId = JSONSitenavigationSetter.setGroupId(
-			groupName = ${groupName},
-			site = ${site});
+		if (!(isSet(groupId))) {
+			var groupId = JSONSitenavigationSetter.setGroupId(
+				grandParentGroupName = ${grandParentGroupName},
+				groupName = ${groupName},
+				parentGroupName = ${parentGroupName},
+				site = ${site});
+		}
+
 		var siteNavigationMenuId = JSONSitenavigationSetter.setSiteNavigationMenuId(
+			grandParentGroupName = ${grandParentGroupName},
+			groupId = ${groupId},
 			groupName = ${groupName},
+			parentGroupName = ${parentGroupName},
 			site = ${site},
 			siteNavigationMenuName = ${siteNavigationMenuName});
 
 		if (isSet(parentSiteNavigationMenuItem)) {
 			var parentSiteNavigationMenuItemId = JSONSitenavigationSetter.setSiteNavigationMenuItemId(
+				grandParentGroupName = ${grandParentGroupName},
 				groupName = ${groupName},
+				parentGroupName = ${parentGroupName},
 				siteNavigationMenuItemName = ${parentSiteNavigationMenuItem},
 				siteNavigationMenuName = ${siteNavigationMenuName});
 		}
@@ -55,7 +71,8 @@ definition {
 			typeSettings = ${typeSettings});
 	}
 
-	macro deleteSiteNavigationMenu {
+	@summary = "Default summary"
+	macro deleteSiteNavigationMenu(groupName = null, site = null, siteNavigationMenuName = null) {
 		Variables.assertDefined(parameterList = "${groupName},${siteNavigationMenuName}");
 
 		var siteNavigationMenuId = JSONSitenavigationSetter.setSiteNavigationMenuId(

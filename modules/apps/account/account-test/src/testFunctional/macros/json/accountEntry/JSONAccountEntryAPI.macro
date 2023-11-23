@@ -1,6 +1,7 @@
 definition {
 
-	macro _addAccountEntry {
+	@summary = "Default summary"
+	macro _addAccountEntry(creatorPassword = null, accountEntryDescription = null, accountEntryStatus = null, accountEntryName = null, creatorEmailAddress = null, accountEntryType = null) {
 		Variables.assertDefined(parameterList = "${accountEntryName},${accountEntryType},${accountEntryStatus}");
 
 		var companyId = JSONCompany.getCompanyId();
@@ -25,7 +26,8 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _addAccountEntryOrganization {
+	@summary = "Default summary"
+	macro _addAccountEntryOrganization(organizationId = null, accountEntryId = null) {
 		Variables.assertDefined(parameterList = "${accountEntryId},${organizationId}");
 
 		if (!(isSet(creatorEmailAddress))) {
@@ -49,8 +51,8 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	@summary = "Delete all account entries"
-	macro _deleteAllAccountEntries {
+	@summary = "Default summary"
+	macro _deleteAllAccountEntries() {
 		if (!(isSet(creatorEmailAddress))) {
 			var creatorEmailAddress = "test@liferay.com";
 		}
@@ -80,8 +82,8 @@ definition {
 		}
 	}
 
-	@summary = "Get the 'accountEntryId' from '${accountEntryName}'"
-	macro _getAccountEntryId {
+	@summary = "Default summary"
+	macro _getAccountEntryId(accountEntryName = null) {
 		Variables.assertDefined(parameterList = ${accountEntryName});
 
 		if (!(isSet(creatorEmailAddress))) {
@@ -92,7 +94,7 @@ definition {
 			var creatorPassword = "test";
 		}
 
-		var companyId = JSONCompany.getCompanyId();
+		var companyId = JSONCompany.getCompanyIdNoSelenium();
 		var portalURL = JSONCompany.getPortalURL();
 		var userId = JSONUserSetter.setUserId(userEmailAddress = ${creatorEmailAddress});
 		var curl = '''
@@ -119,8 +121,8 @@ definition {
 		}
 	}
 
-	@summary = "Get the Ids of all account entries"
-	macro _getAccountEntryIds {
+	@summary = "Default summary"
+	macro _getAccountEntryIds() {
 		if (!(isSet(creatorEmailAddress))) {
 			var creatorEmailAddress = "test@liferay.com";
 		}
@@ -147,7 +149,8 @@ definition {
 		return ${accountEntryIds};
 	}
 
-	macro _setAccountExternalReferenceCode {
+	@summary = "Default summary"
+	macro _setAccountExternalReferenceCode(accountEntryName = null, externalReferenceCode = null) {
 		Variables.assertDefined(parameterList = "${accountEntryName},${externalReferenceCode}");
 
 		var portalURL = JSONCompany.getPortalURL();

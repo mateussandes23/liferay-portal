@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.internal.related.models;
@@ -17,6 +8,7 @@ package com.liferay.object.internal.related.models;
 import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.exception.RequiredObjectRelationshipException;
+import com.liferay.object.internal.entry.util.ObjectEntrySearchUtil;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.model.ObjectRelationship;
@@ -31,6 +23,7 @@ import com.liferay.object.system.SystemObjectDefinitionManagerRegistry;
 import com.liferay.petra.sql.dsl.Column;
 import com.liferay.petra.sql.dsl.DSLQueryFactoryUtil;
 import com.liferay.petra.sql.dsl.Table;
+import com.liferay.petra.sql.dsl.expression.Expression;
 import com.liferay.petra.sql.dsl.query.DSLQuery;
 import com.liferay.petra.sql.dsl.query.FromStep;
 import com.liferay.petra.sql.dsl.query.GroupByStep;
@@ -39,9 +32,9 @@ import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
-import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.service.PersistedModelLocalServiceRegistryUtil;
 
 import java.io.Serializable;
 
@@ -62,7 +55,6 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 		ObjectEntryLocalService objectEntryLocalService,
 		ObjectFieldLocalService objectFieldLocalService,
 		ObjectRelationshipLocalService objectRelationshipLocalService,
-		PersistedModelLocalServiceRegistry persistedModelLocalServiceRegistry,
 		SystemObjectDefinitionManager systemObjectDefinitionManager,
 		SystemObjectDefinitionManagerRegistry
 			systemObjectDefinitionManagerRegistry) {
@@ -72,8 +64,6 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 		_objectEntryLocalService = objectEntryLocalService;
 		_objectFieldLocalService = objectFieldLocalService;
 		_objectRelationshipLocalService = objectRelationshipLocalService;
-		_persistedModelLocalServiceRegistry =
-			persistedModelLocalServiceRegistry;
 		_systemObjectDefinitionManager = systemObjectDefinitionManager;
 		_systemObjectDefinitionManagerRegistry =
 			systemObjectDefinitionManagerRegistry;
@@ -84,7 +74,7 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 	@Override
 	public void deleteRelatedModel(
 			long userId, long groupId, long objectRelationshipId,
-			long primaryKey)
+			long primaryKey, String deletionType)
 		throws PortalException {
 
 		ObjectRelationship objectRelationship =
@@ -92,7 +82,7 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 				objectRelationshipId);
 
 		List<T> relatedModels = getRelatedModels(
-			groupId, objectRelationshipId, primaryKey, QueryUtil.ALL_POS,
+			groupId, objectRelationshipId, primaryKey, null, QueryUtil.ALL_POS,
 			QueryUtil.ALL_POS);
 
 		if (relatedModels.isEmpty()) {
@@ -100,7 +90,7 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 		}
 
 		if (Objects.equals(
-				objectRelationship.getDeletionType(),
+				deletionType,
 				ObjectRelationshipConstants.DELETION_TYPE_CASCADE)) {
 
 			SystemObjectDefinitionManager systemObjectDefinitionManager =
@@ -113,7 +103,7 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 			}
 		}
 		else if (Objects.equals(
-					objectRelationship.getDeletionType(),
+					deletionType,
 					ObjectRelationshipConstants.DELETION_TYPE_DISASSOCIATE)) {
 
 			ObjectField objectField = _objectFieldLocalService.getObjectField(
@@ -129,14 +119,10 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 			}
 		}
 		else if (Objects.equals(
-					objectRelationship.getDeletionType(),
+					deletionType,
 					ObjectRelationshipConstants.DELETION_TYPE_PREVENT)) {
 
-			throw new RequiredObjectRelationshipException(
-				StringBundler.concat(
-					"Object relationship ",
-					objectRelationship.getObjectRelationshipId(),
-					" does not allow deletes"));
+			throw new RequiredObjectRelationshipException(objectRelationship);
 		}
 	}
 
@@ -166,6 +152,84 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 	}
 
 	@Override
+	public T fetchRelatedModel(
+			long groupId, long objectRelationshipId, long primaryKey)
+		throws PortalException {
+
+		ObjectRelationship objectRelationship =
+			_objectRelationshipLocalService.getObjectRelationship(
+				objectRelationshipId);
+
+		ObjectDefinition relatedObjectDefinition =
+			_objectDefinitionLocalService.getObjectDefinition(
+				objectRelationship.getObjectDefinitionId2());
+
+		if (relatedObjectDefinition.isUnmodifiableSystemObject()) {
+			throw new UnsupportedOperationException();
+		}
+
+		PersistedModelLocalService persistedModelLocalService =
+			PersistedModelLocalServiceRegistryUtil.
+				getPersistedModelLocalService(
+					_systemObjectDefinitionManager.getModelClassName());
+
+		DynamicObjectDefinitionTable dynamicObjectDefinitionTable =
+			_getDynamicObjectDefinitionTable(
+				relatedObjectDefinition.getObjectDefinitionId());
+
+		ObjectDefinition objectDefinition =
+			_objectDefinitionLocalService.getObjectDefinition(
+				objectRelationship.getObjectDefinitionId1());
+
+		Column<DynamicObjectDefinitionTable, Long> column =
+			(Column<DynamicObjectDefinitionTable, Long>)
+				dynamicObjectDefinitionTable.getColumn(
+					StringBundler.concat(
+						"r_", objectRelationship.getName(), "_",
+						objectDefinition.getPKObjectFieldName()));
+
+		if (column == null) {
+			dynamicObjectDefinitionTable =
+				_getExtensionDynamicObjectDefinitionTable(
+					relatedObjectDefinition.getObjectDefinitionId());
+		}
+
+		FromStep fromStep = DSLQueryFactoryUtil.selectDistinct(_table);
+		ObjectField objectField = _objectFieldLocalService.getObjectField(
+			objectRelationship.getObjectFieldId2());
+		Column<DynamicObjectDefinitionTable, Long> primaryKeyColumn =
+			dynamicObjectDefinitionTable.getPrimaryKeyColumn();
+
+		List<T> relatedModels = persistedModelLocalService.dslQuery(
+			fromStep.from(
+				_table
+			).innerJoinON(
+				dynamicObjectDefinitionTable,
+				_systemObjectDefinitionManager.getPrimaryKeyColumn(
+				).eq(
+					(Expression<Long>)dynamicObjectDefinitionTable.getColumn(
+						objectField.getDBColumnName())
+				)
+			).where(
+				primaryKeyColumn.eq(
+					primaryKey
+				).and(
+					_table.getColumn(
+						"companyId"
+					).eq(
+						groupId
+					)
+				)
+			));
+
+		if (relatedModels.isEmpty()) {
+			return null;
+		}
+
+		return relatedModels.get(0);
+	}
+
+	@Override
 	public String getClassName() {
 		return _systemObjectDefinitionManager.getModelClassName();
 	}
@@ -182,17 +246,19 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 
 	@Override
 	public List<T> getRelatedModels(
-			long groupId, long objectRelationshipId, long primaryKey, int start,
-			int end)
+			long groupId, long objectRelationshipId, long primaryKey,
+			String search, int start, int end)
 		throws PortalException {
 
 		PersistedModelLocalService persistedModelLocalService =
-			_persistedModelLocalServiceRegistry.getPersistedModelLocalService(
-				_systemObjectDefinitionManager.getModelClassName());
+			PersistedModelLocalServiceRegistryUtil.
+				getPersistedModelLocalService(
+					_systemObjectDefinitionManager.getModelClassName());
 
 		DSLQuery dslQuery = _getGroupByStep(
-			_getDynamicObjectDefinitionTable(), groupId, objectRelationshipId,
-			primaryKey, DSLQueryFactoryUtil.selectDistinct(_table)
+			_getDynamicObjectDefinitionTable(),
+			DSLQueryFactoryUtil.selectDistinct(_table), groupId,
+			objectRelationshipId, primaryKey, search
 		).limit(
 			start, end
 		);
@@ -202,98 +268,61 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 
 	@Override
 	public int getRelatedModelsCount(
-			long groupId, long objectRelationshipId, long primaryKey)
+			long groupId, long objectRelationshipId, long primaryKey,
+			String search)
 		throws PortalException {
 
 		DynamicObjectDefinitionTable dynamicObjectDefinitionTable =
 			_getDynamicObjectDefinitionTable();
 
 		PersistedModelLocalService persistedModelLocalService =
-			_persistedModelLocalServiceRegistry.getPersistedModelLocalService(
-				_systemObjectDefinitionManager.getModelClassName());
+			PersistedModelLocalServiceRegistryUtil.
+				getPersistedModelLocalService(
+					_systemObjectDefinitionManager.getModelClassName());
 
 		return persistedModelLocalService.dslQueryCount(
 			_getGroupByStep(
-				dynamicObjectDefinitionTable, groupId, objectRelationshipId,
-				primaryKey,
+				dynamicObjectDefinitionTable,
 				DSLQueryFactoryUtil.countDistinct(
-					dynamicObjectDefinitionTable.getPrimaryKeyColumn())));
+					dynamicObjectDefinitionTable.getPrimaryKeyColumn()),
+				groupId, objectRelationshipId, primaryKey, search));
 	}
 
 	@Override
 	public List<T> getUnrelatedModels(
 			long companyId, long groupId, ObjectDefinition objectDefinition,
+			long objectEntryId, long objectRelationshipId, int start, int end)
+		throws PortalException {
+
+		DSLQuery dslQuery = _getUnrelatedModelsGroupByStep(
+			companyId, DSLQueryFactoryUtil.select(_table), groupId,
+			objectDefinition, objectRelationshipId
+		).limit(
+			start, end
+		);
+
+		PersistedModelLocalService persistedModelLocalService =
+			PersistedModelLocalServiceRegistryUtil.
+				getPersistedModelLocalService(objectDefinition.getClassName());
+
+		return persistedModelLocalService.dslQuery(dslQuery);
+	}
+
+	@Override
+	public int getUnrelatedModelsCount(
+			long companyId, long groupId, ObjectDefinition objectDefinition,
 			long objectEntryId, long objectRelationshipId)
 		throws PortalException {
 
-		Column<?, Long> companyIdColumn = (Column<?, Long>)_table.getColumn(
-			"companyId");
-
-		ObjectRelationship objectRelationship =
-			_objectRelationshipLocalService.getObjectRelationship(
-				objectRelationshipId);
-
-		ObjectDefinition objectDefinition1 =
-			_objectDefinitionLocalService.getObjectDefinition(
-				objectRelationship.getObjectDefinitionId1());
+		DSLQuery dslQuery = _getUnrelatedModelsGroupByStep(
+			companyId, DSLQueryFactoryUtil.count(), groupId, objectDefinition,
+			objectRelationshipId);
 
 		PersistedModelLocalService persistedModelLocalService =
-			_persistedModelLocalServiceRegistry.getPersistedModelLocalService(
-				objectDefinition.getClassName());
+			PersistedModelLocalServiceRegistryUtil.
+				getPersistedModelLocalService(objectDefinition.getClassName());
 
-		return persistedModelLocalService.dslQuery(
-			DSLQueryFactoryUtil.select(
-				_table
-			).from(
-				_table
-			).where(
-				companyIdColumn.eq(
-					companyId
-				).and(
-					() -> {
-						Column<?, Long> groupIdColumn = _table.getColumn(
-							"groupId");
-
-						if ((groupIdColumn == null) ||
-							Objects.equals(
-								ObjectDefinitionConstants.SCOPE_COMPANY,
-								objectDefinition1.getScope())) {
-
-							return null;
-						}
-
-						return groupIdColumn.eq(groupId);
-					}
-				).and(
-					() -> {
-						Column<?, Long> primaryKeyColumn = _table.getColumn(
-							objectDefinition.getPKObjectFieldDBColumnName());
-
-						DynamicObjectDefinitionTable
-							dynamicObjectDefinitionTable =
-								_getDynamicObjectDefinitionTable();
-						ObjectField objectField =
-							_objectFieldLocalService.getObjectField(
-								objectRelationship.getObjectFieldId2());
-
-						Column<DynamicObjectDefinitionTable, Long>
-							foreignKeyColumn =
-								(Column<DynamicObjectDefinitionTable, Long>)
-									dynamicObjectDefinitionTable.getColumn(
-										objectField.getDBColumnName());
-
-						return primaryKeyColumn.notIn(
-							DSLQueryFactoryUtil.select(
-								dynamicObjectDefinitionTable.
-									getPrimaryKeyColumn()
-							).from(
-								dynamicObjectDefinitionTable
-							).where(
-								foreignKeyColumn.neq(0L)
-							));
-					}
-				)
-			));
+		return persistedModelLocalService.dslQueryCount(dslQuery);
 	}
 
 	private DynamicObjectDefinitionTable _getDynamicObjectDefinitionTable()
@@ -310,10 +339,46 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 			_objectDefinition.getExtensionDBTableName());
 	}
 
+	private DynamicObjectDefinitionTable _getDynamicObjectDefinitionTable(
+			long objectDefinitionId)
+		throws PortalException {
+
+		// TODO Cache this across the cluster with proper invalidation when the
+		// object definition or its object fields are updated
+
+		ObjectDefinition objectDefinition =
+			_objectDefinitionLocalService.getObjectDefinition(
+				objectDefinitionId);
+
+		return new DynamicObjectDefinitionTable(
+			objectDefinition,
+			_objectFieldLocalService.getObjectFields(
+				objectDefinitionId, objectDefinition.getDBTableName()),
+			objectDefinition.getDBTableName());
+	}
+
+	private DynamicObjectDefinitionTable
+			_getExtensionDynamicObjectDefinitionTable(long objectDefinitionId)
+		throws PortalException {
+
+		// TODO Cache this across the cluster with proper invalidation when the
+		// object definition or its object fields are updated
+
+		ObjectDefinition objectDefinition =
+			_objectDefinitionLocalService.getObjectDefinition(
+				objectDefinitionId);
+
+		return new DynamicObjectDefinitionTable(
+			objectDefinition,
+			_objectFieldLocalService.getObjectFields(
+				objectDefinitionId, objectDefinition.getExtensionDBTableName()),
+			objectDefinition.getExtensionDBTableName());
+	}
+
 	private GroupByStep _getGroupByStep(
 			DynamicObjectDefinitionTable dynamicObjectDefinitionTable,
-			long groupId, long objectRelationshipId, long primaryKey,
-			FromStep fromStep)
+			FromStep fromStep, long groupId, long objectRelationshipId,
+			long primaryKey, String search)
 		throws PortalException {
 
 		Column<?, Long> primaryKeyColumn = null;
@@ -376,6 +441,77 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 
 					return companyIdColumn.eq(objectField.getCompanyId());
 				}
+			).and(
+				ObjectEntrySearchUtil.getRelatedModelsPredicate(
+					dynamicObjectDefinitionTable,
+					_objectDefinitionLocalService.fetchObjectDefinition(
+						objectRelationship.getObjectDefinitionId2()),
+					_objectFieldLocalService, search)
+			)
+		);
+	}
+
+	private GroupByStep _getUnrelatedModelsGroupByStep(
+			long companyId, FromStep fromStep, long groupId,
+			ObjectDefinition objectDefinition, long objectRelationshipId)
+		throws PortalException {
+
+		Column<?, Long> companyIdColumn = (Column<?, Long>)_table.getColumn(
+			"companyId");
+
+		ObjectRelationship objectRelationship =
+			_objectRelationshipLocalService.getObjectRelationship(
+				objectRelationshipId);
+
+		ObjectDefinition objectDefinition1 =
+			_objectDefinitionLocalService.getObjectDefinition(
+				objectRelationship.getObjectDefinitionId1());
+
+		return fromStep.from(
+			_table
+		).where(
+			companyIdColumn.eq(
+				companyId
+			).and(
+				() -> {
+					Column<?, Long> groupIdColumn = _table.getColumn("groupId");
+
+					if ((groupIdColumn == null) ||
+						Objects.equals(
+							ObjectDefinitionConstants.SCOPE_COMPANY,
+							objectDefinition1.getScope())) {
+
+						return null;
+					}
+
+					return groupIdColumn.eq(groupId);
+				}
+			).and(
+				() -> {
+					Column<?, Long> primaryKeyColumn = _table.getColumn(
+						objectDefinition.getPKObjectFieldDBColumnName());
+
+					DynamicObjectDefinitionTable dynamicObjectDefinitionTable =
+						_getDynamicObjectDefinitionTable();
+					ObjectField objectField =
+						_objectFieldLocalService.getObjectField(
+							objectRelationship.getObjectFieldId2());
+
+					Column<DynamicObjectDefinitionTable, Long>
+						foreignKeyColumn =
+							(Column<DynamicObjectDefinitionTable, Long>)
+								dynamicObjectDefinitionTable.getColumn(
+									objectField.getDBColumnName());
+
+					return primaryKeyColumn.notIn(
+						DSLQueryFactoryUtil.select(
+							dynamicObjectDefinitionTable.getPrimaryKeyColumn()
+						).from(
+							dynamicObjectDefinitionTable
+						).where(
+							foreignKeyColumn.neq(0L)
+						));
+				}
 			)
 		);
 	}
@@ -386,8 +522,6 @@ public class SystemObject1toMObjectRelatedModelsProviderImpl
 	private final ObjectFieldLocalService _objectFieldLocalService;
 	private final ObjectRelationshipLocalService
 		_objectRelationshipLocalService;
-	private final PersistedModelLocalServiceRegistry
-		_persistedModelLocalServiceRegistry;
 	private final SystemObjectDefinitionManager _systemObjectDefinitionManager;
 	private final SystemObjectDefinitionManagerRegistry
 		_systemObjectDefinitionManagerRegistry;

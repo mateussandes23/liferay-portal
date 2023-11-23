@@ -1,7 +1,7 @@
 definition {
 
-	@summary = "Directly calls the JSON WS API to add a group"
-	macro _hasPortlet {
+	@summary = "Default summary"
+	macro _hasPortlet(portletId = null) {
 		Variables.assertDefined(parameterList = ${portletId});
 
 		var portalURL = JSONCompany.getPortalURL();

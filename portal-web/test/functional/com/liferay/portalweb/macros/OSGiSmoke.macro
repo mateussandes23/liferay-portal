@@ -1,6 +1,7 @@
 definition {
 
-	macro Smoke {
+	@summary = "Default summary"
+	macro Smoke(appName = null, portletName = null) {
 		ApplicationsMenu.gotoPortlet(
 			category = "System",
 			panel = "Control Panel",
@@ -25,9 +26,7 @@ definition {
 
 		AssertTextPresent.assertTextPresent(value1 = ${appName});
 
-		AntCommand.antCommand(
-			locator1 = "build-test.xml",
-			value1 = "remove-plugin -Dplugin.name=${portletName}");
+		AntCommands.runCommand("build-test.xml", "remove-plugin -Dplugin.name=${portletName}");
 	}
 
 }

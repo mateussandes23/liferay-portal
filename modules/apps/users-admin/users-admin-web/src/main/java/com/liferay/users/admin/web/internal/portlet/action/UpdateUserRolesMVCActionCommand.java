@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.users.admin.web.internal.portlet.action;
@@ -37,7 +28,7 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserService;
-import com.liferay.portal.kernel.service.permission.OrganizationPermission;
+import com.liferay.portal.kernel.service.permission.OrganizationPermissionUtil;
 import com.liferay.portal.kernel.service.permission.PortletPermissionUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.util.ArrayUtil;
@@ -48,8 +39,8 @@ import com.liferay.portal.kernel.util.JavaConstants;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portlet.usersadmin.util.UsersAdminUtil;
 import com.liferay.users.admin.constants.UsersAdminPortletKeys;
-import com.liferay.users.admin.kernel.util.UsersAdmin;
 
 import java.util.Calendar;
 import java.util.List;
@@ -95,7 +86,7 @@ public class UpdateUserRolesMVCActionCommand extends BaseMVCActionCommand {
 
 			birthdayCal.setTime(user.getBirthday());
 
-			long[] roleIds = _usersAdmin.getRoleIds(actionRequest);
+			long[] roleIds = UsersAdminUtil.getRoleIds(actionRequest);
 
 			_validate(user, roleIds);
 
@@ -115,7 +106,8 @@ public class UpdateUserRolesMVCActionCommand extends BaseMVCActionCommand {
 				(deleteGroupRolesGroupIds != null) ||
 				(deleteGroupRolesRoleIds != null)) {
 
-				userGroupRoles = _usersAdmin.getUserGroupRoles(actionRequest);
+				userGroupRoles = UsersAdminUtil.getUserGroupRoles(
+					actionRequest);
 			}
 
 			ServiceContext serviceContext = ServiceContextFactory.getInstance(
@@ -220,7 +212,7 @@ public class UpdateUserRolesMVCActionCommand extends BaseMVCActionCommand {
 			}
 
 			if ((organizationId > 0) &&
-				!_organizationPermission.contains(
+				!OrganizationPermissionUtil.contains(
 					permissionChecker, organizationId, ActionKeys.VIEW)) {
 
 				PortletURL portletURL = _portal.getControlPanelPortletURL(
@@ -260,9 +252,6 @@ public class UpdateUserRolesMVCActionCommand extends BaseMVCActionCommand {
 	}
 
 	@Reference
-	private OrganizationPermission _organizationPermission;
-
-	@Reference
 	private Portal _portal;
 
 	@Reference
@@ -270,9 +259,6 @@ public class UpdateUserRolesMVCActionCommand extends BaseMVCActionCommand {
 
 	@Reference
 	private UserLocalService _userLocalService;
-
-	@Reference
-	private UsersAdmin _usersAdmin;
 
 	@Reference
 	private UserService _userService;

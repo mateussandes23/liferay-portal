@@ -14,9 +14,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -132,7 +132,8 @@ definition {
 	@priority = 4
 	test ViewReportEmailNewConfiguration {
 		property test.assert.javascript.errors = "false";
-		property test.name.skip.portal.instance = "ReportsUsecase#ViewReportEmailNewConfiguration";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		var portalURL = PropsUtil.get("portal.url");
 
@@ -193,38 +194,19 @@ definition {
 			reportFormat = "pdf",
 			reportsDefinitionName = "Reports Definition Name");
 
-		Pause(locator1 = 30000);
+		Pause(value1 = 30000);
 
 		Gmail.login(
 			userEmailAddress = PropsUtil.get("email.address.4"),
 			userPassword = PropsUtil.get("email.password.4"));
 
-		Gmail.gotoHtmlMode();
-
-		Gmail.viewMail(
-			emailFromUserName = "Liferay QA",
-			gmailAssetType = "New Report From QA: reports_admin_template_source_sample_class_name.pdf",
-			gmailMessageBody = "You have a new report from your friends in QA.",
-			gmailMessageTitle = "New Report From QA: reports_admin_template_source_sample_class_name.pdf");
-
-		Gmail.gotoHtmlMode();
+		Gmail.gotoMail(gmailMessageTitle = "New Report From QA: reports_admin_template_source_sample_class_name.pdf");
 
 		Gmail.deleteSpecificMail(gmailMessageTitleList = "New Report From QA: reports_admin_template_source_sample_class_name.pdf");
 
-		Gmail.logoutAndLogin(
-			userEmailAddress = PropsUtil.get("email.address.3"),
-			userPassword = PropsUtil.get("email.password.3"));
+		TestUtils.hardRefresh();
 
-		Gmail.gotoHtmlMode();
-
-		Gmail.viewMail(
-			emailFromUserName = "Liferay QA",
-			gmailAssetType = "New Report From QA: reports_admin_template_source_sample_class_name.pdf",
-			gmailMessageAttachment = "reports_admin_template_source_sample_class_name.pdf",
-			gmailMessageBody = "Please review the attached report from your friends in QA!",
-			gmailMessageTitle = "New Report From QA: reports_admin_template_source_sample_class_name.pdf");
-
-		Gmail.gotoHtmlMode();
+		Gmail.gotoMail(gmailMessageTitle = "New Report From QA: reports_admin_template_source_sample_class_name.pdf");
 
 		Gmail.deleteSpecificMail(gmailMessageTitleList = "New Report From QA: reports_admin_template_source_sample_class_name.pdf");
 

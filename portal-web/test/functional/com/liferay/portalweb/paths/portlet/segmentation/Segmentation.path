@@ -12,7 +12,12 @@
 <tbody>
 <tr>
 	<td>ADD_FIELD_POSITION</td>
-	<td>//*[contains(@class, 'criteria-group-item-root')]//*[contains(@class, 'empty-drop-zone-root')]/div[1] | //*[contains(@class, 'edit-container')]</td>
+	<td>//*[contains(@class, 'criteria-group-item-root')]/div[1] | //*[contains(@class, 'edit-container')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ADD_FIELD_POSITION_N</td>
+	<td>xpath=(//*[contains(@class, 'criteria-group-item-root')]/div[1])[${indexNumber}]</td>
 	<td></td>
 </tr>
 <tr>
@@ -22,12 +27,17 @@
 </tr>
 <tr>
 	<td>ADD_FIELD_POSITION_EMPTY</td>
-	<td>//div[contains(@class, 'empty-drop-zone-dashed')] //*[contains(@class, 'drop-zone-target')]</td>
+	<td>//div[contains(@class, 'empty-drop-zone--dashed')]</td>
 	<td></td>
 </tr>
 <tr>
 	<td>ADD_FIELD_TYPE</td>
 	<td>//*[contains(@class, 'criteria-sidebar-item-root') and (text()='${key_propertyOption}')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>ADD_FIELD_TYPE_VISIBLE</td>
+	<td>//button[contains(@class,'panel-header')][contains(@class,'show')]//following-sibling::div//*[contains(@class, 'criteria-sidebar-item-root') and (text()='${key_propertyOption}')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -91,6 +101,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>EMPTY_DROP_ZONE_DASHED</td>
+	<td>//div[contains(@class,'empty-drop-zone--dashed')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>ENABLE_ASSIGN_ROLES_SEGMENTS_CHECKBOX</td>
 	<td>//input[contains(@class, 'custom-control-input') and contains(@name, 'roleSegmentation')]</td>
 	<td></td>
@@ -133,11 +148,6 @@
 <tr>
 	<td>SCOPE_TABLE_SITE</td>
 	<td>//*[contains(@class,'lfr-name-column')]//*[contains(.,'${segmentName}')]/../../*[contains(@class,'lfr-scope-column') and normalize-space(text())='${siteScope}']</td>
-	<td></td>
-</tr>
-<tr>
-	<td>SEGMENT_FIELDS_TYPE</td>
-	<td>//a[contains(@class, 'sidebar-collapse-header') and contains(text(),'${key_typeName}')]</td>
 	<td></td>
 </tr>
 <tr>

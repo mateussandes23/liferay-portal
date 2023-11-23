@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.analytics.batch.exportimport.internal.dto.v1_0.converter;
@@ -28,6 +19,7 @@ import com.liferay.expando.kernel.model.ExpandoTable;
 import com.liferay.expando.kernel.model.ExpandoTableConstants;
 import com.liferay.expando.kernel.service.ExpandoColumnLocalService;
 import com.liferay.expando.kernel.service.ExpandoTableLocalService;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactory;
@@ -39,7 +31,6 @@ import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.model.ShardedModel;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
-import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -105,17 +96,20 @@ public class DXPEntityDTOConverterImpl implements DXPEntityDTOConverter {
 				{
 					name = entry.getKey();
 
-					if (entry.getValue() instanceof Date) {
-						Date date = (Date)entry.getValue();
+					setValue(
+						() -> {
+							if (entry.getValue() instanceof Date) {
+								Date date = (Date)entry.getValue();
 
-						value = String.valueOf(date.getTime());
-					}
-					else if (Validator.isNotNull(entry.getValue())) {
-						value = String.valueOf(entry.getValue());
-					}
-					else {
-						value = StringPool.BLANK;
-					}
+								return String.valueOf(date.getTime());
+							}
+
+							if (Validator.isNull(entry.getValue())) {
+								return StringPool.BLANK;
+							}
+
+							return String.valueOf(entry.getValue());
+						});
 				}
 			};
 
@@ -184,8 +178,7 @@ public class DXPEntityDTOConverterImpl implements DXPEntityDTOConverter {
 					new Field() {
 						{
 							name = "columnId";
-							value = GetterUtil.getString(
-								expandoColumn.getColumnId());
+							value = String.valueOf(expandoColumn.getColumnId());
 						}
 					});
 				add(
@@ -202,8 +195,7 @@ public class DXPEntityDTOConverterImpl implements DXPEntityDTOConverter {
 
 							Date modifiedDate = expandoColumn.getModifiedDate();
 
-							value = GetterUtil.getString(
-								modifiedDate.getTime());
+							value = String.valueOf(modifiedDate.getTime());
 						}
 					});
 				add(
@@ -333,6 +325,42 @@ public class DXPEntityDTOConverterImpl implements DXPEntityDTOConverter {
 					ListUtil.fromArray(
 						analyticsConfiguration.syncedContactFieldNames()),
 					includeAttributeNames));
+
+			fields.add(
+				new Field() {
+					{
+						name = "groupIds";
+						value = _getGroupIds(user);
+					}
+				});
+			fields.add(
+				new Field() {
+					{
+						name = "organizationIds";
+						value = _getOrganizationIds(user);
+					}
+				});
+			fields.add(
+				new Field() {
+					{
+						name = "roleIds";
+						value = _getRoleIds(user);
+					}
+				});
+			fields.add(
+				new Field() {
+					{
+						name = "teamIds";
+						value = _getTeamIds(user);
+					}
+				});
+			fields.add(
+				new Field() {
+					{
+						name = "userGroupIds";
+						value = _getUserGroupIds(user);
+					}
+				});
 		}
 
 		_addFieldAttributes(baseModel, fields, includeAttributeNames);
@@ -366,6 +394,85 @@ public class DXPEntityDTOConverterImpl implements DXPEntityDTOConverter {
 		}
 
 		return fields.toArray(new Field[0]);
+	}
+
+	private String _getGroupIds(User user) {
+		try {
+			long[] ids = TransformUtil.transformToLongArray(
+				user.getSiteGroups(), Group::getGroupId);
+
+			return "[" + StringUtil.merge(ids, ",") + "]";
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Unable to get group ids for user " + user.getUserId(),
+					exception);
+			}
+
+			return "[]";
+		}
+	}
+
+	private String _getOrganizationIds(User user) {
+		try {
+			return "[" + StringUtil.merge(user.getOrganizationIds(), ",") + "]";
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Unable to get organization ids for user " +
+						user.getUserId(),
+					exception);
+			}
+
+			return "[]";
+		}
+	}
+
+	private String _getRoleIds(User user) {
+		try {
+			return "[" + StringUtil.merge(user.getRoleIds(), ",") + "]";
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Unable to get role ids for user " + user.getUserId(),
+					exception);
+			}
+
+			return "[]";
+		}
+	}
+
+	private String _getTeamIds(User user) {
+		try {
+			return "[" + StringUtil.merge(user.getTeamIds(), ",") + "]";
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Unable to get team ids for user " + user.getUserId(),
+					exception);
+			}
+
+			return "[]";
+		}
+	}
+
+	private String _getUserGroupIds(User user) {
+		try {
+			return "[" + StringUtil.merge(user.getUserGroupIds(), ",") + "]";
+		}
+		catch (Exception exception) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Unable to get user group ids for user " + user.getUserId(),
+					exception);
+			}
+
+			return "[]";
+		}
 	}
 
 	private boolean _isCustomField(String className, long tableId) {

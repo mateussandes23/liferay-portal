@@ -6,13 +6,12 @@ exports[`Field Radio has a helptext 1`] = `
     aria-labelledby="radioField_fieldDetails"
     class="form-group hide"
     data-field-name="radioField"
-    tabindex="0"
   >
     <div
       class="ddm__radio"
     >
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -34,7 +33,7 @@ exports[`Field Radio has a helptext 1`] = `
         </label>
       </div>
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -95,7 +94,6 @@ exports[`Field Radio has a label 1`] = `
     <label
       aria-labelledby="radioField_fieldDetails"
       class="ddm-label"
-      tabindex="0"
     >
       label
     </label>
@@ -103,7 +101,7 @@ exports[`Field Radio has a label 1`] = `
       class="ddm__radio"
     >
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -125,7 +123,7 @@ exports[`Field Radio has a label 1`] = `
         </label>
       </div>
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -173,13 +171,12 @@ exports[`Field Radio has a placeholder 1`] = `
     aria-labelledby="radioField_fieldDetails"
     class="form-group hide"
     data-field-name="radioField"
-    tabindex="0"
   >
     <div
       class="ddm__radio"
     >
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -201,7 +198,7 @@ exports[`Field Radio has a placeholder 1`] = `
         </label>
       </div>
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -243,13 +240,12 @@ exports[`Field Radio has a value 1`] = `
     aria-labelledby="radioField_fieldDetails"
     class="form-group hide"
     data-field-name="radioField"
-    tabindex="0"
   >
     <div
       class="ddm__radio"
     >
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -271,7 +267,7 @@ exports[`Field Radio has a value 1`] = `
         </label>
       </div>
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -313,13 +309,12 @@ exports[`Field Radio has an id 1`] = `
     aria-labelledby="Id_fieldDetails"
     class="form-group hide"
     data-field-name="radioField"
-    tabindex="0"
   >
     <div
       class="ddm__radio"
     >
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -341,7 +336,7 @@ exports[`Field Radio has an id 1`] = `
         </label>
       </div>
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -383,13 +378,12 @@ exports[`Field Radio is not editable 1`] = `
     aria-labelledby="radioField_fieldDetails"
     class="form-group hide"
     data-field-name="radioField"
-    tabindex="0"
   >
     <div
       class="ddm__radio"
     >
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -412,7 +406,7 @@ exports[`Field Radio is not editable 1`] = `
         </label>
       </div>
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -455,16 +449,16 @@ exports[`Field Radio is not required 1`] = `
     aria-labelledby="radioField_fieldDetails"
     class="form-group hide"
     data-field-name="radioField"
-    tabindex="0"
   >
     <div
       class="ddm__radio"
     >
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
+            aria-required="false"
             class="custom-control-input"
             name="radioField_0"
             role="radio"
@@ -483,10 +477,11 @@ exports[`Field Radio is not required 1`] = `
         </label>
       </div>
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
+            aria-required="false"
             class="custom-control-input"
             name="radioField_1"
             role="radio"
@@ -528,7 +523,6 @@ exports[`Field Radio renders Label if showLabel is true 1`] = `
     <label
       aria-labelledby="radioField_fieldDetails"
       class="ddm-label"
-      tabindex="0"
     >
       text
     </label>
@@ -536,7 +530,7 @@ exports[`Field Radio renders Label if showLabel is true 1`] = `
       class="ddm__radio"
     >
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -558,7 +552,7 @@ exports[`Field Radio renders Label if showLabel is true 1`] = `
         </label>
       </div>
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -606,7 +600,6 @@ exports[`Field Radio renders no options when options is empty 1`] = `
     aria-labelledby="radioField_fieldDetails"
     class="form-group hide"
     data-field-name="radioField"
-    tabindex="0"
   >
     <div
       class="ddm__radio"
@@ -631,13 +624,12 @@ exports[`Field Radio renders options 1`] = `
     aria-labelledby="radioField_fieldDetails"
     class="form-group hide"
     data-field-name="radioField"
-    tabindex="0"
   >
     <div
       class="ddm__radio"
     >
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input
@@ -659,7 +651,7 @@ exports[`Field Radio renders options 1`] = `
         </label>
       </div>
       <div
-        class="custom-control custom-radio"
+        class="custom-control custom-radio custom-control-outside"
       >
         <label>
           <input

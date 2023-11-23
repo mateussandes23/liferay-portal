@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.dynamic.data.mapping.internal.io.exporter;
@@ -41,11 +32,10 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.util.FastDateFormatFactoryUtil;
-import com.liferay.portal.kernel.util.Html;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
-import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import java.text.Format;
@@ -148,7 +138,7 @@ public class DDMFormInstanceRecordExporterImpl
 			String value = ddmFormFieldValueRenderer.render(
 				ddmFormFieldValue, locale);
 
-			if (Validator.isNotNull(value)) {
+			if (value != null) {
 				sb.append(value);
 				sb.append(StringPool.COMMA_AND_SPACE);
 			}
@@ -156,7 +146,7 @@ public class DDMFormInstanceRecordExporterImpl
 
 		sb.setIndex(sb.index() - 1);
 
-		return _html.unescape(sb.toString());
+		return HtmlUtil.unescape(sb.toString());
 	}
 
 	protected List<Map<String, String>> getDDMFormFieldValues(
@@ -321,9 +311,6 @@ public class DDMFormInstanceRecordExporterImpl
 	private static final String _KEY_MODIFIED_DATE = "modifiedDate";
 
 	private static final String _KEY_STATUS = "status";
-
-	@Reference
-	private Html _html;
 
 	@Reference
 	private Language _language;

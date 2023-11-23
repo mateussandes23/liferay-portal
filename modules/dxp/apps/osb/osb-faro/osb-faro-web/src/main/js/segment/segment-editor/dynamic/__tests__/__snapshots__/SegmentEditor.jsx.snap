@@ -51,7 +51,7 @@ exports[`SegmentEditor should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#pencil"
+                        href="#pencil"
                       />
                     </svg>
                   </button>
@@ -102,7 +102,7 @@ exports[`SegmentEditor should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#question-circle-full"
+                        href="#question-circle-full"
                       />
                     </svg>
                   </span>
@@ -121,13 +121,10 @@ exports[`SegmentEditor should render 1`] = `
                     <div
                       class="total-members-count"
                     >
-                      <div
-                        class="spinner-root"
-                      >
-                        <span
-                          class="loading-animation loading-animation-dotted loading-animation-sm"
-                        />
-                      </div>
+                      <span
+                        aria-hidden="true"
+                        class="loading-root center loading-animation"
+                      />
                     </div>
                   </div>
                 </div>
@@ -135,6 +132,7 @@ exports[`SegmentEditor should render 1`] = `
                   class="btn-group-item"
                 >
                   <button
+                    aria-label="View Members"
                     class="button-root preview-criteria btn btn-outline-borderless btn-sm btn-outline-secondary"
                     data-testid="preview-criteria-button"
                     data-tooltip="true"
@@ -152,7 +150,7 @@ exports[`SegmentEditor should render 1`] = `
                         role="presentation"
                       >
                         <use
-                          xlink:href="#view"
+                          href="#view"
                         />
                       </svg>
                     </span>
@@ -232,7 +230,7 @@ exports[`SegmentEditor should render 1`] = `
                               role="presentation"
                             >
                               <use
-                                xlink:href="#ac-rule"
+                                href="#ac-rule"
                               />
                             </svg>
                             Drag and drop criterion from the right to add rules.
@@ -245,7 +243,7 @@ exports[`SegmentEditor should render 1`] = `
                               role="presentation"
                             >
                               <use
-                                xlink:href="#ac-group"
+                                href="#ac-group"
                               />
                             </svg>
                             Drag and drop over an existing criteria to form groups.

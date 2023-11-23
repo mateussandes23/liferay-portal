@@ -6,8 +6,8 @@ import Form from 'shared/components/form';
 import NoResultsDisplay from 'shared/components/NoResultsDisplay';
 import React, {useContext, useState} from 'react';
 import URLConstants from 'shared/util/url-constants';
-import {ClaySelectWithOption} from '@clayui/select';
 import {compose} from 'shared/hoc';
+import {Containers} from 'shared/components/download-report/DownloadPDFReport';
 import {
 	DAY,
 	INTERVAL_OPTIONS,
@@ -16,6 +16,7 @@ import {
 } from 'sites/components/cohort-analysis/utils';
 import {graphql} from '@apollo/react-hoc';
 import {mapPropsToOptions, mapResultToProps} from './mappers/cohort-query';
+import {Option, Picker} from '@clayui/core';
 import {withError, withLoading} from 'shared/hoc/util';
 
 const withEmpty = Component => ({empty, ...otherProps}) => {
@@ -58,7 +59,7 @@ const CohortAnalysisWithData = compose(
 	}),
 	withError({page: false}),
 	withEmpty,
-	withLoading({alignCenter: true, page: false})
+	withLoading()
 )(CohortAnalysis);
 
 const CohortAnalysisCard = () => {
@@ -67,24 +68,15 @@ const CohortAnalysisCard = () => {
 	const [interval, setInterval] = useState(DAY);
 	const [visitorsType, setVisitorsType] = useState(VISITORS);
 
-	const handleIntervalSelect = event => {
-		const {value} = event.target;
-
-		setInterval(value);
-	};
-
-	const handleVisitorsTypeSelect = event => {
-		const {value} = event.target;
-
-		setVisitorsType(value);
-	};
-
 	const {
 		params: {channelId}
 	} = router;
 
 	return (
-		<Card className='cohort-analysis-card-root'>
+		<Card
+			className='cohort-analysis-card-root'
+			id={Containers.CohortAnalysisCard}
+		>
 			<Card.Header>
 				<Card.Title>
 					{Liferay.Language.get('cohort-analysis')}
@@ -94,12 +86,16 @@ const CohortAnalysisCard = () => {
 			<Card.Body>
 				<Form.Group autoFit>
 					<Form.GroupItem shrink>
-						<ClaySelectWithOption
+						<Picker
 							className='visitors-type-select'
-							onChange={handleVisitorsTypeSelect}
-							options={VISITORS_TYPE_OPTIONS}
-							value={visitorsType}
-						/>
+							items={VISITORS_TYPE_OPTIONS}
+							onSelectionChange={setVisitorsType}
+							selectedKey={visitorsType}
+						>
+							{({label, value}) => (
+								<Option key={value}>{label}</Option>
+							)}
+						</Picker>
 					</Form.GroupItem>
 
 					<Form.GroupItem label shrink>
@@ -107,12 +103,16 @@ const CohortAnalysisCard = () => {
 					</Form.GroupItem>
 
 					<Form.GroupItem shrink>
-						<ClaySelectWithOption
+						<Picker
 							className='interval-select'
-							onChange={handleIntervalSelect}
-							options={INTERVAL_OPTIONS}
-							value={interval}
-						/>
+							items={INTERVAL_OPTIONS}
+							onSelectionChange={setInterval}
+							selectedKey={interval}
+						>
+							{({label, value}) => (
+								<Option key={value}>{label}</Option>
+							)}
+						</Picker>
 					</Form.GroupItem>
 				</Form.Group>
 

@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.fragment.web.internal.change.tracking.spi.display;
@@ -21,7 +12,9 @@ import com.liferay.fragment.helper.FragmentEntryLinkHelper;
 import com.liferay.fragment.model.FragmentEntryLink;
 import com.liferay.fragment.renderer.DefaultFragmentRendererContext;
 import com.liferay.fragment.renderer.FragmentRendererController;
+import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -65,11 +58,30 @@ public class FragmentEntryLinkCTDisplayRender
 
 	@Override
 	public boolean isHideable(FragmentEntryLink fragmentEntryLink) {
+		try (SafeCloseable safeCloseable =
+				CTCollectionThreadLocal.setCTCollectionIdWithSafeCloseable(
+					fragmentEntryLink.getCtCollectionId())) {
+
+			Layout layout = _layoutLocalService.fetchLayout(
+				fragmentEntryLink.getClassPK());
+
+			if ((layout != null) &&
+				_layoutCTDisplayRenderer.isHideable(layout)) {
+
+				return true;
+			}
+		}
+
 		if (fragmentEntryLink.getOriginalFragmentEntryLinkId() == 0) {
 			return false;
 		}
 
 		return true;
+	}
+
+	@Override
+	public boolean isMovable(FragmentEntryLink fragmentEntryLink) {
+		return false;
 	}
 
 	@Override
@@ -129,6 +141,11 @@ public class FragmentEntryLinkCTDisplayRender
 
 	@Reference
 	private Language _language;
+
+	@Reference(
+		target = "(component.name=com.liferay.layout.admin.web.internal.change.tracking.spi.display.LayoutCTDisplayRenderer)"
+	)
+	private CTDisplayRenderer<Layout> _layoutCTDisplayRenderer;
 
 	@Reference
 	private LayoutLocalService _layoutLocalService;

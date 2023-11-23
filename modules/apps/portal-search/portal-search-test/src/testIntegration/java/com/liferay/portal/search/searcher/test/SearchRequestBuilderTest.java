@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.search.searcher.test;
@@ -36,6 +27,8 @@ import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.search.collapse.CollapseBuilderFactory;
+import com.liferay.portal.search.collapse.InnerHitBuilderFactory;
 import com.liferay.portal.search.filter.ComplexQueryPartBuilderFactory;
 import com.liferay.portal.search.query.Queries;
 import com.liferay.portal.search.rescore.Rescore;
@@ -247,6 +240,31 @@ public class SearchRequestBuilderTest {
 			"[firstname1 lastname2, firstname2 lastname3, firstname3 " +
 				"lastname1]",
 			"userName", "name", fieldSort);
+	}
+
+	@Test
+	public void testCollapse() throws Exception {
+		_addJournalArticle("stars", "stars", "stars");
+		_addJournalArticle("stars", "stars", "stars");
+
+		SearchRequestBuilder searchRequestBuilder =
+			_searchRequestBuilderFactory.builder(
+			).collapse(
+				_collapseBuilderFactory.builder(
+				).field(
+					"localized_title_en_US_sortable.keyword_lowercase"
+				).build()
+			).companyId(
+				_group.getCompanyId()
+			).groupIds(
+				_group.getGroupId()
+			).modelIndexerClassNames(
+				JournalArticle.class.getCanonicalName()
+			).queryString(
+				"stars"
+			);
+
+		_assertSearch("[stars]", "title_en_US", searchRequestBuilder);
 	}
 
 	@Test
@@ -462,12 +480,18 @@ public class SearchRequestBuilderTest {
 	private static Portal _portal;
 
 	@Inject
+	private CollapseBuilderFactory _collapseBuilderFactory;
+
+	@Inject
 	private ComplexQueryPartBuilderFactory _complexQueryPartBuilderFactory;
 
 	private Group _group;
 
 	@DeleteAfterTestRun
 	private List<Group> _groups;
+
+	@Inject
+	private InnerHitBuilderFactory _innerHitBuilderFactory;
 
 	@Inject
 	private JournalArticleLocalService _journalArticleLocalService;

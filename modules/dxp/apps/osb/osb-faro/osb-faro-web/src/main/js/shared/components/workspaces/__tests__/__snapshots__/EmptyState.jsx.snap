@@ -10,14 +10,14 @@ exports[`Workspace Empty State - CardEmpty should render CardEmpty 1`] = `
       role="presentation"
     >
       <use
-        xlink:href="#home"
+        href="#home"
       />
     </svg>
     <p>
       CardEmpty Description
     </p>
     <button
-      class="btn btn-primary"
+      class="btn btn-secondary"
       type="button"
     >
       CardEmpty Button Label
@@ -42,14 +42,14 @@ exports[`Workspace Empty State should render 1`] = `
           role="presentation"
         >
           <use
-            xlink:href="#ac-integration"
+            href="#ac-integration"
           />
         </svg>
         <p>
           Do more with our Business & Enterprise Plans
         </p>
         <button
-          class="btn btn-secondary"
+          class="btn btn-primary"
           type="button"
         >
           Contact Sales
@@ -67,19 +67,18 @@ exports[`Workspace Empty State should render 1`] = `
           role="presentation"
         >
           <use
-            xlink:href="#ac-page-analytics"
+            href="#ac-page-analytics"
           />
         </svg>
         <p>
           90 Day Full Feature Trial
         </p>
-        <button
+        <a
           class="btn btn-secondary"
           href="/workspace/add/trial"
-          type="button"
         >
           Start Free Trial
-        </button>
+        </a>
       </div>
     </div>
   </div>

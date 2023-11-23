@@ -225,6 +225,7 @@ module.exports = {
 				user: 'user'
 			},
 			projectLocations: {
+				AS1: 'MUMBAI, INDIA',
 				EU2: 'LONDON, ENGLAND',
 				EU3: 'FRANKFURT, GERMANY',
 				SA: 'SÃO PAULO, BRAZIL',
@@ -468,8 +469,6 @@ module.exports = {
 		'^individual(.*)$': '<rootDir>/src/main/js/individual$1',
 		'^react-dnd$': 'react-dnd/dist/cjs',
 		'^react-dnd-html5-backend$': 'react-dnd-html5-backend/dist/cjs',
-		'^react-dnd-test-backend$': 'react-dnd-test-backend/dist/cjs',
-		'^react-dnd-test-utils$': 'react-dnd-test-utils/dist/cjs',
 		'^route-middleware(.*)$': '<rootDir>/src/main/js/route-middleware$1',
 		'^segment(.*)$': '<rootDir>/src/main/js/segment$1',
 		'^settings(.*)$': '<rootDir>/src/main/js/settings$1',

@@ -31,20 +31,18 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
-
-		// It is not possible to delete properties and data source after LRAC-13389. This functionality should return after LRAC-8040
-
-		//ACUtils.tearDownAC();
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		ACUtils.tearDownDXP();
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
 			JSONGroup.deleteGroupByName(groupName = "Site Name");
 		}
+
+		ACUtils.tearDownAC();
 	}
 
 	@description = "Feature ID: Legacy | Automation ID: LRAC-8344 | Test Summary: Site overview acquisition card shows which channels individuals are coming from"
@@ -52,7 +50,7 @@ definition {
 	@priority = 5
 	test AssertShowsChannelsIndividualsComingFrom {
 
-		// AC Refactor: data doesn't appear on time
+		// AC Refactor: Data doesn't appear on time (Need to wait for the session to close)
 		// AC Refactor ticket: LRAC-9016
 
 		task ("Sign out then sign in as Test Test") {
@@ -209,8 +207,13 @@ definition {
 	}
 
 	@description = "Feature ID: Legacy | Automation ID: LRAC-8346 | Test Summary: Assert Sites Acquisition card Channels highest session"
+	@ignore = "true"
 	@priority = 3
 	test AssertSitesAcquisitionCardChannelsHighestSession {
+
+		// AC Refactor: Data doesn't appear on time (Need to wait for the session to close)
+		// AC Refactor ticket: LRAC-13994
+
 		task ("View the site page") {
 			ACUtils.navigateToSitePage(
 				pageName = "AC Page",
@@ -265,8 +268,13 @@ definition {
 	}
 
 	@description = "Feature ID: Legacy | Automation ID: LRAC-8347 | Test Summary: Assert Sites Acquisition card Referrers highest session"
+	@ignore = "true"
 	@priority = 3
 	test AssertSitesAcquisitionCardReferrersHighestSession {
+
+		// AC Refactor: Data doesn't appear on time (Need to wait for the session to close)
+		// AC Refactor ticket: LRAC-13994
+
 		task ("Get the portal URL") {
 			var portalURL = PropsUtil.get("portal.url");
 
@@ -341,8 +349,13 @@ definition {
 	}
 
 	@description = "Feature ID: Legacy | Automation ID: LRAC-8348 | Test Summary: Assert Sites Acquisition card Source|Medium highest session"
+	@ignore = "true"
 	@priority = 3
 	test AssertSitesAcquisitionCardSourceAndMediumHighestSession {
+
+		// AC Refactor: Data doesn't appear on time (Need to wait for the session to close)
+		// AC Refactor ticket: LRAC-13994
+
 		task ("Get the portal URL") {
 			var portalURL = PropsUtil.get("portal.url");
 

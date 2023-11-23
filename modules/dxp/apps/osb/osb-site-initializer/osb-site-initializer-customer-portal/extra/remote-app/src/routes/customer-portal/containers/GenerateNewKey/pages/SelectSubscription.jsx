@@ -1,60 +1,61 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayAlert from '@clayui/alert';
 import {ClaySelect} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
-import React, {useEffect, useMemo, useState} from 'react';
-import {Link} from 'react-router-dom';
-import i18n from '../../../../../common/I18n';
-import {Button} from '../../../../../common/components';
-import {Radio} from '../../../../../common/components/Radio';
-import Layout from '../../../../../common/containers/setup-forms/Layout';
-import {useAppPropertiesContext} from '../../../../../common/contexts/AppPropertiesContext';
-import {getNewGenerateKeyFormValues} from '../../../../../common/services/liferay/rest/raysource/LicenseKeys';
-import {FORMAT_DATE_TYPES} from '../../../../../common/utils/constants';
-import getDateCustomFormat from '../../../../../common/utils/getDateCustomFormat';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {Link, useLocation, useNavigate} from 'react-router-dom';
+import i18n from '~/common/I18n';
+import {Button} from '~/common/components';
+import {Radio} from '~/common/components/Radio';
+import Layout from '~/common/containers/setup-forms/Layout';
+import {useAppPropertiesContext} from '~/common/contexts/AppPropertiesContext';
+import useProvisioningLicenseKeys from '~/common/hooks/useProvisioningLicenseKeys';
+import {patchOrderItemByExternalReferenceCode} from '~/common/services/liferay/graphql/queries';
+import {
+	getNewGenerateKeyFormValues,
+	putSubscriptionInKey,
+} from '~/common/services/liferay/rest/raysource/LicenseKeys';
+import {FORMAT_DATE_TYPES} from '~/common/utils/constants';
+import getDateCustomFormat from '~/common/utils/getDateCustomFormat';
 import {useCustomerPortal} from '../../../context';
+import {has100YearsDifference} from '../../ActivationKeysTable/utils';
 import GenerateNewKeySkeleton from '../Skeleton';
+import {getLicenseKeyEndDatesByLicenseType} from '../utils/licenseKeyEndDateUtil';
 
 const SelectSubscription = ({
 	accountKey,
+	deactivateKeysConfirm,
+	hasKeyComplimentary,
 	infoSelectedKey,
 	productGroupName,
 	sessionId,
+	setHasKeyComplimentary,
 	setInfoSelectedKey,
 	setStep,
 	urlPreviousPage,
 }) => {
 	const [{subscriptionGroups}] = useCustomerPortal();
-	const {provisioningServerAPI} = useAppPropertiesContext();
+	const {
+		articleDeactivateKey,
+		client,
+		featureFlags,
+		provisioningServerAPI,
+	} = useAppPropertiesContext();
 
 	const [generateFormValues, setGenerateFormValues] = useState();
+	const provisioningService = useProvisioningLicenseKeys();
+	const [isLoadingGenerateKey, setIsLoadingGenerateKey] = useState(false);
 
-	const [selectedSubscription, setSelectedSubscription] = useState(
-		infoSelectedKey?.selectedSubscription
-	);
-	const [selectedVersion, setSelectedVersion] = useState(
-		infoSelectedKey?.productVersion
-	);
-	const [selectedKeyType, setSelectedKeyType] = useState(
-		infoSelectedKey?.licenseEntryType
-	);
-
-	const doesNotAllowPermanentLicense = !generateFormValues?.allowPermanentLicenses;
-
-	const hasNotPermanentLicence =
-		selectedKeyType?.includes('Virtual Cluster') ||
-		selectedKeyType?.includes('OEM') ||
-		selectedKeyType?.includes('Enterprise');
+	const navigate = useNavigate();
+	const {state} = useLocation();
+	const [
+		availableActivationKeysTotal,
+		setAvailableActivationKeysTotal,
+	] = useState();
 
 	useEffect(() => {
 		const fetchGenerateFormData = async () => {
@@ -74,6 +75,46 @@ const SelectSubscription = ({
 			fetchGenerateFormData();
 		}
 	}, [accountKey, provisioningServerAPI, productGroupName, sessionId]);
+
+	const [selectedSubscription, setSelectedSubscription] = useState(
+		infoSelectedKey?.selectedSubscription
+	);
+	const [selectedVersion, setSelectedVersion] = useState(
+		infoSelectedKey?.productVersion
+	);
+	const [selectedKeyType, setSelectedKeyType] = useState(
+		infoSelectedKey?.licenseEntryType
+	);
+
+	const doesNotAllowPermanentLicense = !generateFormValues?.allowPermanentLicenses;
+
+	const allowComplimentary = generateFormValues?.allowComplimentary;
+
+	const hasNotPermanentLicence =
+		selectedKeyType?.includes('Virtual Cluster') ||
+		selectedKeyType?.includes('OEM') ||
+		selectedKeyType?.includes('Enterprise');
+
+	const typesProduct = generateFormValues?.versions[0]?.types;
+
+	const handleProduct = useCallback(() => {
+		const filteredTypes = typesProduct?.find(
+			(type) =>
+				type.licenseEntryDisplayName ===
+				productGroupName + ' ' + selectedKeyType
+		);
+
+		return filteredTypes?.productKey;
+	}, [typesProduct, productGroupName, selectedKeyType]);
+
+	const mockedValuesForComplimentaryKeys = useMemo(() => {
+		return {
+			instanceSize: 4,
+			productKey: handleProduct(),
+			provisionedCount: 0,
+			quantity: 5,
+		};
+	}, [handleProduct]);
 
 	const productVersions = useMemo(() => {
 		if (generateFormValues?.versions) {
@@ -126,6 +167,82 @@ const SelectSubscription = ({
 		selectedVersionIndex,
 	]);
 
+	const versionsOfTheSelectedKeys = state.activationKeys?.map((item) => {
+		return item.productVersion;
+	});
+
+	const uniqueVersionOfTheSelectedKey = [
+		...new Set(versionsOfTheSelectedKeys),
+	].join(', ');
+
+	const productNames = [
+		...new Set(
+			state.activationKeys.map((key) => {
+				const productName = key.productName.replace(
+					`${productGroupName} `,
+					''
+				);
+
+				return productName.toLowerCase() ===
+					key.licenseEntryType.toLowerCase()
+					? productName
+					: `${productName} (${key.licenseEntryType})`;
+			})
+		),
+	];
+
+	const productName = [...new Set(productNames)].join(', ');
+
+	const selectedProductName = state.activationKeys?.map((item) => {
+		return item.productName;
+	});
+
+	const uniqueSelectedProductName = [...new Set(selectedProductName)].join(
+		', '
+	);
+
+	const productKey = typesProduct?.find(
+		(item) =>
+			item.licenseEntryDisplayName
+				.toLowerCase()
+				.replace(/[- ]+/g, '-') ===
+			uniqueSelectedProductName
+				.toString()
+				.toLowerCase()
+				.replace(/[- ]+/g, '-')
+	)?.productKey;
+
+	const mockedValuesForComplimentaryKeysOfTheSelectedKeys = useMemo(() => {
+		return {
+			productKey,
+		};
+	}, [productKey]);
+
+	const matchingProductKeys = state.activationKeys.map((activationKey) => {
+		const productName = activationKey.productName;
+		const licenseEntryType = activationKey.licenseEntryType;
+		const productVersionLabel = activationKey.productVersion;
+
+		const matchingProductType = productVersions
+			.find((versionData) => versionData.label === productVersionLabel)
+			?.types.find((productType) => {
+				const displayNameMatch = productType.licenseEntryName.includes(
+					productName
+				);
+				const typeMatch = productType.licenseEntryType.includes(
+					licenseEntryType
+				);
+
+				if (displayNameMatch && typeMatch) {
+					return true;
+				}
+
+				return false;
+			});
+
+		return matchingProductType ? matchingProductType.productKey : 'N/A';
+	});
+
 	const selectedProductKey = useMemo(
 		() =>
 			productVersions &&
@@ -146,43 +263,248 @@ const SelectSubscription = ({
 
 	const subscriptionTerms = useMemo(
 		() =>
-			generateFormValues?.subscriptionTerms?.filter(
-				(key) => key.productKey === selectedProductKey
+			generateFormValues?.subscriptionTerms?.filter((key) =>
+				state.id === 'renew'
+					? matchingProductKeys.includes(key.productKey)
+					: key.productKey === selectedProductKey
 			),
-		[generateFormValues?.subscriptionTerms, selectedProductKey]
+		[
+			generateFormValues?.subscriptionTerms,
+			selectedProductKey,
+			state.id,
+			matchingProductKeys,
+		]
 	);
 
-	const getCustomAlert = (subscriptionTerm) =>
-		hasNotPermanentLicence || doesNotAllowPermanentLicense ? (
+	const submitKey = useCallback(async () => {
+		const licenseEntryTypes = state.activationKeys.map((key) => {
+			return key.licenseEntryType;
+		});
+
+		const licenseEntryType =
+			licenseEntryTypes?.includes('virtual-cluster') ||
+			licenseEntryTypes?.includes('oem') ||
+			licenseEntryTypes?.includes('enterprise');
+
+		const selectedProductNames = [...new Set(licenseEntryTypes)]
+			.join(', ')
+			.toLowerCase();
+
+		const selectedProductName = selectedSubscription.licenseKeyEndDates.find(
+			(item) => item.licenseEntryType.includes(selectedProductNames)
+		);
+
+		const endDateSelected = selectedProductName
+			? selectedProductName.endDate
+			: null;
+
+		const selectedFields = [
+			'active',
+			'description',
+			'licenseEntryType',
+			'maxClusterNodes',
+			'name',
+			'productName',
+			'productVersion',
+		];
+
+		if (!licenseEntryType) {
+			selectedFields.push('macAddresses', 'hostName', 'ipAddresses');
+		}
+
+		const saveSubscriptionKey = async (id) => {
+			return putSubscriptionInKey(provisioningServerAPI, id, sessionId);
+		};
+
+		const generateLicenseKey = async (item) => {
+			const licenseKey = {
+				accountKey,
+				expirationDate: endDateSelected,
+				productKey: selectedSubscription.productKey,
+				productPurchaseKey: selectedSubscription.productPurchaseKey,
+				sizing: 'Sizing ' + selectedSubscription.instanceSize,
+				startDate: selectedSubscription.startDate,
+			};
+			selectedFields.forEach((field) => {
+				licenseKey[field] = item[field];
+			});
+			const response = await provisioningService.createNewGenerateKey(
+				accountKey,
+				licenseKey
+			);
+
+			await saveSubscriptionKey(response?.items?.[0]?.id);
+		};
+
+		setIsLoadingGenerateKey(true);
+
+		try {
+			if (has100YearsDifference()) {
+				const createKeyPromises = state.activationKeys.map(
+					async (item) => {
+						await generateLicenseKey(item);
+					}
+				);
+
+				await Promise.all(createKeyPromises);
+
+				setIsLoadingGenerateKey(false);
+
+				return true;
+			} else {
+				const results = await Promise.all(
+					state.activationKeys.map(async (item) => {
+						await generateLicenseKey(item, hasKeyComplimentary);
+					})
+				);
+
+				if (hasKeyComplimentary) {
+					await saveSubscriptionKey(results?.items?.[0]?.id);
+				}
+
+				await Promise.all(results);
+
+				setIsLoadingGenerateKey(false);
+
+				try {
+					if (!hasKeyComplimentary) {
+						await client.mutate({
+							context: {
+								displaySuccess: false,
+							},
+							mutation: patchOrderItemByExternalReferenceCode,
+							variables: {
+								externalReferenceCode:
+									selectedSubscription.productPurchaseKey,
+								orderItem: {
+									customFields: [
+										{
+											customValue: {
+												data:
+													selectedSubscription.provisionedCount +
+													1,
+											},
+											name: 'provisionedCount',
+										},
+									],
+								},
+							},
+						});
+					}
+				} catch (error) {
+					console.error(error);
+				}
+
+				navigate(urlPreviousPage, {
+					state: {newKeyGeneratedAlert: true},
+				});
+			}
+
+			return true;
+		} catch (error) {
+			Liferay.Util.openToast({
+				message:
+					error?.info?.title ??
+					i18n.translate('an-unexpected-error-occurred'),
+				title: i18n.translate('error'),
+				type: 'danger',
+			});
+
+			console.error(error);
+
+			setIsLoadingGenerateKey(false);
+
+			return false;
+		}
+	}, [
+		accountKey,
+		client,
+		hasKeyComplimentary,
+		navigate,
+		provisioningServerAPI,
+		provisioningService,
+		selectedSubscription,
+		sessionId,
+		state.activationKeys,
+		urlPreviousPage,
+	]);
+
+	const handleSubmit = async () => {
+		const submitResult = await submitKey();
+
+		if (submitResult) {
+			deactivateKeysConfirm();
+			setIsLoadingGenerateKey(false);
+		}
+	};
+
+	const CustomComplimentaryKeyAlert = () => {
+		return (
 			<ClayAlert className="px-4 py-3" displayType="info">
 				<span className="text-paragraph">
-					{i18n.sub('activation-keys-will-be-valid-x-x', [
-						getDateCustomFormat(
-							subscriptionTerm.startDate,
-							FORMAT_DATE_TYPES.day2DMonthSYearN
-						),
-						getDateCustomFormat(
-							subscriptionTerm.endDate,
-							FORMAT_DATE_TYPES.day2DMonthSYearN
-						),
-					])}
-				</span>
-			</ClayAlert>
-		) : (
-			<ClayAlert className="px-4 py-3" displayType="info">
-				<span className="text-paragraph">
-					{i18n.sub(
-						'activation-keys-will-be-valid-indefinitely-starting-x-or-until-manually-deactivated',
-						[
-							getDateCustomFormat(
-								subscriptionTerm.startDate,
-								FORMAT_DATE_TYPES.day2DMonthSYearN
-							),
-						]
-					)}
+					{`${i18n.translate(
+						'this-option-is-available-to-use-a-single-time-please-contact-your-liferay-representative-if-you-need-to-use-it-later'
+					)} `}
 				</span>
 			</ClayAlert>
 		);
+	};
+
+	const GetCustomAlert = ({activeKeysAvailable, subscriptionTerm}) => {
+		if (activeKeysAvailable === 0) {
+			return (
+				<ClayAlert className="px-4 py-3" displayType="warning">
+					<span className="text-paragraph">
+						{`${i18n.translate(
+							'key-activations-available-is-zero-to-deactivate-a-key-or-reach-out-to-provisioning-read'
+						)} `}
+
+						<a
+							href={articleDeactivateKey}
+							rel="noreferrer noopener"
+							target="_blank"
+						>
+							<u className="font-weight-semi-bold warning-content-link">
+								{i18n.translate('this-article')}
+							</u>
+						</a>
+					</span>
+				</ClayAlert>
+			);
+		}
+
+		return (
+			<ClayAlert className="px-4 py-3" displayType="info">
+				<span className="text-paragraph">
+					{hasNotPermanentLicence || doesNotAllowPermanentLicense
+						? i18n.sub('activation-keys-will-be-valid-x-x', [
+								getDateCustomFormat(
+									subscriptionTerm.startDate,
+									FORMAT_DATE_TYPES.day2DMonthSYearN
+								),
+								getDateCustomFormat(
+									getLicenseKeyEndDatesByLicenseType({
+										...infoSelectedKey,
+										selectedSubscription: {
+											...subscriptionTerm,
+										},
+									}),
+									FORMAT_DATE_TYPES.day2DMonthSYearN
+								),
+						  ])
+						: i18n.sub(
+								'activation-keys-will-be-valid-indefinitely-starting-x-or-until-manually-deactivated',
+								[
+									getDateCustomFormat(
+										subscriptionTerm.startDate,
+										FORMAT_DATE_TYPES.day2DMonthSYearN
+									),
+								]
+						  )}
+				</span>
+			</ClayAlert>
+		);
+	};
 
 	if (!generateFormValues || !accountKey || !sessionId) {
 		return <GenerateNewKeySkeleton />;
@@ -192,10 +514,10 @@ const SelectSubscription = ({
 		<Layout
 			footerProps={{
 				footerClass: 'mx-5 mb-2',
-
 				leftButton: (
 					<Link to={urlPreviousPage}>
 						<Button
+							aria-label={i18n.translate('cancel')}
 							className="btn btn-borderless btn-style-neutral"
 							displayType="secondary"
 						>
@@ -205,27 +527,59 @@ const SelectSubscription = ({
 				),
 				middleButton: (
 					<Button
-						disabled={!selectedSubscription}
+						aria-label={i18n.translate('next')}
+						disabled={
+							(state.activationKeys.length >
+								availableActivationKeysTotal &&
+								!hasKeyComplimentary) ||
+							!selectedSubscription ||
+							isLoadingGenerateKey ||
+							!Object.keys(selectedSubscription).length
+						}
 						displayType="primary"
+						isLoading={isLoadingGenerateKey}
 						onClick={() => {
-							setInfoSelectedKey((previousInfoSelectedKey) => ({
-								...previousInfoSelectedKey,
-								doesNotAllowPermanentLicense,
-								hasNotPermanentLicence,
-								selectedSubscription: {
-									...selectedSubscription,
-								},
-							}));
+							if (!hasKeyComplimentary && state.id === 'renew') {
+								handleSubmit();
 
-							setStep(1);
+								setInfoSelectedKey(
+									(previousInfoSelectedKey) => ({
+										...previousInfoSelectedKey,
+										doesNotAllowPermanentLicense,
+										hasNotPermanentLicence,
+										selectedSubscription: {
+											...selectedSubscription,
+										},
+									})
+								);
+							} else {
+								setInfoSelectedKey(
+									(previousInfoSelectedKey) => ({
+										...previousInfoSelectedKey,
+										doesNotAllowPermanentLicense,
+										hasNotPermanentLicence,
+										selectedSubscription: {
+											...selectedSubscription,
+										},
+									})
+								);
+								setStep(hasKeyComplimentary ? 1 : 2);
+							}
 						}}
 					>
-						{i18n.translate('next')}
+						{!hasKeyComplimentary && state.id === 'renew'
+							? i18n.sub(
+									state.activationKeys.length > 1
+										? 'generate-x-keys'
+										: 'generate-x-key',
+									[state.activationKeys.length]
+							  )
+							: i18n.translate('next')}
 					</Button>
 				),
 			}}
 			headerProps={{
-				headerClass: 'ml-5 mt-4 mb-3',
+				headerClass: 'mb-3 ml-5 mt-4',
 				helper: i18n.translate(
 					'select-the-subscription-and-key-type-you-would-like-to-generate'
 				),
@@ -254,6 +608,7 @@ const SelectSubscription = ({
 							</ClaySelect>
 
 							<ClayIcon
+								aria-label="Caret Icon Bottom"
 								className="select-icon"
 								symbol="caret-bottom"
 							/>
@@ -267,21 +622,35 @@ const SelectSubscription = ({
 
 						<div className="position-relative">
 							<ClaySelect
-								className="mr-2"
-								onChange={({target}) =>
-									setSelectedVersion(target.value)
-								}
+								className="cp-select-card mr-2"
+								disabled={state.id === 'renew' ? true : false}
+								onChange={({target}) => {
+									setInfoSelectedKey({
+										licenseEntryType: selectedKeyType,
+										productType: productGroupName,
+										productVersion: target.value,
+									});
+									setSelectedVersion(target.value);
+								}}
 								value={selectedVersion}
 							>
-								{productVersions?.map((version) => (
+								{state.id === 'renew' ? (
 									<ClaySelect.Option
-										key={version.label}
-										label={version.label}
+										key={uniqueVersionOfTheSelectedKey}
+										label={uniqueVersionOfTheSelectedKey}
 									/>
-								))}
+								) : (
+									productVersions?.map((version) => (
+										<ClaySelect.Option
+											key={version.label}
+											label={version.label}
+										/>
+									))
+								)}
 							</ClaySelect>
 
 							<ClayIcon
+								aria-label="Caret Icon Bottom"
 								className="select-icon"
 								symbol="caret-bottom"
 							/>
@@ -296,13 +665,22 @@ const SelectSubscription = ({
 
 					<div className="position-relative">
 						<ClaySelect
-							className="mr-2 pr-6 w-100"
-							onChange={({target}) =>
-								setSelectedKeyType(target.value)
-							}
+							className="cp-select-card mr-2 pr-6 w-100"
+							disabled={state.id === 'renew' ? true : false}
+							onChange={({target}) => {
+								setSelectedKeyType(target.value);
+								setSelectedSubscription({});
+								setHasKeyComplimentary(false);
+							}}
 							value={selectedKeyType}
 						>
-							{productKeyTypes &&
+							{state.id === 'renew' ? (
+								<ClaySelect.Option
+									key={productNames}
+									label={productNames}
+								/>
+							) : (
+								productKeyTypes &&
 								productKeyTypes[
 									selectedVersionIndex
 								]?.map((keyType) => (
@@ -310,10 +688,12 @@ const SelectSubscription = ({
 										key={keyType}
 										label={keyType}
 									/>
-								))}
+								))
+							)}
 						</ClaySelect>
 
 						<ClayIcon
+							aria-label="Caret Icon Bottom"
 							className="select-icon"
 							symbol="caret-bottom"
 						/>
@@ -326,79 +706,159 @@ const SelectSubscription = ({
 					</div>
 
 					<div>
-						{subscriptionTerms?.map((subscriptionTerm, index) => {
-							const selected =
-								JSON.stringify(selectedSubscription) ===
-								JSON.stringify({
-									...subscriptionTerm,
+						{subscriptionTerms
+							?.filter((subscriptionTerm) => {
+								return (
+									new Date() <
+										new Date(subscriptionTerm.endDate) &&
+									subscriptionTerm
+								);
+							})
+							.sort(
+								(
+									firstSubscriptionTerm,
+									secondSubscriptionTerm
+								) => {
+									const firstAvailableKeysQty =
+										firstSubscriptionTerm.quantity -
+										firstSubscriptionTerm.provisionedCount;
+
+									const secondAvailableKeysQty =
+										secondSubscriptionTerm.quantity -
+										secondSubscriptionTerm.provisionedCount;
+
+									return (
+										secondAvailableKeysQty -
+										firstAvailableKeysQty
+									);
+								}
+							)
+							?.map((subscriptionTerm, index) => {
+								const selected =
+									JSON.stringify(selectedSubscription) ===
+									JSON.stringify({
+										...subscriptionTerm,
+										index,
+									});
+								const currentStartAndEndDate = `${getDateCustomFormat(
+									subscriptionTerm.startDate,
+									FORMAT_DATE_TYPES.day2DMonthSYearN
+								)} - ${getDateCustomFormat(
+									subscriptionTerm.endDate,
+									FORMAT_DATE_TYPES.day2DMonthSYearN
+								)}`;
+
+								const infoSelectedKey = {
 									index,
-								});
-							const currentStartAndEndDate = `${getDateCustomFormat(
-								subscriptionTerm.startDate,
-								FORMAT_DATE_TYPES.day2DMonthSYearN
-							)} - ${getDateCustomFormat(
-								subscriptionTerm.endDate,
-								FORMAT_DATE_TYPES.day2DMonthSYearN
-							)}`;
+									licenseEntryType: selectedKeyType,
+									productType: productGroupName,
+									productVersion: selectedVersion,
+								};
 
-							const infoSelectedKey = {
-								index,
-								licenseEntryType: selectedKeyType,
-								productType: productGroupName,
-								productVersion: selectedVersion,
-							};
+								let numberOfActivationKeysAvailable =
+									subscriptionTerm.quantity -
+									subscriptionTerm.provisionedCount;
+								numberOfActivationKeysAvailable =
+									numberOfActivationKeysAvailable < 0
+										? 0
+										: numberOfActivationKeysAvailable;
 
-							const displayAlertType = getCustomAlert(
-								subscriptionTerm
-							);
+								const displayAlertType = (
+									<GetCustomAlert
+										activeKeysAvailable={
+											numberOfActivationKeysAvailable
+										}
+										subscriptionTerm={subscriptionTerm}
+									/>
+								);
 
-							let numberOfActivationKeysAvailable =
-								subscriptionTerm.quantity -
-								subscriptionTerm.provisionedCount;
-							numberOfActivationKeysAvailable =
-								numberOfActivationKeysAvailable < 0
-									? 0
-									: numberOfActivationKeysAvailable;
-
-							const isNotExpired =
-								new Date() < new Date(subscriptionTerm.endDate);
-
-							return (
-								<Radio
-									description={i18n.sub(
-										'key-activation-available-x-of-x',
-										[
-											numberOfActivationKeysAvailable,
-											subscriptionTerm.quantity,
-										]
-									)}
-									hasCustomAlert={
-										selected && displayAlertType
+								const HandleCustomAlert = () => {
+									if (numberOfActivationKeysAvailable === 0) {
+										return displayAlertType;
 									}
-									isActivationKeyAvailable={
-										subscriptionTerm.quantity -
-											subscriptionTerm.provisionedCount >
-											0 && isNotExpired
-									}
-									key={index}
-									label={currentStartAndEndDate}
-									onChange={(event) => {
-										setSelectedSubscription({
-											...event.target.value,
-											index,
-										});
 
-										setInfoSelectedKey(infoSelectedKey);
-									}}
-									selected={selected}
-									subtitle={i18n.sub('instance-size-x', [
-										subscriptionTerm?.instanceSize || 1,
-									])}
-									value={subscriptionTerm}
-								/>
-							);
-						})}
+									if (selected) {
+										setAvailableActivationKeysTotal(
+											numberOfActivationKeysAvailable
+										);
+									}
+
+									return selected && displayAlertType;
+								};
+
+								return (
+									<Radio
+										description={i18n.sub(
+											'key-activation-available-x-of-x',
+											[
+												numberOfActivationKeysAvailable,
+												subscriptionTerm.quantity,
+											]
+										)}
+										hasCustomAlert={<HandleCustomAlert />}
+										isActivationKeyAvailable={
+											subscriptionTerm.quantity -
+												subscriptionTerm.provisionedCount >
+											0
+										}
+										key={index}
+										label={currentStartAndEndDate}
+										onChange={(event) => {
+											setSelectedSubscription({
+												...event.target.value,
+												index,
+											});
+											setInfoSelectedKey(infoSelectedKey);
+											setHasKeyComplimentary(false);
+										}}
+										selected={selected}
+										subtitle={i18n.sub('instance-size-x', [
+											subscriptionTerm?.instanceSize || 1,
+										])}
+										value={subscriptionTerm}
+									/>
+								);
+							})}
 					</div>
+
+					{featureFlags.includes('LPS-148342') && allowComplimentary && (
+						<Radio
+							hasCustomAlert={
+								hasKeyComplimentary && (
+									<CustomComplimentaryKeyAlert />
+								)
+							}
+							isActivationKeyAvailable={5}
+							label="Complimentary"
+							onChange={(event) => {
+								setSelectedSubscription({
+									...event.target.value,
+								});
+								setHasKeyComplimentary(true);
+
+								setInfoSelectedKey({
+									licenseEntryType:
+										state.id === 'renew'
+											? productName
+											: selectedKeyType,
+									productType: productGroupName,
+									productVersion:
+										state.id === 'renew'
+											? uniqueVersionOfTheSelectedKey
+											: selectedVersion,
+								});
+							}}
+							selected={hasKeyComplimentary}
+							subtitle={i18n.translate(
+								'choose-this-option-if-you-want-an-activation-key-for-60-days'
+							)}
+							value={
+								state.id === 'renew'
+									? mockedValuesForComplimentaryKeysOfTheSelectedKeys
+									: mockedValuesForComplimentaryKeys
+							}
+						/>
+					)}
 
 					<div className="dropdown-divider mt-3"></div>
 				</div>

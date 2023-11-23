@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.admin.rest.resource.v1_0.test;
@@ -28,6 +19,7 @@ import com.liferay.object.admin.rest.client.pagination.Page;
 import com.liferay.object.admin.rest.client.pagination.Pagination;
 import com.liferay.object.admin.rest.client.resource.v1_0.ObjectValidationRuleResource;
 import com.liferay.object.admin.rest.client.serdes.v1_0.ObjectValidationRuleSerDes;
+import com.liferay.petra.function.UnsafeTriConsumer;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.petra.string.StringBundler;
@@ -43,6 +35,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -189,6 +182,7 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 
 		objectValidationRule.setEngine(regex);
 		objectValidationRule.setEngineLabel(regex);
+		objectValidationRule.setExternalReferenceCode(regex);
 		objectValidationRule.setObjectDefinitionExternalReferenceCode(regex);
 		objectValidationRule.setScript(regex);
 
@@ -200,6 +194,8 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 
 		Assert.assertEquals(regex, objectValidationRule.getEngine());
 		Assert.assertEquals(regex, objectValidationRule.getEngineLabel());
+		Assert.assertEquals(
+			regex, objectValidationRule.getExternalReferenceCode());
 		Assert.assertEquals(
 			regex,
 			objectValidationRule.getObjectDefinitionExternalReferenceCode());
@@ -218,9 +214,9 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		Page<ObjectValidationRule> page =
 			objectValidationRuleResource.
 				getObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage(
-					externalReferenceCode, null, Pagination.of(1, 10));
+					externalReferenceCode, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantExternalReferenceCode != null) {
 			ObjectValidationRule irrelevantObjectValidationRule =
@@ -232,12 +228,12 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 				objectValidationRuleResource.
 					getObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage(
 						irrelevantExternalReferenceCode, null,
-						Pagination.of(1, 2));
+						Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantObjectValidationRule),
+			assertContains(
+				irrelevantObjectValidationRule,
 				(List<ObjectValidationRule>)page.getItems());
 			assertValid(
 				page,
@@ -256,13 +252,14 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		page =
 			objectValidationRuleResource.
 				getObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage(
-					externalReferenceCode, null, Pagination.of(1, 10));
+					externalReferenceCode, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(objectValidationRule1, objectValidationRule2),
-			(List<ObjectValidationRule>)page.getItems());
+		assertContains(
+			objectValidationRule1, (List<ObjectValidationRule>)page.getItems());
+		assertContains(
+			objectValidationRule2, (List<ObjectValidationRule>)page.getItems());
 		assertValid(
 			page,
 			testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage_getExpectedActions(
@@ -292,6 +289,14 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		String externalReferenceCode =
 			testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage_getExternalReferenceCode();
 
+		Page<ObjectValidationRule> objectValidationRulePage =
+			objectValidationRuleResource.
+				getObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage(
+					externalReferenceCode, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			objectValidationRulePage.getTotalCount());
+
 		ObjectValidationRule objectValidationRule1 =
 			testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage_addObjectValidationRule(
 				externalReferenceCode, randomObjectValidationRule());
@@ -307,21 +312,23 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		Page<ObjectValidationRule> page1 =
 			objectValidationRuleResource.
 				getObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage(
-					externalReferenceCode, null, Pagination.of(1, 2));
+					externalReferenceCode, null,
+					Pagination.of(1, totalCount + 2), null);
 
 		List<ObjectValidationRule> objectValidationRules1 =
 			(List<ObjectValidationRule>)page1.getItems();
 
 		Assert.assertEquals(
-			objectValidationRules1.toString(), 2,
+			objectValidationRules1.toString(), totalCount + 2,
 			objectValidationRules1.size());
 
 		Page<ObjectValidationRule> page2 =
 			objectValidationRuleResource.
 				getObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage(
-					externalReferenceCode, null, Pagination.of(2, 2));
+					externalReferenceCode, null,
+					Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<ObjectValidationRule> objectValidationRules2 =
 			(List<ObjectValidationRule>)page2.getItems();
@@ -333,13 +340,183 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		Page<ObjectValidationRule> page3 =
 			objectValidationRuleResource.
 				getObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage(
-					externalReferenceCode, null, Pagination.of(1, 3));
+					externalReferenceCode, null,
+					Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				objectValidationRule1, objectValidationRule2,
-				objectValidationRule3),
+		assertContains(
+			objectValidationRule1,
 			(List<ObjectValidationRule>)page3.getItems());
+		assertContains(
+			objectValidationRule2,
+			(List<ObjectValidationRule>)page3.getItems());
+		assertContains(
+			objectValidationRule3,
+			(List<ObjectValidationRule>)page3.getItems());
+	}
+
+	@Test
+	public void testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPageWithSortDateTime()
+		throws Exception {
+
+		testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPageWithSort(
+			EntityField.Type.DATE_TIME,
+			(entityField, objectValidationRule1, objectValidationRule2) -> {
+				BeanTestUtil.setProperty(
+					objectValidationRule1, entityField.getName(),
+					DateUtils.addMinutes(new Date(), -2));
+			});
+	}
+
+	@Test
+	public void testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPageWithSortDouble()
+		throws Exception {
+
+		testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPageWithSort(
+			EntityField.Type.DOUBLE,
+			(entityField, objectValidationRule1, objectValidationRule2) -> {
+				BeanTestUtil.setProperty(
+					objectValidationRule1, entityField.getName(), 0.1);
+				BeanTestUtil.setProperty(
+					objectValidationRule2, entityField.getName(), 0.5);
+			});
+	}
+
+	@Test
+	public void testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPageWithSortInteger()
+		throws Exception {
+
+		testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPageWithSort(
+			EntityField.Type.INTEGER,
+			(entityField, objectValidationRule1, objectValidationRule2) -> {
+				BeanTestUtil.setProperty(
+					objectValidationRule1, entityField.getName(), 0);
+				BeanTestUtil.setProperty(
+					objectValidationRule2, entityField.getName(), 1);
+			});
+	}
+
+	@Test
+	public void testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPageWithSortString()
+		throws Exception {
+
+		testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPageWithSort(
+			EntityField.Type.STRING,
+			(entityField, objectValidationRule1, objectValidationRule2) -> {
+				Class<?> clazz = objectValidationRule1.getClass();
+
+				String entityFieldName = entityField.getName();
+
+				Method method = clazz.getMethod(
+					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
+
+				Class<?> returnType = method.getReturnType();
+
+				if (returnType.isAssignableFrom(Map.class)) {
+					BeanTestUtil.setProperty(
+						objectValidationRule1, entityFieldName,
+						Collections.singletonMap("Aaa", "Aaa"));
+					BeanTestUtil.setProperty(
+						objectValidationRule2, entityFieldName,
+						Collections.singletonMap("Bbb", "Bbb"));
+				}
+				else if (entityFieldName.contains("email")) {
+					BeanTestUtil.setProperty(
+						objectValidationRule1, entityFieldName,
+						"aaa" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()) +
+									"@liferay.com");
+					BeanTestUtil.setProperty(
+						objectValidationRule2, entityFieldName,
+						"bbb" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()) +
+									"@liferay.com");
+				}
+				else {
+					BeanTestUtil.setProperty(
+						objectValidationRule1, entityFieldName,
+						"aaa" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()));
+					BeanTestUtil.setProperty(
+						objectValidationRule2, entityFieldName,
+						"bbb" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()));
+				}
+			});
+	}
+
+	protected void
+			testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPageWithSort(
+				EntityField.Type type,
+				UnsafeTriConsumer
+					<EntityField, ObjectValidationRule, ObjectValidationRule,
+					 Exception> unsafeTriConsumer)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
+
+		if (entityFields.isEmpty()) {
+			return;
+		}
+
+		String externalReferenceCode =
+			testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage_getExternalReferenceCode();
+
+		ObjectValidationRule objectValidationRule1 =
+			randomObjectValidationRule();
+		ObjectValidationRule objectValidationRule2 =
+			randomObjectValidationRule();
+
+		for (EntityField entityField : entityFields) {
+			unsafeTriConsumer.accept(
+				entityField, objectValidationRule1, objectValidationRule2);
+		}
+
+		objectValidationRule1 =
+			testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage_addObjectValidationRule(
+				externalReferenceCode, objectValidationRule1);
+
+		objectValidationRule2 =
+			testGetObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage_addObjectValidationRule(
+				externalReferenceCode, objectValidationRule2);
+
+		Page<ObjectValidationRule> page =
+			objectValidationRuleResource.
+				getObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage(
+					externalReferenceCode, null, null, null);
+
+		for (EntityField entityField : entityFields) {
+			Page<ObjectValidationRule> ascPage =
+				objectValidationRuleResource.
+					getObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage(
+						externalReferenceCode, null,
+						Pagination.of(1, (int)page.getTotalCount() + 1),
+						entityField.getName() + ":asc");
+
+			assertContains(
+				objectValidationRule1,
+				(List<ObjectValidationRule>)ascPage.getItems());
+			assertContains(
+				objectValidationRule2,
+				(List<ObjectValidationRule>)ascPage.getItems());
+
+			Page<ObjectValidationRule> descPage =
+				objectValidationRuleResource.
+					getObjectDefinitionByExternalReferenceCodeObjectValidationRulesPage(
+						externalReferenceCode, null,
+						Pagination.of(1, (int)page.getTotalCount() + 1),
+						entityField.getName() + ":desc");
+
+			assertContains(
+				objectValidationRule2,
+				(List<ObjectValidationRule>)descPage.getItems());
+			assertContains(
+				objectValidationRule1,
+				(List<ObjectValidationRule>)descPage.getItems());
+		}
 	}
 
 	protected ObjectValidationRule
@@ -403,9 +580,9 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		Page<ObjectValidationRule> page =
 			objectValidationRuleResource.
 				getObjectDefinitionObjectValidationRulesPage(
-					objectDefinitionId, null, Pagination.of(1, 10));
+					objectDefinitionId, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantObjectDefinitionId != null) {
 			ObjectValidationRule irrelevantObjectValidationRule =
@@ -417,12 +594,12 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 				objectValidationRuleResource.
 					getObjectDefinitionObjectValidationRulesPage(
 						irrelevantObjectDefinitionId, null,
-						Pagination.of(1, 2));
+						Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantObjectValidationRule),
+			assertContains(
+				irrelevantObjectValidationRule,
 				(List<ObjectValidationRule>)page.getItems());
 			assertValid(
 				page,
@@ -441,13 +618,14 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		page =
 			objectValidationRuleResource.
 				getObjectDefinitionObjectValidationRulesPage(
-					objectDefinitionId, null, Pagination.of(1, 10));
+					objectDefinitionId, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(objectValidationRule1, objectValidationRule2),
-			(List<ObjectValidationRule>)page.getItems());
+		assertContains(
+			objectValidationRule1, (List<ObjectValidationRule>)page.getItems());
+		assertContains(
+			objectValidationRule2, (List<ObjectValidationRule>)page.getItems());
 		assertValid(
 			page,
 			testGetObjectDefinitionObjectValidationRulesPage_getExpectedActions(
@@ -488,6 +666,14 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		Long objectDefinitionId =
 			testGetObjectDefinitionObjectValidationRulesPage_getObjectDefinitionId();
 
+		Page<ObjectValidationRule> objectValidationRulePage =
+			objectValidationRuleResource.
+				getObjectDefinitionObjectValidationRulesPage(
+					objectDefinitionId, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			objectValidationRulePage.getTotalCount());
+
 		ObjectValidationRule objectValidationRule1 =
 			testGetObjectDefinitionObjectValidationRulesPage_addObjectValidationRule(
 				objectDefinitionId, randomObjectValidationRule());
@@ -503,21 +689,23 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		Page<ObjectValidationRule> page1 =
 			objectValidationRuleResource.
 				getObjectDefinitionObjectValidationRulesPage(
-					objectDefinitionId, null, Pagination.of(1, 2));
+					objectDefinitionId, null, Pagination.of(1, totalCount + 2),
+					null);
 
 		List<ObjectValidationRule> objectValidationRules1 =
 			(List<ObjectValidationRule>)page1.getItems();
 
 		Assert.assertEquals(
-			objectValidationRules1.toString(), 2,
+			objectValidationRules1.toString(), totalCount + 2,
 			objectValidationRules1.size());
 
 		Page<ObjectValidationRule> page2 =
 			objectValidationRuleResource.
 				getObjectDefinitionObjectValidationRulesPage(
-					objectDefinitionId, null, Pagination.of(2, 2));
+					objectDefinitionId, null, Pagination.of(2, totalCount + 2),
+					null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<ObjectValidationRule> objectValidationRules2 =
 			(List<ObjectValidationRule>)page2.getItems();
@@ -529,13 +717,182 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		Page<ObjectValidationRule> page3 =
 			objectValidationRuleResource.
 				getObjectDefinitionObjectValidationRulesPage(
-					objectDefinitionId, null, Pagination.of(1, 3));
+					objectDefinitionId, null,
+					Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				objectValidationRule1, objectValidationRule2,
-				objectValidationRule3),
+		assertContains(
+			objectValidationRule1,
 			(List<ObjectValidationRule>)page3.getItems());
+		assertContains(
+			objectValidationRule2,
+			(List<ObjectValidationRule>)page3.getItems());
+		assertContains(
+			objectValidationRule3,
+			(List<ObjectValidationRule>)page3.getItems());
+	}
+
+	@Test
+	public void testGetObjectDefinitionObjectValidationRulesPageWithSortDateTime()
+		throws Exception {
+
+		testGetObjectDefinitionObjectValidationRulesPageWithSort(
+			EntityField.Type.DATE_TIME,
+			(entityField, objectValidationRule1, objectValidationRule2) -> {
+				BeanTestUtil.setProperty(
+					objectValidationRule1, entityField.getName(),
+					DateUtils.addMinutes(new Date(), -2));
+			});
+	}
+
+	@Test
+	public void testGetObjectDefinitionObjectValidationRulesPageWithSortDouble()
+		throws Exception {
+
+		testGetObjectDefinitionObjectValidationRulesPageWithSort(
+			EntityField.Type.DOUBLE,
+			(entityField, objectValidationRule1, objectValidationRule2) -> {
+				BeanTestUtil.setProperty(
+					objectValidationRule1, entityField.getName(), 0.1);
+				BeanTestUtil.setProperty(
+					objectValidationRule2, entityField.getName(), 0.5);
+			});
+	}
+
+	@Test
+	public void testGetObjectDefinitionObjectValidationRulesPageWithSortInteger()
+		throws Exception {
+
+		testGetObjectDefinitionObjectValidationRulesPageWithSort(
+			EntityField.Type.INTEGER,
+			(entityField, objectValidationRule1, objectValidationRule2) -> {
+				BeanTestUtil.setProperty(
+					objectValidationRule1, entityField.getName(), 0);
+				BeanTestUtil.setProperty(
+					objectValidationRule2, entityField.getName(), 1);
+			});
+	}
+
+	@Test
+	public void testGetObjectDefinitionObjectValidationRulesPageWithSortString()
+		throws Exception {
+
+		testGetObjectDefinitionObjectValidationRulesPageWithSort(
+			EntityField.Type.STRING,
+			(entityField, objectValidationRule1, objectValidationRule2) -> {
+				Class<?> clazz = objectValidationRule1.getClass();
+
+				String entityFieldName = entityField.getName();
+
+				Method method = clazz.getMethod(
+					"get" + StringUtil.upperCaseFirstLetter(entityFieldName));
+
+				Class<?> returnType = method.getReturnType();
+
+				if (returnType.isAssignableFrom(Map.class)) {
+					BeanTestUtil.setProperty(
+						objectValidationRule1, entityFieldName,
+						Collections.singletonMap("Aaa", "Aaa"));
+					BeanTestUtil.setProperty(
+						objectValidationRule2, entityFieldName,
+						Collections.singletonMap("Bbb", "Bbb"));
+				}
+				else if (entityFieldName.contains("email")) {
+					BeanTestUtil.setProperty(
+						objectValidationRule1, entityFieldName,
+						"aaa" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()) +
+									"@liferay.com");
+					BeanTestUtil.setProperty(
+						objectValidationRule2, entityFieldName,
+						"bbb" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()) +
+									"@liferay.com");
+				}
+				else {
+					BeanTestUtil.setProperty(
+						objectValidationRule1, entityFieldName,
+						"aaa" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()));
+					BeanTestUtil.setProperty(
+						objectValidationRule2, entityFieldName,
+						"bbb" +
+							StringUtil.toLowerCase(
+								RandomTestUtil.randomString()));
+				}
+			});
+	}
+
+	protected void testGetObjectDefinitionObjectValidationRulesPageWithSort(
+			EntityField.Type type,
+			UnsafeTriConsumer
+				<EntityField, ObjectValidationRule, ObjectValidationRule,
+				 Exception> unsafeTriConsumer)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
+
+		if (entityFields.isEmpty()) {
+			return;
+		}
+
+		Long objectDefinitionId =
+			testGetObjectDefinitionObjectValidationRulesPage_getObjectDefinitionId();
+
+		ObjectValidationRule objectValidationRule1 =
+			randomObjectValidationRule();
+		ObjectValidationRule objectValidationRule2 =
+			randomObjectValidationRule();
+
+		for (EntityField entityField : entityFields) {
+			unsafeTriConsumer.accept(
+				entityField, objectValidationRule1, objectValidationRule2);
+		}
+
+		objectValidationRule1 =
+			testGetObjectDefinitionObjectValidationRulesPage_addObjectValidationRule(
+				objectDefinitionId, objectValidationRule1);
+
+		objectValidationRule2 =
+			testGetObjectDefinitionObjectValidationRulesPage_addObjectValidationRule(
+				objectDefinitionId, objectValidationRule2);
+
+		Page<ObjectValidationRule> page =
+			objectValidationRuleResource.
+				getObjectDefinitionObjectValidationRulesPage(
+					objectDefinitionId, null, null, null);
+
+		for (EntityField entityField : entityFields) {
+			Page<ObjectValidationRule> ascPage =
+				objectValidationRuleResource.
+					getObjectDefinitionObjectValidationRulesPage(
+						objectDefinitionId, null,
+						Pagination.of(1, (int)page.getTotalCount() + 1),
+						entityField.getName() + ":asc");
+
+			assertContains(
+				objectValidationRule1,
+				(List<ObjectValidationRule>)ascPage.getItems());
+			assertContains(
+				objectValidationRule2,
+				(List<ObjectValidationRule>)ascPage.getItems());
+
+			Page<ObjectValidationRule> descPage =
+				objectValidationRuleResource.
+					getObjectDefinitionObjectValidationRulesPage(
+						objectDefinitionId, null,
+						Pagination.of(1, (int)page.getTotalCount() + 1),
+						entityField.getName() + ":desc");
+
+			assertContains(
+				objectValidationRule2,
+				(List<ObjectValidationRule>)descPage.getItems());
+			assertContains(
+				objectValidationRule1,
+				(List<ObjectValidationRule>)descPage.getItems());
+		}
 	}
 
 	protected ObjectValidationRule
@@ -954,6 +1311,16 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals(
+					"externalReferenceCode", additionalAssertFieldName)) {
+
+				if (objectValidationRule.getExternalReferenceCode() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("name", additionalAssertFieldName)) {
 				if (objectValidationRule.getName() == null) {
 					valid = false;
@@ -985,8 +1352,37 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals(
+					"objectValidationRuleSettings",
+					additionalAssertFieldName)) {
+
+				if (objectValidationRule.getObjectValidationRuleSettings() ==
+						null) {
+
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("outputType", additionalAssertFieldName)) {
+				if (objectValidationRule.getOutputType() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("script", additionalAssertFieldName)) {
 				if (objectValidationRule.getScript() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("system", additionalAssertFieldName)) {
+				if (objectValidationRule.getSystem() == null) {
 					valid = false;
 				}
 
@@ -1025,14 +1421,19 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1186,6 +1587,19 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals(
+					"externalReferenceCode", additionalAssertFieldName)) {
+
+				if (!Objects.deepEquals(
+						objectValidationRule1.getExternalReferenceCode(),
+						objectValidationRule2.getExternalReferenceCode())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("id", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						objectValidationRule1.getId(),
@@ -1237,10 +1651,47 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals(
+					"objectValidationRuleSettings",
+					additionalAssertFieldName)) {
+
+				if (!Objects.deepEquals(
+						objectValidationRule1.getObjectValidationRuleSettings(),
+						objectValidationRule2.
+							getObjectValidationRuleSettings())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("outputType", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						objectValidationRule1.getOutputType(),
+						objectValidationRule2.getOutputType())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("script", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						objectValidationRule1.getScript(),
 						objectValidationRule2.getScript())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("system", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						objectValidationRule1.getSystem(),
+						objectValidationRule2.getSystem())) {
 
 					return false;
 				}
@@ -1431,17 +1882,93 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		}
 
 		if (entityFieldName.equals("engine")) {
-			sb.append("'");
-			sb.append(String.valueOf(objectValidationRule.getEngine()));
-			sb.append("'");
+			Object object = objectValidationRule.getEngine();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("engineLabel")) {
-			sb.append("'");
-			sb.append(String.valueOf(objectValidationRule.getEngineLabel()));
-			sb.append("'");
+			Object object = objectValidationRule.getEngineLabel();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1449,6 +1976,52 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		if (entityFieldName.equals("errorLabel")) {
 			throw new IllegalArgumentException(
 				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("externalReferenceCode")) {
+			Object object = objectValidationRule.getExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
+
+			return sb.toString();
 		}
 
 		if (entityFieldName.equals("id")) {
@@ -1462,12 +2035,48 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 		}
 
 		if (entityFieldName.equals("objectDefinitionExternalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					objectValidationRule.
-						getObjectDefinitionExternalReferenceCode()));
-			sb.append("'");
+			Object object =
+				objectValidationRule.getObjectDefinitionExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1477,12 +2086,65 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 				"Invalid entity field " + entityFieldName);
 		}
 
+		if (entityFieldName.equals("objectValidationRuleSettings")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("outputType")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
 		if (entityFieldName.equals("script")) {
-			sb.append("'");
-			sb.append(String.valueOf(objectValidationRule.getScript()));
-			sb.append("'");
+			Object object = objectValidationRule.getScript();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
+		}
+
+		if (entityFieldName.equals("system")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
 		}
 
 		throw new IllegalArgumentException(
@@ -1537,11 +2199,14 @@ public abstract class BaseObjectValidationRuleResourceTestCase {
 				engine = StringUtil.toLowerCase(RandomTestUtil.randomString());
 				engineLabel = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
+				externalReferenceCode = StringUtil.toLowerCase(
+					RandomTestUtil.randomString());
 				id = RandomTestUtil.randomLong();
 				objectDefinitionExternalReferenceCode = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
 				objectDefinitionId = RandomTestUtil.randomLong();
 				script = StringUtil.toLowerCase(RandomTestUtil.randomString());
+				system = RandomTestUtil.randomBoolean();
 			}
 		};
 	}

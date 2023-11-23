@@ -1,20 +1,11 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.kernel.upload.configuration;
 
-import com.liferay.portal.kernel.util.ServiceProxyFactory;
+import com.liferay.portal.kernel.module.service.Snapshot;
 
 /**
  * @author Pei-Jung Lan
@@ -22,22 +13,32 @@ import com.liferay.portal.kernel.util.ServiceProxyFactory;
 public class UploadServletRequestConfigurationProviderUtil {
 
 	public static long getMaxSize() {
-		return _uploadServletRequestConfigurationProvider.getMaxSize();
+		UploadServletRequestConfigurationProvider
+			uploadServletRequestConfigurationProvider =
+				_uploadServletRequestConfigurationProviderSnapshot.get();
+
+		return uploadServletRequestConfigurationProvider.getMaxSize();
 	}
 
 	public static long getMaxTries() {
-		return _uploadServletRequestConfigurationProvider.getMaxTries();
+		UploadServletRequestConfigurationProvider
+			uploadServletRequestConfigurationProvider =
+				_uploadServletRequestConfigurationProviderSnapshot.get();
+
+		return uploadServletRequestConfigurationProvider.getMaxTries();
 	}
 
 	public static String getTempDir() {
-		return _uploadServletRequestConfigurationProvider.getTempDir();
+		UploadServletRequestConfigurationProvider
+			uploadServletRequestConfigurationProvider =
+				_uploadServletRequestConfigurationProviderSnapshot.get();
+
+		return uploadServletRequestConfigurationProvider.getTempDir();
 	}
 
-	private static volatile UploadServletRequestConfigurationProvider
-		_uploadServletRequestConfigurationProvider =
-			ServiceProxyFactory.newServiceTrackedInstance(
-				UploadServletRequestConfigurationProvider.class,
-				UploadServletRequestConfigurationProviderUtil.class,
-				"_uploadServletRequestConfigurationProvider", false);
+	private static final Snapshot<UploadServletRequestConfigurationProvider>
+		_uploadServletRequestConfigurationProviderSnapshot = new Snapshot<>(
+			UploadServletRequestConfigurationProviderUtil.class,
+			UploadServletRequestConfigurationProvider.class);
 
 }

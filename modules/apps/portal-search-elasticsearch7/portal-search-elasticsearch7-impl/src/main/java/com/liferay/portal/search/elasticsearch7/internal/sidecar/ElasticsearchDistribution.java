@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.search.elasticsearch7.internal.sidecar;
@@ -24,7 +15,7 @@ import java.util.List;
  */
 public class ElasticsearchDistribution implements Distribution {
 
-	public static final String VERSION = "7.17.9";
+	public static final String VERSION = "7.17.14";
 
 	@Override
 	public Distributable getElasticsearchDistributable() {
@@ -55,23 +46,23 @@ public class ElasticsearchDistribution implements Distribution {
 	}
 
 	private static final String _ELASTICSEARCH_CHECKSUM =
-		"e2c6094377ed2ada0650864b7c30386467b920770b93e6f19d1448635f7f2024fbae" +
-			"bd619ba683ed4c1b5dc8e67f2396183d81598a5e610ca2879ea3cd8dba32";
+		"4103fc9b931e2acfc52c3583cec820ff62e59957e147215e16a5c7f5987a9d6fc858" +
+			"b5b239333c852bd18b528d8fb38ac9bec6d8229c3a331f12e4f8ff0d26f2";
 
 	private static final String _ICU_CHECKSUM =
-		"1935e8c469bac4c5f0e7460778dfff64afa1a7bbca32f5d4acea1a64d50dbfb101b3" +
-			"3fa9df8b1aed74eaa5b3a785642423aacae57d737d7966145893d6ddcc22";
+		"c1c9f92e121882016fc2cd01f32fe3a5fbeb06976b3758e3c943c1cd64ed0e95a004" +
+			"a2126028cbfd8404aba243ef15c0a8b50f31cbaf557c93c612eb55fc091f";
 
 	private static final String _KUROMOJI_CHECKSUM =
-		"b2de15ab451e45b2f3bd4b9af3fc8832554facf1a62effbedc3bb1ba26aa5628695f" +
-			"55da4086b547bd21ab908cb83ccb220522862100fd71ffce574b2b2d8945";
+		"77b524e4a4b7d60332242c610d50216056e530b51b4dca1f99c90c3f0d1f28052831" +
+			"2ba0a38403b330fc101b1ee2b69eb4e6d016c4eabc6b563f493fe196e2b3";
 
 	private static final String _SMARTCN_CHECKSUM =
-		"affbb4c56168bb45521cf62913b697c342448a560001bebf2a72ca5f1ba016455daa" +
-			"52b6dd78a1fbb45f3eccb091214ca48e6221022986fe8e9c0050b0c2b5b2";
+		"7733cd7053496088644f07ed774ab74d98c5bbcd42828f59e216cb05fe8fc1d42dce" +
+			"1e71d74d1a43180edc1c50fd800005954d567040cef7ed3ab982f1ac373f";
 
 	private static final String _STEMPEL_CHECKSUM =
-		"1a13ad408b137eee2ca0157891c45efd1659eb7772549195bd7cbc768ecaf3590c75" +
-			"7c67d77fcf0ef760940f15f87bc589d7bdc01663624b1f82b85e07fd30b9";
+		"ef30afe037fc12363a764fe9065b6f67e1491d2d2d294d4bec16b59d03263da08e40" +
+			"9847fbd6838656d7a93bc0a28af19fe8573f30da360df59cc7010ed2dedc";
 
 }

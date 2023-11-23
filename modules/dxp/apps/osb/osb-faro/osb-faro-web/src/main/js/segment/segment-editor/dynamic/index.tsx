@@ -4,9 +4,7 @@ import CriteriaBuilder from './criteria-builder';
 import CriteriaSidebar from './criteria-sidebar';
 import EmbeddedAlertList from 'shared/components/EmbeddedAlertList';
 import Form, {withField} from 'shared/components/form';
-import HTML5Backend from 'react-dnd-html5-backend';
 import NavigationWarning from 'shared/components/NavigationWarning';
-import Promise from 'metal-promise';
 import React from 'react';
 import Toolbar from './Toolbar';
 import {AlertTypes} from 'shared/components/Alert';
@@ -18,6 +16,7 @@ import {
 import {CriterionGroup} from './utils/types';
 import {DndProvider} from 'react-dnd';
 import {Formik} from 'formik';
+import {HTML5Backend} from 'react-dnd-html5-backend';
 import {
 	invalidateCriterionWithMissingProperty,
 	validateSegmentInputs
@@ -83,7 +82,7 @@ interface ISegmentEditorProps {
 	onSubmit: (
 		form: FormValues,
 		ref: React.Ref<Formik>,
-		requestFn: (params: FormValues) => typeof Promise
+		requestFn: (params: FormValues) => Promise<any>
 	) => void;
 	propertyGroupsIList: List<PropertyGroup>;
 	segment: Segment;
@@ -114,7 +113,7 @@ class SegmentEditor extends React.Component<ISegmentEditorProps> {
 			criteriaString: buildQueryString([criteria]),
 			description: '',
 			includeAnonymousUsers,
-			name,
+			name: name.trim(),
 			segmentType: SegmentTypes.Dynamic
 		};
 

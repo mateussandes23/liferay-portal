@@ -1,32 +1,39 @@
-import {Liferay} from './liferay/liferay';
-import {AppCreationFlow} from './pages/AppCreationFlow/AppCreationFlow';
-import GetAppPage from './pages/GetAppPage/GetAppPage';
-import {NextStepPage} from './pages/NextStepPage/NextStepPage';
-import {PublishedAppsDashboardPage} from './pages/PublishedAppsDashboardPage/PublishedAppsDashboardPage';
-import {PurchasedAppsDashboardPage} from './pages/PurchasedAppsDashboardPage/PurchasedAppsDashboardPage';
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
 
-interface AppRoutesProps {
-	route: string;
-}
+import {Liferay} from './liferay/liferay';
+import {CustomerGatePage} from './pages/CustomerGatePage/CustomerGatePage';
+import GetAppPage from './pages/GetAppPage/GetAppPage';
+import {NextSteps} from './pages/NextSteps';
+import {AppCreationFlow} from './pages/PublishedAppsDashboard/Apps/AppCreationFlow/AppCreationFlow';
+import PublishedAppsDashboardRouter from './pages/PublishedAppsDashboard/PublishedAppsDashboardRouter';
+import PurchasedAppsDashboardRouter from './pages/PurchasedAppsDashboard/PurchasedAppsDashboardRouter';
+import PurchasedSolutions from './pages/PurchasedSolutions/PurchasedSolutions';
+
+const Routes = {
+	'create-app': AppCreationFlow,
+	'customer-gate': CustomerGatePage,
+	'get-app': GetAppPage,
+	'next-steps': NextSteps,
+	'published-apps': PublishedAppsDashboardRouter,
+	'purchased-apps': PurchasedAppsDashboardRouter,
+	'purchased-solutions': PurchasedSolutions,
+} as const;
+
+export type RouteType = keyof typeof Routes;
+
+type AppRoutesProps = {
+	route: RouteType;
+};
 
 export default function AppRoutes({route}: AppRoutesProps) {
-	if (Liferay.ThemeDisplay.isSignedIn()) {
-		if (route === 'create-app') {
-			return <AppCreationFlow />;
-		}
-		else if (route === 'get-app') {
-			return <GetAppPage />;
-		}
-		else if (route === 'next-steps') {
-			return <NextStepPage />;
-		}
-		else if (route === 'purchased-apps') {
-			return <PurchasedAppsDashboardPage />;
-		}
-		else if (route === 'published-apps') {
-			return <PublishedAppsDashboardPage />;
-		}
+	const Route = Routes[route];
+
+	if (!Liferay.ThemeDisplay.isSignedIn() || !Route) {
+		return <h1>Page not found</h1>;
 	}
 
-	return <></>;
+	return <Route />;
 }

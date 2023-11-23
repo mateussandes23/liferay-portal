@@ -1,27 +1,26 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayAlert from '@clayui/alert';
 import {useCallback, useMemo, useState} from 'react';
+import {useAppPropertiesContext} from '~/common/contexts/AppPropertiesContext';
+import {useGetMyUserAccount} from '~/common/services/liferay/graphql/user-accounts';
 import i18n from '../../../../../../common/I18n';
 import {ROLE_TYPES} from '../../../../../../common/utils/constants';
 import {ALERT_DOWNLOAD_TYPE} from '../../../../utils/constants/alertDownloadType';
+import {has100YearsDifference} from '../../utils';
 import {ALERT_ACTIVATION_AGGREGATED_KEYS_DOWNLOAD_TEXT} from '../../utils/constants/alertAggregateKeysDownloadText';
 import {ALERT_ACTIVATION_MULTIPLE_KEYS_DOWNLOAD_TEXT} from '../../utils/constants/alertMultipleKeysDownloadText';
 import {DOWNLOADABLE_LICENSE_KEYS} from '../../utils/constants/downlodableLicenseKeys';
+import {hasAdminUserAccount} from '../../utils/hasAdminUserAccount';
 import ActionButton from '../ActionButton';
 import BadgeFilter from '../BadgeFilter';
 import DeactivateButton from '../Deactivate';
 import DownloadAlert from '../DownloadAlert';
 import Filter from '../Filter';
+import RenewButton from '../Renew';
 import useGetAccountUserAccount from './hooks/useGetAccountUserAccount';
 
 const ActivationKeysTableHeader = ({
@@ -39,6 +38,10 @@ const ActivationKeysTableHeader = ({
 		userAccountsState: [userAccounts],
 	} = useGetAccountUserAccount(project);
 
+	const {data: myAccount} = useGetMyUserAccount();
+
+	const isAdminUserAccount = hasAdminUserAccount(myAccount);
+
 	const isAdminOrPartnerManager = useMemo(() => {
 		const currentUser = userAccounts?.find(
 			({id}) => id === +Liferay.ThemeDisplay.getUserId()
@@ -54,6 +57,8 @@ const ActivationKeysTableHeader = ({
 			return hasAdminRoles;
 		}
 	}, [userAccounts]);
+
+	const {featureFlags} = useAppPropertiesContext();
 
 	const [status, setStatus] = useState({
 		deactivate: '',
@@ -111,6 +116,26 @@ const ActivationKeysTableHeader = ({
 
 	const allowSelfProvisioning = project.allowSelfProvisioning;
 
+	function isBulkRenewAvailable(items) {
+		const firstItem = items[0];
+
+		for (const item of items) {
+			if (
+				item.productName !== firstItem.productName ||
+				item.expirationDate !== firstItem.expirationDate ||
+				item.startDate !== firstItem.startDate ||
+				has100YearsDifference(item.startDate, item.expirationDate)
+			) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+	const bulkRenewAvailable = isBulkRenewAvailable(
+		activationKeysByStatusPaginatedChecked
+	);
+
 	return (
 		<>
 			<div className="bg-neutral-1 d-flex flex-column pb-1 pt-3 px-3 rounded">
@@ -124,11 +149,14 @@ const ActivationKeysTableHeader = ({
 						{!!activationKeysByStatusPaginatedChecked.length && (
 							<>
 								<p className="font-weight-semi-bold m-0 ml-auto pr-2 text-neutral-10">
-									{i18n.sub('x-keys-selected', [
+									{i18n.sub('x-of-x-keys-selected', [
 										activationKeysByStatusPaginatedChecked.length,
+										activationKeys.length,
 									])}
 								</p>
-								{isAdminOrPartnerManager &&
+
+								{(isAdminUserAccount ||
+									isAdminOrPartnerManager) &&
 									allowSelfProvisioning && (
 										<DeactivateButton
 											deactivateKeysStatus={
@@ -150,6 +178,23 @@ const ActivationKeysTableHeader = ({
 							</>
 						)}
 
+						{featureFlags.includes('ISSD-78') &&
+							(isAdminUserAccount || isAdminOrPartnerManager) &&
+							allowSelfProvisioning &&
+							activationKeysByStatusPaginatedChecked.length >=
+								2 &&
+							bulkRenewAvailable && (
+								<RenewButton
+									activationKeysByStatusPaginatedChecked={
+										activationKeysByStatusPaginatedChecked
+									}
+									filterCheckedActivationKeys={
+										filterCheckedActivationKeys
+									}
+									identifier="renew"
+								/>
+							)}
+
 						<ActionButton
 							activationKeysByStatusPaginatedChecked={
 								activationKeysByStatusPaginatedChecked
@@ -157,10 +202,12 @@ const ActivationKeysTableHeader = ({
 							filterCheckedActivationKeys={
 								filterCheckedActivationKeys
 							}
+							identifier="action"
 							isAbleToDownloadAggregateKeys={
 								isAbleToDownloadAggregateKeys
 							}
 							isAdminOrPartnerManager={isAdminOrPartnerManager}
+							isAdminUserAccount={isAdminUserAccount}
 							productName={productName}
 							project={project}
 							sessionId={sessionId}

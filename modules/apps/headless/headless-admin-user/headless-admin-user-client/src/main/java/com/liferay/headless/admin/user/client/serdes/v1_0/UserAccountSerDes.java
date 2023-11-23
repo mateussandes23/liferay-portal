@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.admin.user.client.serdes.v1_0;
@@ -326,6 +317,16 @@ public class UserAccountSerDes {
 			sb.append("\"");
 		}
 
+		if (userAccount.getImageId() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"imageId\": ");
+
+			sb.append(userAccount.getImageId());
+		}
+
 		if (userAccount.getJobTitle() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -362,6 +363,34 @@ public class UserAccountSerDes {
 			}
 
 			sb.append("]");
+		}
+
+		if (userAccount.getLanguageDisplayName() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"languageDisplayName\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(userAccount.getLanguageDisplayName()));
+
+			sb.append("\"");
+		}
+
+		if (userAccount.getLanguageId() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"languageId\": ");
+
+			sb.append("\"");
+
+			sb.append(_escape(userAccount.getLanguageId()));
+
+			sb.append("\"");
 		}
 
 		if (userAccount.getLastLoginDate() != null) {
@@ -482,6 +511,20 @@ public class UserAccountSerDes {
 			}
 
 			sb.append("]");
+		}
+
+		if (userAccount.getStatus() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"status\": ");
+
+			sb.append("\"");
+
+			sb.append(userAccount.getStatus());
+
+			sb.append("\"");
 		}
 
 		if (userAccount.getUserAccountContactInformation() != null) {
@@ -686,6 +729,13 @@ public class UserAccountSerDes {
 			map.put("image", String.valueOf(userAccount.getImage()));
 		}
 
+		if (userAccount.getImageId() == null) {
+			map.put("imageId", null);
+		}
+		else {
+			map.put("imageId", String.valueOf(userAccount.getImageId()));
+		}
+
 		if (userAccount.getJobTitle() == null) {
 			map.put("jobTitle", null);
 		}
@@ -698,6 +748,22 @@ public class UserAccountSerDes {
 		}
 		else {
 			map.put("keywords", String.valueOf(userAccount.getKeywords()));
+		}
+
+		if (userAccount.getLanguageDisplayName() == null) {
+			map.put("languageDisplayName", null);
+		}
+		else {
+			map.put(
+				"languageDisplayName",
+				String.valueOf(userAccount.getLanguageDisplayName()));
+		}
+
+		if (userAccount.getLanguageId() == null) {
+			map.put("languageId", null);
+		}
+		else {
+			map.put("languageId", String.valueOf(userAccount.getLanguageId()));
 		}
 
 		if (userAccount.getLastLoginDate() == null) {
@@ -751,6 +817,13 @@ public class UserAccountSerDes {
 		}
 		else {
 			map.put("siteBriefs", String.valueOf(userAccount.getSiteBriefs()));
+		}
+
+		if (userAccount.getStatus() == null) {
+			map.put("status", null);
+		}
+		else {
+			map.put("status", String.valueOf(userAccount.getStatus()));
 		}
 
 		if (userAccount.getUserAccountContactInformation() == null) {
@@ -916,6 +989,12 @@ public class UserAccountSerDes {
 					userAccount.setImage((String)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "imageId")) {
+				if (jsonParserFieldValue != null) {
+					userAccount.setImageId(
+						Long.valueOf((String)jsonParserFieldValue));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "jobTitle")) {
 				if (jsonParserFieldValue != null) {
 					userAccount.setJobTitle((String)jsonParserFieldValue);
@@ -925,6 +1004,19 @@ public class UserAccountSerDes {
 				if (jsonParserFieldValue != null) {
 					userAccount.setKeywords(
 						toStrings((Object[])jsonParserFieldValue));
+				}
+			}
+			else if (Objects.equals(
+						jsonParserFieldName, "languageDisplayName")) {
+
+				if (jsonParserFieldValue != null) {
+					userAccount.setLanguageDisplayName(
+						(String)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "languageId")) {
+				if (jsonParserFieldValue != null) {
+					userAccount.setLanguageId((String)jsonParserFieldValue);
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "lastLoginDate")) {
@@ -997,6 +1089,13 @@ public class UserAccountSerDes {
 					}
 
 					userAccount.setSiteBriefs(siteBriefsArray);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "status")) {
+				if (jsonParserFieldValue != null) {
+					userAccount.setStatus(
+						UserAccount.Status.create(
+							(String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(

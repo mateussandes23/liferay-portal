@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.catalog.resource.v1_0.test;
@@ -43,6 +34,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -346,7 +338,7 @@ public abstract class BaseProductChannelResourceTestCase {
 				getProductByExternalReferenceCodeProductChannelsPage(
 					externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantExternalReferenceCode != null) {
 			ProductChannel irrelevantProductChannel =
@@ -357,12 +349,13 @@ public abstract class BaseProductChannelResourceTestCase {
 			page =
 				productChannelResource.
 					getProductByExternalReferenceCodeProductChannelsPage(
-						irrelevantExternalReferenceCode, Pagination.of(1, 2));
+						irrelevantExternalReferenceCode,
+						Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantProductChannel),
+			assertContains(
+				irrelevantProductChannel,
 				(List<ProductChannel>)page.getItems());
 			assertValid(
 				page,
@@ -383,11 +376,10 @@ public abstract class BaseProductChannelResourceTestCase {
 				getProductByExternalReferenceCodeProductChannelsPage(
 					externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(productChannel1, productChannel2),
-			(List<ProductChannel>)page.getItems());
+		assertContains(productChannel1, (List<ProductChannel>)page.getItems());
+		assertContains(productChannel2, (List<ProductChannel>)page.getItems());
 		assertValid(
 			page,
 			testGetProductByExternalReferenceCodeProductChannelsPage_getExpectedActions(
@@ -415,6 +407,14 @@ public abstract class BaseProductChannelResourceTestCase {
 		String externalReferenceCode =
 			testGetProductByExternalReferenceCodeProductChannelsPage_getExternalReferenceCode();
 
+		Page<ProductChannel> productChannelPage =
+			productChannelResource.
+				getProductByExternalReferenceCodeProductChannelsPage(
+					externalReferenceCode, null);
+
+		int totalCount = GetterUtil.getInteger(
+			productChannelPage.getTotalCount());
+
 		ProductChannel productChannel1 =
 			testGetProductByExternalReferenceCodeProductChannelsPage_addProductChannel(
 				externalReferenceCode, randomProductChannel());
@@ -430,20 +430,21 @@ public abstract class BaseProductChannelResourceTestCase {
 		Page<ProductChannel> page1 =
 			productChannelResource.
 				getProductByExternalReferenceCodeProductChannelsPage(
-					externalReferenceCode, Pagination.of(1, 2));
+					externalReferenceCode, Pagination.of(1, totalCount + 2));
 
 		List<ProductChannel> productChannels1 =
 			(List<ProductChannel>)page1.getItems();
 
 		Assert.assertEquals(
-			productChannels1.toString(), 2, productChannels1.size());
+			productChannels1.toString(), totalCount + 2,
+			productChannels1.size());
 
 		Page<ProductChannel> page2 =
 			productChannelResource.
 				getProductByExternalReferenceCodeProductChannelsPage(
-					externalReferenceCode, Pagination.of(2, 2));
+					externalReferenceCode, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<ProductChannel> productChannels2 =
 			(List<ProductChannel>)page2.getItems();
@@ -454,11 +455,12 @@ public abstract class BaseProductChannelResourceTestCase {
 		Page<ProductChannel> page3 =
 			productChannelResource.
 				getProductByExternalReferenceCodeProductChannelsPage(
-					externalReferenceCode, Pagination.of(1, 3));
+					externalReferenceCode,
+					Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(productChannel1, productChannel2, productChannel3),
-			(List<ProductChannel>)page3.getItems());
+		assertContains(productChannel1, (List<ProductChannel>)page3.getItems());
+		assertContains(productChannel2, (List<ProductChannel>)page3.getItems());
+		assertContains(productChannel3, (List<ProductChannel>)page3.getItems());
 	}
 
 	protected ProductChannel
@@ -495,7 +497,7 @@ public abstract class BaseProductChannelResourceTestCase {
 			productChannelResource.getProductIdProductChannelsPage(
 				id, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantId != null) {
 			ProductChannel irrelevantProductChannel =
@@ -503,12 +505,12 @@ public abstract class BaseProductChannelResourceTestCase {
 					irrelevantId, randomIrrelevantProductChannel());
 
 			page = productChannelResource.getProductIdProductChannelsPage(
-				irrelevantId, Pagination.of(1, 2));
+				irrelevantId, Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantProductChannel),
+			assertContains(
+				irrelevantProductChannel,
 				(List<ProductChannel>)page.getItems());
 			assertValid(
 				page,
@@ -527,11 +529,10 @@ public abstract class BaseProductChannelResourceTestCase {
 		page = productChannelResource.getProductIdProductChannelsPage(
 			id, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(productChannel1, productChannel2),
-			(List<ProductChannel>)page.getItems());
+		assertContains(productChannel1, (List<ProductChannel>)page.getItems());
+		assertContains(productChannel2, (List<ProductChannel>)page.getItems());
 		assertValid(
 			page, testGetProductIdProductChannelsPage_getExpectedActions(id));
 
@@ -555,6 +556,12 @@ public abstract class BaseProductChannelResourceTestCase {
 
 		Long id = testGetProductIdProductChannelsPage_getId();
 
+		Page<ProductChannel> productChannelPage =
+			productChannelResource.getProductIdProductChannelsPage(id, null);
+
+		int totalCount = GetterUtil.getInteger(
+			productChannelPage.getTotalCount());
+
 		ProductChannel productChannel1 =
 			testGetProductIdProductChannelsPage_addProductChannel(
 				id, randomProductChannel());
@@ -569,19 +576,20 @@ public abstract class BaseProductChannelResourceTestCase {
 
 		Page<ProductChannel> page1 =
 			productChannelResource.getProductIdProductChannelsPage(
-				id, Pagination.of(1, 2));
+				id, Pagination.of(1, totalCount + 2));
 
 		List<ProductChannel> productChannels1 =
 			(List<ProductChannel>)page1.getItems();
 
 		Assert.assertEquals(
-			productChannels1.toString(), 2, productChannels1.size());
+			productChannels1.toString(), totalCount + 2,
+			productChannels1.size());
 
 		Page<ProductChannel> page2 =
 			productChannelResource.getProductIdProductChannelsPage(
-				id, Pagination.of(2, 2));
+				id, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<ProductChannel> productChannels2 =
 			(List<ProductChannel>)page2.getItems();
@@ -591,11 +599,11 @@ public abstract class BaseProductChannelResourceTestCase {
 
 		Page<ProductChannel> page3 =
 			productChannelResource.getProductIdProductChannelsPage(
-				id, Pagination.of(1, 3));
+				id, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(productChannel1, productChannel2, productChannel3),
-			(List<ProductChannel>)page3.getItems());
+		assertContains(productChannel1, (List<ProductChannel>)page3.getItems());
+		assertContains(productChannel2, (List<ProductChannel>)page3.getItems());
+		assertContains(productChannel3, (List<ProductChannel>)page3.getItems());
 	}
 
 	protected ProductChannel
@@ -780,14 +788,19 @@ public abstract class BaseProductChannelResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1038,18 +1051,93 @@ public abstract class BaseProductChannelResourceTestCase {
 		}
 
 		if (entityFieldName.equals("currencyCode")) {
-			sb.append("'");
-			sb.append(String.valueOf(productChannel.getCurrencyCode()));
-			sb.append("'");
+			Object object = productChannel.getCurrencyCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("externalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(productChannel.getExternalReferenceCode()));
-			sb.append("'");
+			Object object = productChannel.getExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1060,17 +1148,93 @@ public abstract class BaseProductChannelResourceTestCase {
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(productChannel.getName()));
-			sb.append("'");
+			Object object = productChannel.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("type")) {
-			sb.append("'");
-			sb.append(String.valueOf(productChannel.getType()));
-			sb.append("'");
+			Object object = productChannel.getType();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

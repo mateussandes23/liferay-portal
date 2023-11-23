@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.data.engine.rest.resource.v2_0.test;
@@ -44,6 +35,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -237,7 +229,7 @@ public abstract class BaseDataLayoutResourceTestCase {
 				dataDefinitionId, RandomTestUtil.randomString(),
 				Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantDataDefinitionId != null) {
 			DataLayout irrelevantDataLayout =
@@ -245,13 +237,13 @@ public abstract class BaseDataLayoutResourceTestCase {
 					irrelevantDataDefinitionId, randomIrrelevantDataLayout());
 
 			page = dataLayoutResource.getDataDefinitionDataLayoutsPage(
-				irrelevantDataDefinitionId, null, Pagination.of(1, 2), null);
+				irrelevantDataDefinitionId, null,
+				Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantDataLayout),
-				(List<DataLayout>)page.getItems());
+			assertContains(
+				irrelevantDataLayout, (List<DataLayout>)page.getItems());
 			assertValid(
 				page,
 				testGetDataDefinitionDataLayoutsPage_getExpectedActions(
@@ -269,11 +261,10 @@ public abstract class BaseDataLayoutResourceTestCase {
 		page = dataLayoutResource.getDataDefinitionDataLayoutsPage(
 			dataDefinitionId, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(dataLayout1, dataLayout2),
-			(List<DataLayout>)page.getItems());
+		assertContains(dataLayout1, (List<DataLayout>)page.getItems());
+		assertContains(dataLayout2, (List<DataLayout>)page.getItems());
 		assertValid(
 			page,
 			testGetDataDefinitionDataLayoutsPage_getExpectedActions(
@@ -311,6 +302,12 @@ public abstract class BaseDataLayoutResourceTestCase {
 		Long dataDefinitionId =
 			testGetDataDefinitionDataLayoutsPage_getDataDefinitionId();
 
+		Page<DataLayout> dataLayoutPage =
+			dataLayoutResource.getDataDefinitionDataLayoutsPage(
+				dataDefinitionId, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(dataLayoutPage.getTotalCount());
+
 		DataLayout dataLayout1 =
 			testGetDataDefinitionDataLayoutsPage_addDataLayout(
 				dataDefinitionId, randomDataLayout());
@@ -325,17 +322,18 @@ public abstract class BaseDataLayoutResourceTestCase {
 
 		Page<DataLayout> page1 =
 			dataLayoutResource.getDataDefinitionDataLayoutsPage(
-				dataDefinitionId, null, Pagination.of(1, 2), null);
+				dataDefinitionId, null, Pagination.of(1, totalCount + 2), null);
 
 		List<DataLayout> dataLayouts1 = (List<DataLayout>)page1.getItems();
 
-		Assert.assertEquals(dataLayouts1.toString(), 2, dataLayouts1.size());
+		Assert.assertEquals(
+			dataLayouts1.toString(), totalCount + 2, dataLayouts1.size());
 
 		Page<DataLayout> page2 =
 			dataLayoutResource.getDataDefinitionDataLayoutsPage(
-				dataDefinitionId, null, Pagination.of(2, 2), null);
+				dataDefinitionId, null, Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<DataLayout> dataLayouts2 = (List<DataLayout>)page2.getItems();
 
@@ -343,11 +341,12 @@ public abstract class BaseDataLayoutResourceTestCase {
 
 		Page<DataLayout> page3 =
 			dataLayoutResource.getDataDefinitionDataLayoutsPage(
-				dataDefinitionId, null, Pagination.of(1, 3), null);
+				dataDefinitionId, null, Pagination.of(1, (int)totalCount + 3),
+				null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(dataLayout1, dataLayout2, dataLayout3),
-			(List<DataLayout>)page3.getItems());
+		assertContains(dataLayout1, (List<DataLayout>)page3.getItems());
+		assertContains(dataLayout2, (List<DataLayout>)page3.getItems());
+		assertContains(dataLayout3, (List<DataLayout>)page3.getItems());
 	}
 
 	@Test
@@ -470,24 +469,28 @@ public abstract class BaseDataLayoutResourceTestCase {
 		dataLayout2 = testGetDataDefinitionDataLayoutsPage_addDataLayout(
 			dataDefinitionId, dataLayout2);
 
+		Page<DataLayout> page =
+			dataLayoutResource.getDataDefinitionDataLayoutsPage(
+				dataDefinitionId, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<DataLayout> ascPage =
 				dataLayoutResource.getDataDefinitionDataLayoutsPage(
-					dataDefinitionId, null, Pagination.of(1, 2),
+					dataDefinitionId, null,
+					Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(dataLayout1, dataLayout2),
-				(List<DataLayout>)ascPage.getItems());
+			assertContains(dataLayout1, (List<DataLayout>)ascPage.getItems());
+			assertContains(dataLayout2, (List<DataLayout>)ascPage.getItems());
 
 			Page<DataLayout> descPage =
 				dataLayoutResource.getDataDefinitionDataLayoutsPage(
-					dataDefinitionId, null, Pagination.of(1, 2),
+					dataDefinitionId, null,
+					Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(dataLayout2, dataLayout1),
-				(List<DataLayout>)descPage.getItems());
+			assertContains(dataLayout2, (List<DataLayout>)descPage.getItems());
+			assertContains(dataLayout1, (List<DataLayout>)descPage.getItems());
 		}
 	}
 
@@ -1008,14 +1011,19 @@ public abstract class BaseDataLayoutResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1339,9 +1347,47 @@ public abstract class BaseDataLayoutResourceTestCase {
 		sb.append(" ");
 
 		if (entityFieldName.equals("contentType")) {
-			sb.append("'");
-			sb.append(String.valueOf(dataLayout.getContentType()));
-			sb.append("'");
+			Object object = dataLayout.getContentType();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1357,9 +1403,47 @@ public abstract class BaseDataLayoutResourceTestCase {
 		}
 
 		if (entityFieldName.equals("dataLayoutKey")) {
-			sb.append("'");
-			sb.append(String.valueOf(dataLayout.getDataLayoutKey()));
-			sb.append("'");
+			Object object = dataLayout.getDataLayoutKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1453,9 +1537,47 @@ public abstract class BaseDataLayoutResourceTestCase {
 		}
 
 		if (entityFieldName.equals("paginationMode")) {
-			sb.append("'");
-			sb.append(String.valueOf(dataLayout.getPaginationMode()));
-			sb.append("'");
+			Object object = dataLayout.getPaginationMode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

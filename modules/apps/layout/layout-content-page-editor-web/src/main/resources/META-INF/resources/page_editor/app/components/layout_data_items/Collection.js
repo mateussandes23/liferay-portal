@@ -1,20 +1,13 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayAlert from '@clayui/alert';
 import ClayLayout from '@clayui/layout';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
+import {useIsMounted} from '@liferay/frontend-js-react-web';
+import {isNullOrUndefined} from '@liferay/layout-js-components-web';
 import classNames from 'classnames';
 import {sub} from 'frontend-js-web';
 import React, {useContext, useEffect, useMemo, useState} from 'react';
@@ -37,7 +30,6 @@ import {collectionIsMapped} from '../../utils/collectionIsMapped';
 import getLayoutDataItemClassName from '../../utils/getLayoutDataItemClassName';
 import getLayoutDataItemUniqueClassName from '../../utils/getLayoutDataItemUniqueClassName';
 import {getResponsiveConfig} from '../../utils/getResponsiveConfig';
-import isNullOrUndefined from '../../utils/isNullOrUndefined';
 import UnsafeHTML from '../UnsafeHTML';
 import CollectionPagination from './CollectionPagination';
 
@@ -292,9 +284,11 @@ const Collection = React.memo(
 
 		const [activePage, setActivePage] = useState(1);
 		const [collection, setCollection] = useState(emptyCollection);
-		const [loading, setLoading] = useState(false);
+		const [loading, setLoading] = useState(!!collectionConfig.collection);
 
 		const numberOfItems = getNumberOfItems(collection, collectionConfig);
+
+		const isMounted = useIsMounted();
 
 		useEffect(() => {
 			if (
@@ -312,7 +306,8 @@ const Collection = React.memo(
 		]);
 
 		const context = useContext(CollectionItemContext);
-		const {classNameId, classPK} = context.collectionItem || {};
+		const {classNameId, classPK, externalReferenceCode} =
+			context.collectionItem || {};
 
 		const displayPagePreviewItemData =
 			useDisplayPagePreviewItem()?.data ?? {};
@@ -320,6 +315,9 @@ const Collection = React.memo(
 		const itemClassNameId =
 			classNameId || displayPagePreviewItemData.classNameId;
 		const itemClassPK = classPK || displayPagePreviewItemData.classPK;
+		const itemExternalReferenceCode =
+			externalReferenceCode ||
+			displayPagePreviewItemData.externalReferenceCode;
 		const segmentsExperienceId = useSelector(selectSegmentsExperienceId);
 
 		useEffect(() => {
@@ -337,13 +335,14 @@ const Collection = React.memo(
 					collection: collectionConfig.collection,
 					displayAllItems: collectionConfig.displayAllItems,
 					displayAllPages: collectionConfig.displayAllPages,
+					externalReferenceCode: itemExternalReferenceCode,
 					languageId,
 					listItemStyle: collectionConfig.listItemStyle || null,
 					listStyle: collectionConfig.listStyle,
 					numberOfItems: collectionConfig.numberOfItems,
 					numberOfItemsPerPage: collectionConfig.numberOfItemsPerPage,
 					numberOfPages: collectionConfig.numberOfPages,
-					onNetworkStatus: dispatch,
+
 					paginationType: collectionConfig.paginationType,
 					segmentsExperienceId,
 					templateKey: collectionConfig.templateKey || null,
@@ -351,11 +350,14 @@ const Collection = React.memo(
 					.then((response) => {
 						const {itemSubtype, itemType, ...collection} = response;
 
-						setCollection(
-							!!collection.length && collection.items?.length > 0
-								? collection
-								: {...collection, ...emptyCollection}
-						);
+						if (isMounted()) {
+							setCollection(
+								!!collection.length &&
+									collection.items?.length > 0
+									? collection
+									: {...collection, ...emptyCollection}
+							);
+						}
 
 						// LPS-133832
 						// Update itemType/itemSubtype if the user changes the type of the collection
@@ -402,7 +404,9 @@ const Collection = React.memo(
 						}
 					})
 					.finally(() => {
-						setLoading(false);
+						if (isMounted()) {
+							setLoading(false);
+						}
 					});
 			}
 		}, [
@@ -413,6 +417,8 @@ const Collection = React.memo(
 			item.itemId,
 			itemClassNameId,
 			itemClassPK,
+			itemExternalReferenceCode,
+			isMounted,
 			languageId,
 			segmentsExperienceId,
 		]);
@@ -435,7 +441,7 @@ const Collection = React.memo(
 
 		let CollectionContent = null;
 
-		if (Liferay.FeatureFlags['LPS-169923'] && collection.isRestricted) {
+		if (collection.isRestricted) {
 			CollectionContent = (
 				<ClayAlert displayType="secondary" role={null}>
 					{Liferay.Language.get(

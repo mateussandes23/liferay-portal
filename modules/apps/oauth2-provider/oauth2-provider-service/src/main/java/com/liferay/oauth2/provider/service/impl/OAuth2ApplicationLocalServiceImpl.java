@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.oauth2.provider.service.impl;
@@ -42,11 +33,11 @@ import com.liferay.oauth2.provider.util.OAuth2SecureRandomGenerator;
 import com.liferay.oauth2.provider.util.builder.OAuth2ScopeBuilder;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.aop.AopService;
+import com.liferay.portal.image.ImageToolUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.ImageTypeException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.image.ImageBag;
-import com.liferay.portal.kernel.image.ImageTool;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.model.Group;
@@ -565,7 +556,7 @@ public class OAuth2ApplicationLocalServiceImpl
 			new UnsyncByteArrayOutputStream();
 
 		try {
-			ImageBag imageBag = _imageTool.read(inputStream);
+			ImageBag imageBag = ImageToolUtil.read(inputStream);
 
 			RenderedImage renderedImage = imageBag.getRenderedImage();
 
@@ -573,9 +564,9 @@ public class OAuth2ApplicationLocalServiceImpl
 				throw new ImageTypeException("Unable to read icon");
 			}
 
-			renderedImage = _imageTool.scale(renderedImage, 160, 160);
+			renderedImage = ImageToolUtil.scale(renderedImage, 160, 160);
 
-			_imageTool.write(
+			ImageToolUtil.write(
 				renderedImage, imageBag.getType(), unsyncByteArrayOutputStream);
 		}
 		catch (IOException ioException) {
@@ -962,9 +953,6 @@ public class OAuth2ApplicationLocalServiceImpl
 
 	@Reference
 	private GroupLocalService _groupLocalService;
-
-	@Reference
-	private ImageTool _imageTool;
 
 	@Reference(
 		target = "(indexer.class.name=com.liferay.document.library.kernel.model.DLFileEntry)"

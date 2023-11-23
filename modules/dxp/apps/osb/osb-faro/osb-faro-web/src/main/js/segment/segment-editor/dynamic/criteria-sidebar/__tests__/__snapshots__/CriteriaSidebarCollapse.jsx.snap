@@ -12,6 +12,7 @@ exports[`CriteriaSidebarCollapse should render 1`] = `
       >
         <li
           class="criteria-sidebar-item-root color--"
+          draggable="true"
         >
           <span
             class="inline-item"
@@ -21,7 +22,7 @@ exports[`CriteriaSidebarCollapse should render 1`] = `
               role="presentation"
             >
               <use
-                xlink:href="#drag"
+                href="#drag"
               />
             </svg>
           </span>
@@ -36,7 +37,7 @@ exports[`CriteriaSidebarCollapse should render 1`] = `
                 role="presentation"
               >
                 <use
-                  xlink:href="#text"
+                  href="#text"
                 />
               </svg>
             </span>
@@ -56,6 +57,7 @@ exports[`CriteriaSidebarCollapse should render 1`] = `
       >
         <li
           class="criteria-sidebar-item-root color--"
+          draggable="true"
         >
           <span
             class="inline-item"
@@ -65,7 +67,7 @@ exports[`CriteriaSidebarCollapse should render 1`] = `
               role="presentation"
             >
               <use
-                xlink:href="#drag"
+                href="#drag"
               />
             </svg>
           </span>
@@ -80,7 +82,7 @@ exports[`CriteriaSidebarCollapse should render 1`] = `
                 role="presentation"
               >
                 <use
-                  xlink:href="#text"
+                  href="#text"
                 />
               </svg>
             </span>

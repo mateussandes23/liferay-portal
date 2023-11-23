@@ -2,18 +2,14 @@ import BaseSelect, {Item} from '../BaseSelect';
 import client from 'shared/apollo/client';
 import EventAttributeValuesQuery from 'event-analysis/queries/EventAttributeValuesQuery';
 import mockStore from 'test/mock-store';
-import Promise from 'metal-promise';
 import React from 'react';
 import {ApolloProvider} from '@apollo/react-components';
-import {
-	fireEvent,
-	render,
-	waitForElementToBeRemoved
-} from '@testing-library/react';
+import {fireEvent, render} from '@testing-library/react';
 import {MockedProvider} from '@apollo/react-testing';
 import {mockEventAttributeValues} from 'test/graphql-data';
 import {noop} from 'lodash';
 import {Provider} from 'react-redux';
+import {waitForLoadingToBeRemoved} from 'test/helpers';
 
 jest.unmock('react-dom');
 
@@ -110,9 +106,7 @@ describe('BaseSelect', () => {
 			/>
 		);
 
-		await waitForElementToBeRemoved(() =>
-			container.querySelector('.spinner-root')
-		).then(() => {
+		await waitForLoadingToBeRemoved(container).then(() => {
 			const dropdownMenu = document.body.getElementsByClassName(
 				'dropdown-root'
 			)[0];
@@ -132,9 +126,7 @@ describe('BaseSelect', () => {
 			/>
 		);
 
-		await waitForElementToBeRemoved(() =>
-			container.querySelector('.spinner-root')
-		).then(() => {
+		await waitForLoadingToBeRemoved(container).then(() => {
 			const dropdownMenu = document.body.getElementsByClassName(
 				'dropdown-root'
 			)[0];
@@ -162,9 +154,7 @@ describe('BaseSelect', () => {
 			/>
 		);
 
-		await waitForElementToBeRemoved(() =>
-			container.querySelector('.spinner-root')
-		).then(async () => {
+		await waitForLoadingToBeRemoved(container).then(async () => {
 			const dropdownMenu = document.body.getElementsByClassName(
 				'dropdown-root'
 			)[0];
@@ -196,9 +186,7 @@ describe('BaseSelect', () => {
 			/>
 		);
 
-		await waitForElementToBeRemoved(() =>
-			container.querySelector('.spinner-root')
-		).then(async () => {
+		await waitForLoadingToBeRemoved(container).then(async () => {
 			const dropdownMenu = document.body.getElementsByClassName(
 				'dropdown-root'
 			)[0];

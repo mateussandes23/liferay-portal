@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import {ClayButtonWithIcon} from '@clayui/button';
@@ -47,6 +38,7 @@ const ITEM_PROPTYPES_SHAPE = PropTypes.shape({
 
 export default function TabItem({displayStyle, item, onRemoveHighlighted}) {
 	const dispatch = useDispatch();
+	const [disabled, setDisabled] = useState(item.disabled);
 
 	const onToggleHighlighted = useCallback(() => {
 		if (item.data.portletId) {
@@ -96,6 +88,8 @@ export default function TabItem({displayStyle, item, onRemoveHighlighted}) {
 				thunk = addItem;
 			}
 
+			setDisabled(true);
+
 			dispatch(
 				thunk({
 					...item.data,
@@ -103,21 +97,27 @@ export default function TabItem({displayStyle, item, onRemoveHighlighted}) {
 					parentItemId: parentId,
 					position,
 				})
-			);
+			)
+				.then(() => {
+					setDisabled(false);
+				})
+				.catch(() => {
+					setDisabled(false);
+				});
 		}
 	);
 
 	return displayStyle === FRAGMENTS_DISPLAY_STYLES.CARDS ? (
 		<CardItem
-			disabled={item.disabled || isDraggingSource}
+			disabled={disabled || isDraggingSource || item.disabled}
 			handlerRef={item.disabled ? null : sourceRef}
 			item={item}
 			onToggleHighlighted={onToggleHighlighted}
 		/>
 	) : (
 		<ListItem
-			disabled={item.disabled || isDraggingSource}
-			handlerRef={item.disabled ? null : sourceRef}
+			disabled={disabled || isDraggingSource || item.disabled}
+			handlerRef={item.disabled || disabled ? null : sourceRef}
 			item={item}
 			onToggleHighlighted={onToggleHighlighted}
 		/>
@@ -158,7 +158,7 @@ const ListItem = ({disabled, handlerRef, item, onToggleHighlighted}) => {
 				<div className="align-items-center d-flex page-editor__fragments-widgets__tab-list-item-body">
 					<ClayIcon className="mr-3" symbol={item.icon} />
 
-					<div className="text-truncate title">{item.label}</div>
+					<div className="title">{item.label}</div>
 				</div>
 
 				{!disabled && (
@@ -181,7 +181,7 @@ const ListItem = ({disabled, handlerRef, item, onToggleHighlighted}) => {
 };
 
 ListItem.propTypes = {
-	disabled: PropTypes.bool.isRequired,
+	disabled: PropTypes.bool,
 	handlerRef: PropTypes.func.isRequired,
 	item: ITEM_PROPTYPES_SHAPE.isRequired,
 	onToggleHighlighted: PropTypes.func.isRequired,

@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.commerce.product.service;
@@ -345,6 +336,12 @@ public class CPInstanceLocalServiceUtil {
 		return getService().fetchCPInstance(CPInstanceId);
 	}
 
+	public static CPInstance fetchCPInstance(
+		long cProductId, String cpInstanceUuid) {
+
+		return getService().fetchCPInstance(cProductId, cpInstanceUuid);
+	}
+
 	public static CPInstance fetchCPInstanceByExternalReferenceCode(
 		String externalReferenceCode, long companyId) {
 
@@ -369,6 +366,10 @@ public class CPInstanceLocalServiceUtil {
 		long cProductId, String cpInstanceUuid) {
 
 		return getService().fetchCProductInstance(cProductId, cpInstanceUuid);
+	}
+
+	public static CPInstance fetchDefaultCPInstance(long cpDefinitionId) {
+		return getService().fetchDefaultCPInstance(cpDefinitionId);
 	}
 
 	public static com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery
@@ -466,6 +467,14 @@ public class CPInstanceLocalServiceUtil {
 
 	public static List<CPInstance> getCPInstances(long companyId, String sku) {
 		return getService().getCPInstances(companyId, sku);
+	}
+
+	public static List<CPInstance> getCPInstances(
+		String replacementCPInstanceUuid, long replacementCProductId,
+		int status) {
+
+		return getService().getCPInstances(
+			replacementCPInstanceUuid, replacementCProductId, status);
 	}
 
 	/**
@@ -634,10 +643,31 @@ public class CPInstanceLocalServiceUtil {
 
 	public static com.liferay.portal.kernel.search.BaseModelSearchResult
 		<CPInstance> searchCPInstances(
+				long companyId, String cpInstanceUuid, long cProductId,
+				String keywords, int status, int start, int end,
+				com.liferay.portal.kernel.search.Sort sort)
+			throws PortalException {
+
+		return getService().searchCPInstances(
+			companyId, cpInstanceUuid, cProductId, keywords, status, start, end,
+			sort);
+	}
+
+	public static com.liferay.portal.kernel.search.BaseModelSearchResult
+		<CPInstance> searchCPInstances(
 				com.liferay.portal.kernel.search.SearchContext searchContext)
 			throws PortalException {
 
 		return getService().searchCPInstances(searchContext);
+	}
+
+	public static int searchCPInstancesCount(
+			long companyId, String cpInstanceUuid, long cProductId,
+			String keywords, int status)
+		throws PortalException {
+
+		return getService().searchCPInstancesCount(
+			companyId, cpInstanceUuid, cProductId, keywords, status);
 	}
 
 	/**
@@ -758,6 +788,10 @@ public class CPInstanceLocalServiceUtil {
 
 	public static CPInstanceLocalService getService() {
 		return _service;
+	}
+
+	public static void setService(CPInstanceLocalService service) {
+		_service = service;
 	}
 
 	private static volatile CPInstanceLocalService _service;

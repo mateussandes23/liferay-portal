@@ -25,6 +25,10 @@
 			max-width: 100%;
 		}
 
+		img[data-cke-saved-src]:not([data-fileentryid]) {
+			visibility: hidden;
+		}
+
 		.cover-image-container {
 			background-position: center;
 			background-repeat: no-repeat;
@@ -236,9 +240,9 @@
 			resize: none;
 
 			&::placeholder {
-				border-color: #b0b4bb;
+				border-color: $secondary;
 				border-left: 2px solid;
-				color: #b0b4bb;
+				color: $secondary;
 				padding-left: 10px;
 			}
 

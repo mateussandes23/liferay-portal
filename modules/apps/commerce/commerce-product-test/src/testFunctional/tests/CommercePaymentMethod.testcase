@@ -1,7 +1,7 @@
 @component-name = "portal-commerce"
 definition {
 
-	property custom.properties = "jsonws.web.service.paths.excludes=${line.separator}company.security.strangers.verify=false";
+	property custom.properties = "company.security.strangers.verify=false${line.separator}jsonws.web.service.paths.excludes=";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property release.feature.flags.disable.DISABLE_PRIVATE_LAYOUTS = "true";
@@ -19,7 +19,8 @@ definition {
 	@priority = 3
 	test ActivateOfflinePaymentMethodsAndAddDescription {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommercePaymentMethod#ActivateOfflinePaymentMethodsAndAddDescription";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Given a Channel") {
 			CommerceJSONChannelsAPI._addChannel(
@@ -61,7 +62,8 @@ definition {
 	@priority = 5
 	test AddEditAndDeleteOfflinePaymentMethod {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "CommercePaymentMethod#AddEditAndDeleteOfflinePaymentMethod";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Given the System Integrator navigates to the Offline Payment Method Keys configuration under the Payment category in System Settings") {
 			SystemSettings.openSystemSettingsAdmin();
@@ -125,7 +127,8 @@ definition {
 	@priority = 5
 	test AnOfflinePaymentMethodCanBeUsedForAnOrder {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "CommercePaymentMethod#AnOfflinePaymentMethodCanBeUsedForAnOrder";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Given a Minium site with a buyer user") {
 			CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
@@ -188,7 +191,8 @@ definition {
 	@priority = 5
 	test AssertAndEditNewPaymentMethodInOrdersPage {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "CommercePaymentMethod#AssertAndEditNewPaymentMethodInOrdersPage";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Given a Minium site with a buyer user") {
 			CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");
@@ -284,7 +288,8 @@ definition {
 	@priority = 3
 	test CreateOrderWithMultipleActivePaymentMethods {
 		property portal.acceptance = "false";
-		property test.name.skip.portal.instance = "CommercePaymentMethod#CreateOrderWithMultipleActivePaymentMethods";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Given a Minium site with a buyer user") {
 			CommerceAccelerators.initializeNewSiteViaAccelerator(siteName = "Minium");

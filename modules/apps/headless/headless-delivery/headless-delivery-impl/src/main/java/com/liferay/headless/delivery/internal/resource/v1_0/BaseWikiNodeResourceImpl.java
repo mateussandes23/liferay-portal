@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.delivery.internal.resource.v1_0;
@@ -21,6 +12,7 @@ import com.liferay.petra.function.UnsafeBiConsumer;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.GroupedModel;
 import com.liferay.portal.kernel.model.Resource;
@@ -36,6 +28,7 @@ import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourceLocalServiceUtil;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
+import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.GroupThreadLocal;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -43,6 +36,7 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.odata.filter.ExpressionConvert;
 import com.liferay.portal.odata.filter.FilterParser;
@@ -567,6 +561,7 @@ public abstract class BaseWikiNodeResourceImpl
 	@io.swagger.v3.oas.annotations.tags.Tags(
 		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiNode")}
 	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
 	@javax.ws.rs.Path("/sites/{siteId}/wiki-nodes/permissions")
 	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@javax.ws.rs.PUT
@@ -891,6 +886,7 @@ public abstract class BaseWikiNodeResourceImpl
 	@io.swagger.v3.oas.annotations.tags.Tags(
 		value = {@io.swagger.v3.oas.annotations.tags.Tag(name = "WikiNode")}
 	)
+	@javax.ws.rs.Consumes({"application/json", "application/xml"})
 	@javax.ws.rs.Path("/wiki-nodes/{wikiNodeId}/permissions")
 	@javax.ws.rs.Produces({"application/json", "application/xml"})
 	@javax.ws.rs.PUT
@@ -997,14 +993,15 @@ public abstract class BaseWikiNodeResourceImpl
 			Map<String, Serializable> parameters)
 		throws Exception {
 
-		UnsafeConsumer<WikiNode, Exception> wikiNodeUnsafeConsumer = null;
+		UnsafeFunction<WikiNode, WikiNode, Exception> wikiNodeUnsafeFunction =
+			null;
 
 		String createStrategy = (String)parameters.getOrDefault(
 			"createStrategy", "INSERT");
 
-		if ("INSERT".equalsIgnoreCase(createStrategy)) {
+		if (StringUtil.equalsIgnoreCase(createStrategy, "INSERT")) {
 			if (parameters.containsKey("siteId")) {
-				wikiNodeUnsafeConsumer = wikiNode -> postSiteWikiNode(
+				wikiNodeUnsafeFunction = wikiNode -> postSiteWikiNode(
 					(Long)parameters.get("siteId"), wikiNode);
 			}
 			else {
@@ -1013,27 +1010,36 @@ public abstract class BaseWikiNodeResourceImpl
 			}
 		}
 
-		if ("UPSERT".equalsIgnoreCase(createStrategy)) {
-			wikiNodeUnsafeConsumer =
-				wikiNode -> putSiteWikiNodeByExternalReferenceCode(
-					wikiNode.getSiteId() != null ? wikiNode.getSiteId() :
-						(Long)parameters.get("siteId"),
-					wikiNode.getExternalReferenceCode(), wikiNode);
+		if (StringUtil.equalsIgnoreCase(createStrategy, "UPSERT")) {
+			String updateStrategy = (String)parameters.getOrDefault(
+				"updateStrategy", "UPDATE");
+
+			if (StringUtil.equalsIgnoreCase(updateStrategy, "UPDATE")) {
+				wikiNodeUnsafeFunction =
+					wikiNode -> putSiteWikiNodeByExternalReferenceCode(
+						wikiNode.getSiteId() != null ? wikiNode.getSiteId() :
+							(Long)parameters.get("siteId"),
+						wikiNode.getExternalReferenceCode(), wikiNode);
+			}
 		}
 
-		if (wikiNodeUnsafeConsumer == null) {
+		if (wikiNodeUnsafeFunction == null) {
 			throw new NotSupportedException(
 				"Create strategy \"" + createStrategy +
 					"\" is not supported for WikiNode");
 		}
 
-		if (contextBatchUnsafeConsumer != null) {
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(
+				wikiNodes, wikiNodeUnsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
 			contextBatchUnsafeConsumer.accept(
-				wikiNodes, wikiNodeUnsafeConsumer);
+				wikiNodes, wikiNodeUnsafeFunction::apply);
 		}
 		else {
 			for (WikiNode wikiNode : wikiNodes) {
-				wikiNodeUnsafeConsumer.accept(wikiNode);
+				wikiNodeUnsafeFunction.apply(wikiNode);
 			}
 		}
 	}
@@ -1121,31 +1127,36 @@ public abstract class BaseWikiNodeResourceImpl
 			Map<String, Serializable> parameters)
 		throws Exception {
 
-		UnsafeConsumer<WikiNode, Exception> wikiNodeUnsafeConsumer = null;
+		UnsafeFunction<WikiNode, WikiNode, Exception> wikiNodeUnsafeFunction =
+			null;
 
 		String updateStrategy = (String)parameters.getOrDefault(
 			"updateStrategy", "UPDATE");
 
-		if ("UPDATE".equalsIgnoreCase(updateStrategy)) {
-			wikiNodeUnsafeConsumer = wikiNode -> putWikiNode(
+		if (StringUtil.equalsIgnoreCase(updateStrategy, "UPDATE")) {
+			wikiNodeUnsafeFunction = wikiNode -> putWikiNode(
 				wikiNode.getId() != null ? wikiNode.getId() :
 					_parseLong((String)parameters.get("wikiNodeId")),
 				wikiNode);
 		}
 
-		if (wikiNodeUnsafeConsumer == null) {
+		if (wikiNodeUnsafeFunction == null) {
 			throw new NotSupportedException(
 				"Update strategy \"" + updateStrategy +
 					"\" is not supported for WikiNode");
 		}
 
-		if (contextBatchUnsafeConsumer != null) {
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(
+				wikiNodes, wikiNodeUnsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
 			contextBatchUnsafeConsumer.accept(
-				wikiNodes, wikiNodeUnsafeConsumer);
+				wikiNodes, wikiNodeUnsafeFunction::apply);
 		}
 		else {
 			for (WikiNode wikiNode : wikiNodes) {
-				wikiNodeUnsafeConsumer.accept(wikiNode);
+				wikiNodeUnsafeFunction.apply(wikiNode);
 			}
 		}
 	}
@@ -1325,6 +1336,15 @@ public abstract class BaseWikiNodeResourceImpl
 		this.contextAcceptLanguage = contextAcceptLanguage;
 	}
 
+	public void setContextBatchUnsafeBiConsumer(
+		UnsafeBiConsumer
+			<Collection<WikiNode>,
+			 UnsafeFunction<WikiNode, WikiNode, Exception>, Exception>
+				contextBatchUnsafeBiConsumer) {
+
+		this.contextBatchUnsafeBiConsumer = contextBatchUnsafeBiConsumer;
+	}
+
 	public void setContextBatchUnsafeConsumer(
 		UnsafeBiConsumer
 			<Collection<WikiNode>, UnsafeConsumer<WikiNode, Exception>,
@@ -1341,6 +1361,13 @@ public abstract class BaseWikiNodeResourceImpl
 
 	public void setContextHttpServletRequest(
 		HttpServletRequest contextHttpServletRequest) {
+
+		if ((contextHttpServletRequest != null) &&
+			(contextHttpServletRequest.getAttribute(WebKeys.CTX) == null)) {
+
+			contextHttpServletRequest.setAttribute(
+				WebKeys.CTX, ServletContextPool.get(StringPool.BLANK));
+		}
 
 		this.contextHttpServletRequest = contextHttpServletRequest;
 	}
@@ -1583,6 +1610,9 @@ public abstract class BaseWikiNodeResourceImpl
 	}
 
 	protected AcceptLanguage contextAcceptLanguage;
+	protected UnsafeBiConsumer
+		<Collection<WikiNode>, UnsafeFunction<WikiNode, WikiNode, Exception>,
+		 Exception> contextBatchUnsafeBiConsumer;
 	protected UnsafeBiConsumer
 		<Collection<WikiNode>, UnsafeConsumer<WikiNode, Exception>, Exception>
 			contextBatchUnsafeConsumer;

@@ -1,21 +1,18 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.batch.engine.unit;
 
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.util.GetterUtil;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
+
+import java.util.Map;
 
 /**
  * @author Raymond Augé
@@ -24,6 +21,26 @@ public interface BatchEngineUnit {
 
 	public BatchEngineUnitConfiguration getBatchEngineUnitConfiguration()
 		throws IOException;
+
+	public default BatchEngineUnitMetaInfo getBatchEngineUnitMetaInfo()
+		throws IOException {
+
+		BatchEngineUnitConfiguration batchEngineUnitConfiguration =
+			getBatchEngineUnitConfiguration();
+
+		String featureFlagKey = StringPool.BLANK;
+		Map<String, Serializable> parameters =
+			batchEngineUnitConfiguration.getParameters();
+
+		if (parameters != null) {
+			featureFlagKey = GetterUtil.getString(
+				parameters.get("featureFlag"));
+		}
+
+		return new BatchEngineUnitMetaInfo(
+			false, batchEngineUnitConfiguration.getCompanyId(), featureFlagKey,
+			batchEngineUnitConfiguration.isMultiCompany(), null);
+	}
 
 	public InputStream getConfigurationInputStream() throws IOException;
 

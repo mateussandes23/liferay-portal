@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.site.setting.resource.v1_0.test;
@@ -43,6 +34,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -349,7 +341,7 @@ public abstract class BaseAvailabilityEstimateResourceTestCase {
 				getCommerceAdminSiteSettingGroupAvailabilityEstimatePage(
 					groupId, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantGroupId != null) {
 			AvailabilityEstimate irrelevantAvailabilityEstimate =
@@ -359,12 +351,13 @@ public abstract class BaseAvailabilityEstimateResourceTestCase {
 			page =
 				availabilityEstimateResource.
 					getCommerceAdminSiteSettingGroupAvailabilityEstimatePage(
-						irrelevantGroupId, Pagination.of(1, 2));
+						irrelevantGroupId,
+						Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantAvailabilityEstimate),
+			assertContains(
+				irrelevantAvailabilityEstimate,
 				(List<AvailabilityEstimate>)page.getItems());
 			assertValid(
 				page,
@@ -385,11 +378,12 @@ public abstract class BaseAvailabilityEstimateResourceTestCase {
 				getCommerceAdminSiteSettingGroupAvailabilityEstimatePage(
 					groupId, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(availabilityEstimate1, availabilityEstimate2),
-			(List<AvailabilityEstimate>)page.getItems());
+		assertContains(
+			availabilityEstimate1, (List<AvailabilityEstimate>)page.getItems());
+		assertContains(
+			availabilityEstimate2, (List<AvailabilityEstimate>)page.getItems());
 		assertValid(
 			page,
 			testGetCommerceAdminSiteSettingGroupAvailabilityEstimatePage_getExpectedActions(
@@ -419,6 +413,14 @@ public abstract class BaseAvailabilityEstimateResourceTestCase {
 		Long groupId =
 			testGetCommerceAdminSiteSettingGroupAvailabilityEstimatePage_getGroupId();
 
+		Page<AvailabilityEstimate> availabilityEstimatePage =
+			availabilityEstimateResource.
+				getCommerceAdminSiteSettingGroupAvailabilityEstimatePage(
+					groupId, null);
+
+		int totalCount = GetterUtil.getInteger(
+			availabilityEstimatePage.getTotalCount());
+
 		AvailabilityEstimate availabilityEstimate1 =
 			testGetCommerceAdminSiteSettingGroupAvailabilityEstimatePage_addAvailabilityEstimate(
 				groupId, randomAvailabilityEstimate());
@@ -434,21 +436,21 @@ public abstract class BaseAvailabilityEstimateResourceTestCase {
 		Page<AvailabilityEstimate> page1 =
 			availabilityEstimateResource.
 				getCommerceAdminSiteSettingGroupAvailabilityEstimatePage(
-					groupId, Pagination.of(1, 2));
+					groupId, Pagination.of(1, totalCount + 2));
 
 		List<AvailabilityEstimate> availabilityEstimates1 =
 			(List<AvailabilityEstimate>)page1.getItems();
 
 		Assert.assertEquals(
-			availabilityEstimates1.toString(), 2,
+			availabilityEstimates1.toString(), totalCount + 2,
 			availabilityEstimates1.size());
 
 		Page<AvailabilityEstimate> page2 =
 			availabilityEstimateResource.
 				getCommerceAdminSiteSettingGroupAvailabilityEstimatePage(
-					groupId, Pagination.of(2, 2));
+					groupId, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<AvailabilityEstimate> availabilityEstimates2 =
 			(List<AvailabilityEstimate>)page2.getItems();
@@ -460,12 +462,16 @@ public abstract class BaseAvailabilityEstimateResourceTestCase {
 		Page<AvailabilityEstimate> page3 =
 			availabilityEstimateResource.
 				getCommerceAdminSiteSettingGroupAvailabilityEstimatePage(
-					groupId, Pagination.of(1, 3));
+					groupId, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				availabilityEstimate1, availabilityEstimate2,
-				availabilityEstimate3),
+		assertContains(
+			availabilityEstimate1,
+			(List<AvailabilityEstimate>)page3.getItems());
+		assertContains(
+			availabilityEstimate2,
+			(List<AvailabilityEstimate>)page3.getItems());
+		assertContains(
+			availabilityEstimate3,
 			(List<AvailabilityEstimate>)page3.getItems());
 	}
 
@@ -675,14 +681,19 @@ public abstract class BaseAvailabilityEstimateResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));

@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.search.internal.buffer;
@@ -21,10 +12,10 @@ import com.liferay.portal.kernel.model.ClassedModel;
 import com.liferay.portal.kernel.search.Bufferable;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.service.PersistedModelLocalService;
-import com.liferay.portal.kernel.service.PersistedModelLocalServiceRegistry;
 import com.liferay.portal.kernel.util.MethodKey;
 import com.liferay.portal.search.configuration.IndexerRegistryConfiguration;
 import com.liferay.portal.search.index.IndexStatusManager;
+import com.liferay.portal.service.PersistedModelLocalServiceRegistryUtil;
 import com.liferay.portal.util.PortalInstances;
 
 import java.lang.annotation.Annotation;
@@ -42,14 +33,11 @@ public class BufferedIndexerInvocationHandler implements InvocationHandler {
 
 	public BufferedIndexerInvocationHandler(
 		Indexer<?> indexer, IndexStatusManager indexStatusManager,
-		IndexerRegistryConfiguration indexerRegistryConfiguration,
-		PersistedModelLocalServiceRegistry persistedModelLocalServiceRegistry) {
+		IndexerRegistryConfiguration indexerRegistryConfiguration) {
 
 		_indexer = indexer;
 		_indexStatusManager = indexStatusManager;
 		_indexerRegistryConfiguration = indexerRegistryConfiguration;
-		_persistedModelLocalServiceRegistry =
-			persistedModelLocalServiceRegistry;
 	}
 
 	@Override
@@ -125,7 +113,7 @@ public class BufferedIndexerInvocationHandler implements InvocationHandler {
 			String className = (String)args[0];
 
 			PersistedModelLocalService persistedModelLocalService =
-				_persistedModelLocalServiceRegistry.
+				PersistedModelLocalServiceRegistryUtil.
 					getPersistedModelLocalService(className);
 
 			Long classPK = (Long)args[1];
@@ -239,7 +227,5 @@ public class BufferedIndexerInvocationHandler implements InvocationHandler {
 	private volatile IndexerRequestBufferOverflowHandler
 		_indexerRequestBufferOverflowHandler;
 	private final IndexStatusManager _indexStatusManager;
-	private final PersistedModelLocalServiceRegistry
-		_persistedModelLocalServiceRegistry;
 
 }

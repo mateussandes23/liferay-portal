@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.delivery.resource.v1_0.test;
@@ -54,6 +45,7 @@ import com.liferay.portal.kernel.test.util.RoleTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -235,7 +227,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 				assetLibraryId, null, null, null, null, Pagination.of(1, 10),
 				null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantAssetLibraryId != null) {
 			DocumentFolder irrelevantDocumentFolder =
@@ -244,12 +236,12 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 			page = documentFolderResource.getAssetLibraryDocumentFoldersPage(
 				irrelevantAssetLibraryId, null, null, null, null,
-				Pagination.of(1, 2), null);
+				Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantDocumentFolder),
+			assertContains(
+				irrelevantDocumentFolder,
 				(List<DocumentFolder>)page.getItems());
 			assertValid(
 				page,
@@ -268,11 +260,10 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		page = documentFolderResource.getAssetLibraryDocumentFoldersPage(
 			assetLibraryId, null, null, null, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2),
-			(List<DocumentFolder>)page.getItems());
+		assertContains(documentFolder1, (List<DocumentFolder>)page.getItems());
+		assertContains(documentFolder2, (List<DocumentFolder>)page.getItems());
 		assertValid(
 			page,
 			testGetAssetLibraryDocumentFoldersPage_getExpectedActions(
@@ -339,44 +330,39 @@ public abstract class BaseDocumentFolderResourceTestCase {
 	public void testGetAssetLibraryDocumentFoldersPageWithFilterDoubleEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.DOUBLE);
+		testGetAssetLibraryDocumentFoldersPageWithFilter(
+			"eq", EntityField.Type.DOUBLE);
+	}
 
-		if (entityFields.isEmpty()) {
-			return;
-		}
+	@Test
+	public void testGetAssetLibraryDocumentFoldersPageWithFilterStringContains()
+		throws Exception {
 
-		Long assetLibraryId =
-			testGetAssetLibraryDocumentFoldersPage_getAssetLibraryId();
-
-		DocumentFolder documentFolder1 =
-			testGetAssetLibraryDocumentFoldersPage_addDocumentFolder(
-				assetLibraryId, randomDocumentFolder());
-
-		@SuppressWarnings("PMD.UnusedLocalVariable")
-		DocumentFolder documentFolder2 =
-			testGetAssetLibraryDocumentFoldersPage_addDocumentFolder(
-				assetLibraryId, randomDocumentFolder());
-
-		for (EntityField entityField : entityFields) {
-			Page<DocumentFolder> page =
-				documentFolderResource.getAssetLibraryDocumentFoldersPage(
-					assetLibraryId, null, null, null,
-					getFilterString(entityField, "eq", documentFolder1),
-					Pagination.of(1, 2), null);
-
-			assertEquals(
-				Collections.singletonList(documentFolder1),
-				(List<DocumentFolder>)page.getItems());
-		}
+		testGetAssetLibraryDocumentFoldersPageWithFilter(
+			"contains", EntityField.Type.STRING);
 	}
 
 	@Test
 	public void testGetAssetLibraryDocumentFoldersPageWithFilterStringEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.STRING);
+		testGetAssetLibraryDocumentFoldersPageWithFilter(
+			"eq", EntityField.Type.STRING);
+	}
+
+	@Test
+	public void testGetAssetLibraryDocumentFoldersPageWithFilterStringStartsWith()
+		throws Exception {
+
+		testGetAssetLibraryDocumentFoldersPageWithFilter(
+			"startswith", EntityField.Type.STRING);
+	}
+
+	protected void testGetAssetLibraryDocumentFoldersPageWithFilter(
+			String operator, EntityField.Type type)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
 
 		if (entityFields.isEmpty()) {
 			return;
@@ -398,7 +384,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			Page<DocumentFolder> page =
 				documentFolderResource.getAssetLibraryDocumentFoldersPage(
 					assetLibraryId, null, null, null,
-					getFilterString(entityField, "eq", documentFolder1),
+					getFilterString(entityField, operator, documentFolder1),
 					Pagination.of(1, 2), null);
 
 			assertEquals(
@@ -414,6 +400,13 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		Long assetLibraryId =
 			testGetAssetLibraryDocumentFoldersPage_getAssetLibraryId();
 
+		Page<DocumentFolder> documentFolderPage =
+			documentFolderResource.getAssetLibraryDocumentFoldersPage(
+				assetLibraryId, null, null, null, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			documentFolderPage.getTotalCount());
+
 		DocumentFolder documentFolder1 =
 			testGetAssetLibraryDocumentFoldersPage_addDocumentFolder(
 				assetLibraryId, randomDocumentFolder());
@@ -428,21 +421,22 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Page<DocumentFolder> page1 =
 			documentFolderResource.getAssetLibraryDocumentFoldersPage(
-				assetLibraryId, null, null, null, null, Pagination.of(1, 2),
-				null);
+				assetLibraryId, null, null, null, null,
+				Pagination.of(1, totalCount + 2), null);
 
 		List<DocumentFolder> documentFolders1 =
 			(List<DocumentFolder>)page1.getItems();
 
 		Assert.assertEquals(
-			documentFolders1.toString(), 2, documentFolders1.size());
+			documentFolders1.toString(), totalCount + 2,
+			documentFolders1.size());
 
 		Page<DocumentFolder> page2 =
 			documentFolderResource.getAssetLibraryDocumentFoldersPage(
-				assetLibraryId, null, null, null, null, Pagination.of(2, 2),
-				null);
+				assetLibraryId, null, null, null, null,
+				Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<DocumentFolder> documentFolders2 =
 			(List<DocumentFolder>)page2.getItems();
@@ -452,12 +446,12 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Page<DocumentFolder> page3 =
 			documentFolderResource.getAssetLibraryDocumentFoldersPage(
-				assetLibraryId, null, null, null, null, Pagination.of(1, 3),
-				null);
+				assetLibraryId, null, null, null, null,
+				Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2, documentFolder3),
-			(List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder1, (List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder2, (List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder3, (List<DocumentFolder>)page3.getItems());
 	}
 
 	@Test
@@ -586,24 +580,32 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			testGetAssetLibraryDocumentFoldersPage_addDocumentFolder(
 				assetLibraryId, documentFolder2);
 
+		Page<DocumentFolder> page =
+			documentFolderResource.getAssetLibraryDocumentFoldersPage(
+				assetLibraryId, null, null, null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<DocumentFolder> ascPage =
 				documentFolderResource.getAssetLibraryDocumentFoldersPage(
-					assetLibraryId, null, null, null, null, Pagination.of(1, 2),
+					assetLibraryId, null, null, null, null,
+					Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(documentFolder1, documentFolder2),
-				(List<DocumentFolder>)ascPage.getItems());
+			assertContains(
+				documentFolder1, (List<DocumentFolder>)ascPage.getItems());
+			assertContains(
+				documentFolder2, (List<DocumentFolder>)ascPage.getItems());
 
 			Page<DocumentFolder> descPage =
 				documentFolderResource.getAssetLibraryDocumentFoldersPage(
-					assetLibraryId, null, null, null, null, Pagination.of(1, 2),
+					assetLibraryId, null, null, null, null,
+					Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(documentFolder2, documentFolder1),
-				(List<DocumentFolder>)descPage.getItems());
+			assertContains(
+				documentFolder2, (List<DocumentFolder>)descPage.getItems());
+			assertContains(
+				documentFolder1, (List<DocumentFolder>)descPage.getItems());
 		}
 	}
 
@@ -732,7 +734,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			documentFolderResource.getAssetLibraryDocumentFoldersRatedByMePage(
 				assetLibraryId, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantAssetLibraryId != null) {
 			DocumentFolder irrelevantDocumentFolder =
@@ -742,12 +744,13 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			page =
 				documentFolderResource.
 					getAssetLibraryDocumentFoldersRatedByMePage(
-						irrelevantAssetLibraryId, Pagination.of(1, 2));
+						irrelevantAssetLibraryId,
+						Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantDocumentFolder),
+			assertContains(
+				irrelevantDocumentFolder,
 				(List<DocumentFolder>)page.getItems());
 			assertValid(
 				page,
@@ -767,11 +770,10 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			documentFolderResource.getAssetLibraryDocumentFoldersRatedByMePage(
 				assetLibraryId, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2),
-			(List<DocumentFolder>)page.getItems());
+		assertContains(documentFolder1, (List<DocumentFolder>)page.getItems());
+		assertContains(documentFolder2, (List<DocumentFolder>)page.getItems());
 		assertValid(
 			page,
 			testGetAssetLibraryDocumentFoldersRatedByMePage_getExpectedActions(
@@ -799,6 +801,13 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		Long assetLibraryId =
 			testGetAssetLibraryDocumentFoldersRatedByMePage_getAssetLibraryId();
 
+		Page<DocumentFolder> documentFolderPage =
+			documentFolderResource.getAssetLibraryDocumentFoldersRatedByMePage(
+				assetLibraryId, null);
+
+		int totalCount = GetterUtil.getInteger(
+			documentFolderPage.getTotalCount());
+
 		DocumentFolder documentFolder1 =
 			testGetAssetLibraryDocumentFoldersRatedByMePage_addDocumentFolder(
 				assetLibraryId, randomDocumentFolder());
@@ -813,19 +822,20 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Page<DocumentFolder> page1 =
 			documentFolderResource.getAssetLibraryDocumentFoldersRatedByMePage(
-				assetLibraryId, Pagination.of(1, 2));
+				assetLibraryId, Pagination.of(1, totalCount + 2));
 
 		List<DocumentFolder> documentFolders1 =
 			(List<DocumentFolder>)page1.getItems();
 
 		Assert.assertEquals(
-			documentFolders1.toString(), 2, documentFolders1.size());
+			documentFolders1.toString(), totalCount + 2,
+			documentFolders1.size());
 
 		Page<DocumentFolder> page2 =
 			documentFolderResource.getAssetLibraryDocumentFoldersRatedByMePage(
-				assetLibraryId, Pagination.of(2, 2));
+				assetLibraryId, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<DocumentFolder> documentFolders2 =
 			(List<DocumentFolder>)page2.getItems();
@@ -835,11 +845,11 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Page<DocumentFolder> page3 =
 			documentFolderResource.getAssetLibraryDocumentFoldersRatedByMePage(
-				assetLibraryId, Pagination.of(1, 3));
+				assetLibraryId, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2, documentFolder3),
-			(List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder1, (List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder2, (List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder3, (List<DocumentFolder>)page3.getItems());
 	}
 
 	protected DocumentFolder
@@ -1215,7 +1225,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 				parentDocumentFolderId, null, null, null, null,
 				Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantParentDocumentFolderId != null) {
 			DocumentFolder irrelevantDocumentFolder =
@@ -1225,12 +1235,12 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 			page = documentFolderResource.getDocumentFolderDocumentFoldersPage(
 				irrelevantParentDocumentFolderId, null, null, null, null,
-				Pagination.of(1, 2), null);
+				Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantDocumentFolder),
+			assertContains(
+				irrelevantDocumentFolder,
 				(List<DocumentFolder>)page.getItems());
 			assertValid(
 				page,
@@ -1250,11 +1260,10 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			parentDocumentFolderId, null, null, null, null,
 			Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2),
-			(List<DocumentFolder>)page.getItems());
+		assertContains(documentFolder1, (List<DocumentFolder>)page.getItems());
+		assertContains(documentFolder2, (List<DocumentFolder>)page.getItems());
 		assertValid(
 			page,
 			testGetDocumentFolderDocumentFoldersPage_getExpectedActions(
@@ -1312,44 +1321,39 @@ public abstract class BaseDocumentFolderResourceTestCase {
 	public void testGetDocumentFolderDocumentFoldersPageWithFilterDoubleEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.DOUBLE);
+		testGetDocumentFolderDocumentFoldersPageWithFilter(
+			"eq", EntityField.Type.DOUBLE);
+	}
 
-		if (entityFields.isEmpty()) {
-			return;
-		}
+	@Test
+	public void testGetDocumentFolderDocumentFoldersPageWithFilterStringContains()
+		throws Exception {
 
-		Long parentDocumentFolderId =
-			testGetDocumentFolderDocumentFoldersPage_getParentDocumentFolderId();
-
-		DocumentFolder documentFolder1 =
-			testGetDocumentFolderDocumentFoldersPage_addDocumentFolder(
-				parentDocumentFolderId, randomDocumentFolder());
-
-		@SuppressWarnings("PMD.UnusedLocalVariable")
-		DocumentFolder documentFolder2 =
-			testGetDocumentFolderDocumentFoldersPage_addDocumentFolder(
-				parentDocumentFolderId, randomDocumentFolder());
-
-		for (EntityField entityField : entityFields) {
-			Page<DocumentFolder> page =
-				documentFolderResource.getDocumentFolderDocumentFoldersPage(
-					parentDocumentFolderId, null, null, null,
-					getFilterString(entityField, "eq", documentFolder1),
-					Pagination.of(1, 2), null);
-
-			assertEquals(
-				Collections.singletonList(documentFolder1),
-				(List<DocumentFolder>)page.getItems());
-		}
+		testGetDocumentFolderDocumentFoldersPageWithFilter(
+			"contains", EntityField.Type.STRING);
 	}
 
 	@Test
 	public void testGetDocumentFolderDocumentFoldersPageWithFilterStringEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.STRING);
+		testGetDocumentFolderDocumentFoldersPageWithFilter(
+			"eq", EntityField.Type.STRING);
+	}
+
+	@Test
+	public void testGetDocumentFolderDocumentFoldersPageWithFilterStringStartsWith()
+		throws Exception {
+
+		testGetDocumentFolderDocumentFoldersPageWithFilter(
+			"startswith", EntityField.Type.STRING);
+	}
+
+	protected void testGetDocumentFolderDocumentFoldersPageWithFilter(
+			String operator, EntityField.Type type)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
 
 		if (entityFields.isEmpty()) {
 			return;
@@ -1371,7 +1375,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			Page<DocumentFolder> page =
 				documentFolderResource.getDocumentFolderDocumentFoldersPage(
 					parentDocumentFolderId, null, null, null,
-					getFilterString(entityField, "eq", documentFolder1),
+					getFilterString(entityField, operator, documentFolder1),
 					Pagination.of(1, 2), null);
 
 			assertEquals(
@@ -1386,6 +1390,13 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Long parentDocumentFolderId =
 			testGetDocumentFolderDocumentFoldersPage_getParentDocumentFolderId();
+
+		Page<DocumentFolder> documentFolderPage =
+			documentFolderResource.getDocumentFolderDocumentFoldersPage(
+				parentDocumentFolderId, null, null, null, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			documentFolderPage.getTotalCount());
 
 		DocumentFolder documentFolder1 =
 			testGetDocumentFolderDocumentFoldersPage_addDocumentFolder(
@@ -1402,20 +1413,21 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		Page<DocumentFolder> page1 =
 			documentFolderResource.getDocumentFolderDocumentFoldersPage(
 				parentDocumentFolderId, null, null, null, null,
-				Pagination.of(1, 2), null);
+				Pagination.of(1, totalCount + 2), null);
 
 		List<DocumentFolder> documentFolders1 =
 			(List<DocumentFolder>)page1.getItems();
 
 		Assert.assertEquals(
-			documentFolders1.toString(), 2, documentFolders1.size());
+			documentFolders1.toString(), totalCount + 2,
+			documentFolders1.size());
 
 		Page<DocumentFolder> page2 =
 			documentFolderResource.getDocumentFolderDocumentFoldersPage(
 				parentDocumentFolderId, null, null, null, null,
-				Pagination.of(2, 2), null);
+				Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<DocumentFolder> documentFolders2 =
 			(List<DocumentFolder>)page2.getItems();
@@ -1426,11 +1438,11 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		Page<DocumentFolder> page3 =
 			documentFolderResource.getDocumentFolderDocumentFoldersPage(
 				parentDocumentFolderId, null, null, null, null,
-				Pagination.of(1, 3), null);
+				Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2, documentFolder3),
-			(List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder1, (List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder2, (List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder3, (List<DocumentFolder>)page3.getItems());
 	}
 
 	@Test
@@ -1559,24 +1571,32 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			testGetDocumentFolderDocumentFoldersPage_addDocumentFolder(
 				parentDocumentFolderId, documentFolder2);
 
+		Page<DocumentFolder> page =
+			documentFolderResource.getDocumentFolderDocumentFoldersPage(
+				parentDocumentFolderId, null, null, null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<DocumentFolder> ascPage =
 				documentFolderResource.getDocumentFolderDocumentFoldersPage(
 					parentDocumentFolderId, null, null, null, null,
-					Pagination.of(1, 2), entityField.getName() + ":asc");
+					Pagination.of(1, (int)page.getTotalCount() + 1),
+					entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(documentFolder1, documentFolder2),
-				(List<DocumentFolder>)ascPage.getItems());
+			assertContains(
+				documentFolder1, (List<DocumentFolder>)ascPage.getItems());
+			assertContains(
+				documentFolder2, (List<DocumentFolder>)ascPage.getItems());
 
 			Page<DocumentFolder> descPage =
 				documentFolderResource.getDocumentFolderDocumentFoldersPage(
 					parentDocumentFolderId, null, null, null, null,
-					Pagination.of(1, 2), entityField.getName() + ":desc");
+					Pagination.of(1, (int)page.getTotalCount() + 1),
+					entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(documentFolder2, documentFolder1),
-				(List<DocumentFolder>)descPage.getItems());
+			assertContains(
+				documentFolder2, (List<DocumentFolder>)descPage.getItems());
+			assertContains(
+				documentFolder1, (List<DocumentFolder>)descPage.getItems());
 		}
 	}
 
@@ -1636,7 +1656,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			documentFolderResource.getSiteDocumentFoldersPage(
 				siteId, null, null, null, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantSiteId != null) {
 			DocumentFolder irrelevantDocumentFolder =
@@ -1644,13 +1664,13 @@ public abstract class BaseDocumentFolderResourceTestCase {
 					irrelevantSiteId, randomIrrelevantDocumentFolder());
 
 			page = documentFolderResource.getSiteDocumentFoldersPage(
-				irrelevantSiteId, null, null, null, null, Pagination.of(1, 2),
-				null);
+				irrelevantSiteId, null, null, null, null,
+				Pagination.of(1, (int)totalCount + 1), null);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantDocumentFolder),
+			assertContains(
+				irrelevantDocumentFolder,
 				(List<DocumentFolder>)page.getItems());
 			assertValid(
 				page,
@@ -1669,11 +1689,10 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		page = documentFolderResource.getSiteDocumentFoldersPage(
 			siteId, null, null, null, null, Pagination.of(1, 10), null);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2),
-			(List<DocumentFolder>)page.getItems());
+		assertContains(documentFolder1, (List<DocumentFolder>)page.getItems());
+		assertContains(documentFolder2, (List<DocumentFolder>)page.getItems());
 		assertValid(
 			page, testGetSiteDocumentFoldersPage_getExpectedActions(siteId));
 
@@ -1735,43 +1754,37 @@ public abstract class BaseDocumentFolderResourceTestCase {
 	public void testGetSiteDocumentFoldersPageWithFilterDoubleEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.DOUBLE);
+		testGetSiteDocumentFoldersPageWithFilter("eq", EntityField.Type.DOUBLE);
+	}
 
-		if (entityFields.isEmpty()) {
-			return;
-		}
+	@Test
+	public void testGetSiteDocumentFoldersPageWithFilterStringContains()
+		throws Exception {
 
-		Long siteId = testGetSiteDocumentFoldersPage_getSiteId();
-
-		DocumentFolder documentFolder1 =
-			testGetSiteDocumentFoldersPage_addDocumentFolder(
-				siteId, randomDocumentFolder());
-
-		@SuppressWarnings("PMD.UnusedLocalVariable")
-		DocumentFolder documentFolder2 =
-			testGetSiteDocumentFoldersPage_addDocumentFolder(
-				siteId, randomDocumentFolder());
-
-		for (EntityField entityField : entityFields) {
-			Page<DocumentFolder> page =
-				documentFolderResource.getSiteDocumentFoldersPage(
-					siteId, null, null, null,
-					getFilterString(entityField, "eq", documentFolder1),
-					Pagination.of(1, 2), null);
-
-			assertEquals(
-				Collections.singletonList(documentFolder1),
-				(List<DocumentFolder>)page.getItems());
-		}
+		testGetSiteDocumentFoldersPageWithFilter(
+			"contains", EntityField.Type.STRING);
 	}
 
 	@Test
 	public void testGetSiteDocumentFoldersPageWithFilterStringEquals()
 		throws Exception {
 
-		List<EntityField> entityFields = getEntityFields(
-			EntityField.Type.STRING);
+		testGetSiteDocumentFoldersPageWithFilter("eq", EntityField.Type.STRING);
+	}
+
+	@Test
+	public void testGetSiteDocumentFoldersPageWithFilterStringStartsWith()
+		throws Exception {
+
+		testGetSiteDocumentFoldersPageWithFilter(
+			"startswith", EntityField.Type.STRING);
+	}
+
+	protected void testGetSiteDocumentFoldersPageWithFilter(
+			String operator, EntityField.Type type)
+		throws Exception {
+
+		List<EntityField> entityFields = getEntityFields(type);
 
 		if (entityFields.isEmpty()) {
 			return;
@@ -1792,7 +1805,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			Page<DocumentFolder> page =
 				documentFolderResource.getSiteDocumentFoldersPage(
 					siteId, null, null, null,
-					getFilterString(entityField, "eq", documentFolder1),
+					getFilterString(entityField, operator, documentFolder1),
 					Pagination.of(1, 2), null);
 
 			assertEquals(
@@ -1806,6 +1819,13 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		throws Exception {
 
 		Long siteId = testGetSiteDocumentFoldersPage_getSiteId();
+
+		Page<DocumentFolder> documentFolderPage =
+			documentFolderResource.getSiteDocumentFoldersPage(
+				siteId, null, null, null, null, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			documentFolderPage.getTotalCount());
 
 		DocumentFolder documentFolder1 =
 			testGetSiteDocumentFoldersPage_addDocumentFolder(
@@ -1821,19 +1841,22 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Page<DocumentFolder> page1 =
 			documentFolderResource.getSiteDocumentFoldersPage(
-				siteId, null, null, null, null, Pagination.of(1, 2), null);
+				siteId, null, null, null, null,
+				Pagination.of(1, totalCount + 2), null);
 
 		List<DocumentFolder> documentFolders1 =
 			(List<DocumentFolder>)page1.getItems();
 
 		Assert.assertEquals(
-			documentFolders1.toString(), 2, documentFolders1.size());
+			documentFolders1.toString(), totalCount + 2,
+			documentFolders1.size());
 
 		Page<DocumentFolder> page2 =
 			documentFolderResource.getSiteDocumentFoldersPage(
-				siteId, null, null, null, null, Pagination.of(2, 2), null);
+				siteId, null, null, null, null,
+				Pagination.of(2, totalCount + 2), null);
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<DocumentFolder> documentFolders2 =
 			(List<DocumentFolder>)page2.getItems();
@@ -1843,11 +1866,12 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Page<DocumentFolder> page3 =
 			documentFolderResource.getSiteDocumentFoldersPage(
-				siteId, null, null, null, null, Pagination.of(1, 3), null);
+				siteId, null, null, null, null,
+				Pagination.of(1, (int)totalCount + 3), null);
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2, documentFolder3),
-			(List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder1, (List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder2, (List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder3, (List<DocumentFolder>)page3.getItems());
 	}
 
 	@Test
@@ -1973,24 +1997,32 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		documentFolder2 = testGetSiteDocumentFoldersPage_addDocumentFolder(
 			siteId, documentFolder2);
 
+		Page<DocumentFolder> page =
+			documentFolderResource.getSiteDocumentFoldersPage(
+				siteId, null, null, null, null, null, null);
+
 		for (EntityField entityField : entityFields) {
 			Page<DocumentFolder> ascPage =
 				documentFolderResource.getSiteDocumentFoldersPage(
-					siteId, null, null, null, null, Pagination.of(1, 2),
+					siteId, null, null, null, null,
+					Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":asc");
 
-			assertEquals(
-				Arrays.asList(documentFolder1, documentFolder2),
-				(List<DocumentFolder>)ascPage.getItems());
+			assertContains(
+				documentFolder1, (List<DocumentFolder>)ascPage.getItems());
+			assertContains(
+				documentFolder2, (List<DocumentFolder>)ascPage.getItems());
 
 			Page<DocumentFolder> descPage =
 				documentFolderResource.getSiteDocumentFoldersPage(
-					siteId, null, null, null, null, Pagination.of(1, 2),
+					siteId, null, null, null, null,
+					Pagination.of(1, (int)page.getTotalCount() + 1),
 					entityField.getName() + ":desc");
 
-			assertEquals(
-				Arrays.asList(documentFolder2, documentFolder1),
-				(List<DocumentFolder>)descPage.getItems());
+			assertContains(
+				documentFolder2, (List<DocumentFolder>)descPage.getItems());
+			assertContains(
+				documentFolder1, (List<DocumentFolder>)descPage.getItems());
 		}
 	}
 
@@ -2033,7 +2065,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/documentFolders");
 
-		Assert.assertEquals(0, documentFoldersJSONObject.get("totalCount"));
+		long totalCount = documentFoldersJSONObject.getLong("totalCount");
 
 		DocumentFolder documentFolder1 =
 			testGraphQLGetSiteDocumentFoldersPage_addDocumentFolder();
@@ -2044,10 +2076,16 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			invokeGraphQLQuery(graphQLField), "JSONObject/data",
 			"JSONObject/documentFolders");
 
-		Assert.assertEquals(2, documentFoldersJSONObject.getLong("totalCount"));
+		Assert.assertEquals(
+			totalCount + 2, documentFoldersJSONObject.getLong("totalCount"));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2),
+		assertContains(
+			documentFolder1,
+			Arrays.asList(
+				DocumentFolderSerDes.toDTOs(
+					documentFoldersJSONObject.getString("items"))));
+		assertContains(
+			documentFolder2,
 			Arrays.asList(
 				DocumentFolderSerDes.toDTOs(
 					documentFoldersJSONObject.getString("items"))));
@@ -2163,7 +2201,7 @@ public abstract class BaseDocumentFolderResourceTestCase {
 			documentFolderResource.getSiteDocumentFoldersRatedByMePage(
 				siteId, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantSiteId != null) {
 			DocumentFolder irrelevantDocumentFolder =
@@ -2171,12 +2209,12 @@ public abstract class BaseDocumentFolderResourceTestCase {
 					irrelevantSiteId, randomIrrelevantDocumentFolder());
 
 			page = documentFolderResource.getSiteDocumentFoldersRatedByMePage(
-				irrelevantSiteId, Pagination.of(1, 2));
+				irrelevantSiteId, Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantDocumentFolder),
+			assertContains(
+				irrelevantDocumentFolder,
 				(List<DocumentFolder>)page.getItems());
 			assertValid(
 				page,
@@ -2195,11 +2233,10 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		page = documentFolderResource.getSiteDocumentFoldersRatedByMePage(
 			siteId, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2),
-			(List<DocumentFolder>)page.getItems());
+		assertContains(documentFolder1, (List<DocumentFolder>)page.getItems());
+		assertContains(documentFolder2, (List<DocumentFolder>)page.getItems());
 		assertValid(
 			page,
 			testGetSiteDocumentFoldersRatedByMePage_getExpectedActions(siteId));
@@ -2225,6 +2262,13 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Long siteId = testGetSiteDocumentFoldersRatedByMePage_getSiteId();
 
+		Page<DocumentFolder> documentFolderPage =
+			documentFolderResource.getSiteDocumentFoldersRatedByMePage(
+				siteId, null);
+
+		int totalCount = GetterUtil.getInteger(
+			documentFolderPage.getTotalCount());
+
 		DocumentFolder documentFolder1 =
 			testGetSiteDocumentFoldersRatedByMePage_addDocumentFolder(
 				siteId, randomDocumentFolder());
@@ -2239,19 +2283,20 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Page<DocumentFolder> page1 =
 			documentFolderResource.getSiteDocumentFoldersRatedByMePage(
-				siteId, Pagination.of(1, 2));
+				siteId, Pagination.of(1, totalCount + 2));
 
 		List<DocumentFolder> documentFolders1 =
 			(List<DocumentFolder>)page1.getItems();
 
 		Assert.assertEquals(
-			documentFolders1.toString(), 2, documentFolders1.size());
+			documentFolders1.toString(), totalCount + 2,
+			documentFolders1.size());
 
 		Page<DocumentFolder> page2 =
 			documentFolderResource.getSiteDocumentFoldersRatedByMePage(
-				siteId, Pagination.of(2, 2));
+				siteId, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<DocumentFolder> documentFolders2 =
 			(List<DocumentFolder>)page2.getItems();
@@ -2261,11 +2306,11 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Page<DocumentFolder> page3 =
 			documentFolderResource.getSiteDocumentFoldersRatedByMePage(
-				siteId, Pagination.of(1, 3));
+				siteId, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(documentFolder1, documentFolder2, documentFolder3),
-			(List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder1, (List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder2, (List<DocumentFolder>)page3.getItems());
+		assertContains(documentFolder3, (List<DocumentFolder>)page3.getItems());
 	}
 
 	protected DocumentFolder
@@ -2930,14 +2975,19 @@ public abstract class BaseDocumentFolderResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -3449,9 +3499,47 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		}
 
 		if (entityFieldName.equals("assetLibraryKey")) {
-			sb.append("'");
-			sb.append(String.valueOf(documentFolder.getAssetLibraryKey()));
-			sb.append("'");
+			Object object = documentFolder.getAssetLibraryKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -3533,18 +3621,93 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		}
 
 		if (entityFieldName.equals("description")) {
-			sb.append("'");
-			sb.append(String.valueOf(documentFolder.getDescription()));
-			sb.append("'");
+			Object object = documentFolder.getDescription();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("externalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(documentFolder.getExternalReferenceCode()));
-			sb.append("'");
+			Object object = documentFolder.getExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -3555,9 +3718,47 @@ public abstract class BaseDocumentFolderResourceTestCase {
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(documentFolder.getName()));
-			sb.append("'");
+			Object object = documentFolder.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

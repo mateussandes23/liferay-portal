@@ -79,16 +79,16 @@ exports[`AccountOverview should render 1`] = `
           class="card-footer"
         >
           <a
-            class="button-root c-link link-secondary text-decoration-underline"
-            href="/workspace/23/contacts/accounts/1/activities"
+            class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
+            href="/workspace/456/123/contacts/accounts/1/activities"
           >
             View All Activities
             <svg
-              class="lexicon-icon lexicon-icon-angle-right icon-root ml-2"
+              class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
               role="presentation"
             >
               <use
-                xlink:href="#angle-right"
+                xlink:href="#angle-right-small"
               />
             </svg>
           </a>
@@ -132,29 +132,85 @@ exports[`AccountOverview should render 1`] = `
                 </th>
               </tr>
             </thead>
+            <tbody>
+              <tr
+                class=""
+              >
+                <td
+                  class="name-cell-root"
+                >
+                  <div
+                    class="content-container"
+                    style="max-width: 200px;"
+                  >
+                    <div
+                      class="text-truncate"
+                    >
+                      <div
+                        class="table-title text-truncate"
+                      >
+                        <a
+                          class="text-truncate"
+                          href="/workspace/456/123/contacts/accounts/test/interests/composition 01"
+                        >
+                          composition 01
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td
+                  class="table-cell-expand relative-metric-bar-root"
+                >
+                  <div
+                    class="metric-bar-root"
+                  >
+                    <div
+                      class="bar bar-lg"
+                    />
+                    <div
+                      class="info-wrapper align-items-center d-flex justify-content-between"
+                    >
+                      <span
+                        class="text-truncate title"
+                        data-tooltip="false"
+                        title=""
+                      />
+                      <span
+                        class="count"
+                      >
+                        10
+                      </span>
+                    </div>
+                  </div>
+                </td>
+                <td
+                  class="table-column-text-end"
+                >
+                  <h4
+                    class="table-title text-truncate"
+                  >
+                    Infinity%
+                  </h4>
+                </td>
+              </tr>
+            </tbody>
           </table>
-          <div
-            class="spinner-root spinner-overlay"
-          >
-            <span
-              class="loading-animation loading-animation-dotted"
-            />
-          </div>
         </div>
         <div
           class="card-footer"
         >
           <a
-            class="button-root link-unstyled"
-            href="/workspace/23/contacts/accounts/test/interests"
+            class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
+            href="/workspace/456/123/contacts/accounts/test/interests"
           >
             View All Interests
             <svg
-              class="lexicon-icon lexicon-icon-angle-right icon-root ml-2"
+              class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
               role="presentation"
             >
               <use
-                xlink:href="#angle-right"
+                xlink:href="#angle-right-small"
               />
             </svg>
           </a>
@@ -192,6 +248,7 @@ exports[`AccountOverview should render 1`] = `
                 class="input-group-inset-item input-group-inset-item-after"
               >
                 <button
+                  aria-label="Search"
                   class="button-root btn btn-unstyled"
                   type="button"
                 >
@@ -220,7 +277,7 @@ exports[`AccountOverview should render 1`] = `
                   class="autofit-col"
                 >
                   <div
-                    class="sticker sticker-root sticker-static sticker-rounded sticker-light"
+                    class="sticker sticker-root sticker-static sticker-rounded sticker-primary"
                   >
                     <svg
                       class="lexicon-icon lexicon-icon-individual-dynamic-segment icon-root"
@@ -243,7 +300,7 @@ exports[`AccountOverview should render 1`] = `
                     <strong>
                       <a
                         class="list-group-link"
-                        href="/workspace/23/contacts/segments/0"
+                        href="/workspace/456/123/contacts/segments/0"
                       >
                         Seattle0
                       </a>
@@ -261,16 +318,16 @@ exports[`AccountOverview should render 1`] = `
           class="card-footer"
         >
           <a
-            class="button-root c-link link-secondary text-decoration-underline"
-            href="/workspace/23/contacts/accounts/test/segments"
+            class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
+            href="/workspace/456/123/contacts/accounts/test/segments"
           >
             View All Segments
             <svg
-              class="lexicon-icon lexicon-icon-angle-right icon-root ml-2"
+              class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
               role="presentation"
             >
               <use
-                xlink:href="#angle-right"
+                xlink:href="#angle-right-small"
               />
             </svg>
           </a>
@@ -507,7 +564,7 @@ exports[`AccountOverview should render 1`] = `
                       >
                         <a
                           class="text-truncate"
-                          href="/workspace/23/contacts/individuals/known-individuals/0"
+                          href="/workspace/456/123/contacts/individuals/known-individuals/0"
                         >
                           Foo Bar
                         </a>
@@ -528,16 +585,16 @@ exports[`AccountOverview should render 1`] = `
           class="card-footer"
         >
           <a
-            class="button-root c-link link-secondary text-decoration-underline"
-            href="/workspace/23/contacts/accounts/test/individuals"
+            class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
+            href="/workspace/456/123/contacts/accounts/test/individuals"
           >
             View All Individuals
             <svg
-              class="lexicon-icon lexicon-icon-angle-right ml-2"
+              class="lexicon-icon lexicon-icon-angle-right-small ml-2"
               role="presentation"
             >
               <use
-                xlink:href="#angle-right"
+                xlink:href="#angle-right-small"
               />
             </svg>
           </a>

@@ -1,6 +1,7 @@
 @component-name = "portal-wcm"
 definition {
 
+	property ci.retries.disabled = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.component.names = "Master Page Templates";
@@ -26,18 +27,7 @@ definition {
 		}
 	}
 
-	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
-
-		if (${testPortalInstance} == "true") {
-			PortalInstances.tearDownCP();
-		}
-		else {
-			JSONGroup.deleteGroupByName(groupName = "Test Site Name");
-		}
-	}
-
-	@description = "This is a test for LPS-102566, LPS-109594 and LPS-119634. Add a page based on custom master."
+	@description = "This is a test for LPS-102566, LPS-109594, LPS-119634 and LPS-104629. Add a page based on custom master."
 	@priority = 5
 	test AddPageBasedOnCustomMaster {
 		property portal.acceptance = "true";
@@ -65,7 +55,7 @@ definition {
 
 			PageEditor.configureFragment(
 				size = "Large",
-				type = "Link");
+				style = "Link");
 
 			PageEditor.gotoStyle(fragmentName = "Button");
 
@@ -96,7 +86,7 @@ definition {
 			PageEditor.viewFragmentStyle(
 				fragmentName = "Button",
 				size = "lg",
-				type = "link");
+				style = "link");
 
 			AssertCssValue(
 				key_fragmentName = "button",
@@ -109,22 +99,6 @@ definition {
 				locator1 = "PageEditor#FRAGMENT_INHERITED_FROM_CUSTOM_MASTERS",
 				locator2 = "background-color",
 				value1 = "rgba(231, 231, 237, 1)");
-		}
-	}
-
-	@description = "This is a test for LPS-102208. As a master pages administrator I can duplicate a masters template"
-	@priority = 5
-	test CanDuplicateMastersPageTemplate {
-		property portal.acceptance = "true";
-
-		task ("Make a copy of master page template") {
-			MastersPageTemplatesAdmin.gotoMastersEllipsisItem(
-				item = "Make a Copy",
-				masterLayoutName = "Custom Masters Page Template");
-		}
-
-		task ("Assert master page template's name") {
-			MastersPageTemplatesAdmin.viewMastersPresent(masterLayoutName = "Custom Masters Page Template (Copy)");
 		}
 	}
 
@@ -269,8 +243,6 @@ definition {
 
 			Click(locator1 = "PageEditor#MORE_LINK");
 
-			Navigator.gotoNavTab(navTab = "Design");
-
 			AssertTextEquals(
 				locator1 = "PagesAdmin#MASTER_LAYOUT_NAME",
 				value1 = "Blank");
@@ -322,8 +294,6 @@ definition {
 			PageEditor.gotoTab(tabName = "Page Design Options");
 
 			Click(locator1 = "PageEditor#MORE_LINK");
-
-			Navigator.gotoNavTab(navTab = "Design");
 
 			AssertTextEquals(
 				locator1 = "PagesAdmin#MASTER_LAYOUT_NAME",
@@ -418,8 +388,6 @@ definition {
 
 			Click(locator1 = "PageEditor#MORE_LINK");
 
-			Navigator.gotoNavTab(navTab = "Design");
-
 			AssertTextEquals(
 				locator1 = "PagesAdmin#MASTER_LAYOUT_NAME",
 				value1 = "Blank");
@@ -481,8 +449,6 @@ definition {
 			PageEditor.gotoTab(tabName = "Page Design Options");
 
 			Click(locator1 = "PageEditor#MORE_LINK");
-
-			Navigator.gotoNavTab(navTab = "Design");
 
 			AssertTextEquals(
 				locator1 = "PagesAdmin#MASTER_LAYOUT_NAME",
@@ -552,7 +518,7 @@ definition {
 		task ("Type content in the HTML Title field") {
 			LexiconEntry.gotoHeaderMenuItem(menuItem = "Configure");
 
-			SelectWindow.selectPopUp(locator1 = "null");
+			SelectWindow.selectPopUp(value1 = "null");
 
 			Navigator.gotoNavTab(navTab = "SEO");
 
@@ -565,8 +531,6 @@ definition {
 
 		task ("View the Custom Masters Page Template is still selected") {
 			Navigator.gotoBack();
-
-			ContentPages.gotoPageEditor();
 
 			PageEditor.gotoTab(tabName = "Page Design Options");
 
@@ -615,8 +579,6 @@ definition {
 			PageEditor.gotoTab(tabName = "Page Design Options");
 
 			Click(locator1 = "PageEditor#MORE_LINK");
-
-			Navigator.gotoNavTab(navTab = "Design");
 
 			AssertTextEquals(
 				locator1 = "PagesAdmin#MASTER_LAYOUT_NAME",
@@ -674,8 +636,6 @@ definition {
 			PageEditor.gotoTab(tabName = "Page Design Options");
 
 			Click(locator1 = "PageEditor#MORE_LINK");
-
-			Navigator.gotoNavTab(navTab = "Design");
 
 			AssertTextEquals(
 				locator1 = "PagesAdmin#MASTER_LAYOUT_NAME",
@@ -1040,8 +1000,6 @@ definition {
 
 			Click(locator1 = "PageEditor#MORE_LINK");
 
-			Navigator.gotoNavTab(navTab = "Design");
-
 			Click(
 				ariaLabel = "Change Master",
 				locator1 = "Button#ANY_WITH_ARIA_LABEL");
@@ -1315,8 +1273,6 @@ definition {
 
 			Click(locator1 = "PageEditor#MORE_LINK");
 
-			Navigator.gotoNavTab(navTab = "Design");
-
 			Click(
 				ariaLabel = "Change Master",
 				locator1 = "Button#ANY_WITH_ARIA_LABEL");
@@ -1431,6 +1387,28 @@ definition {
 		}
 	}
 
+	@description = "This is a test for LPS-102208. As a master pages administrator I can duplicate a masters template"
+	@priority = 5
+	test DuplicateMastersPageTemplate {
+		property portal.acceptance = "true";
+
+		task ("Make a copy of master page template") {
+			MastersPageTemplatesAdmin.gotoMasters(masterLayoutName = "Custom Masters Page Template");
+
+			MastersPageTemplates.publishMaster();
+
+			MastersPageTemplatesAdmin.gotoMastersEllipsisItem(
+				item = "Make a Copy",
+				masterLayoutName = "Custom Masters Page Template");
+
+			MenuItem.click(menuItem = "Master Page");
+		}
+
+		task ("Assert master page template's name") {
+			MastersPageTemplatesAdmin.viewMastersPresent(masterLayoutName = "Custom Masters Page Template (Copy)");
+		}
+	}
+
 	@description = "This is a test for LPS-102194. Assert contents in drop zone shouldn't be changed and available fragments should be changed in sidebar after editing allowed fragments."
 	@priority = 4
 	test EditAllowedFragments {
@@ -1466,8 +1444,6 @@ definition {
 			PageEditor.gotoTab(tabName = "Page Design Options");
 
 			Click(locator1 = "PageEditor#MORE_LINK");
-
-			Navigator.gotoNavTab(navTab = "Design");
 
 			Click(
 				ariaLabel = "Edit Master",
@@ -1554,8 +1530,6 @@ definition {
 
 			Click(locator1 = "PageEditor#MORE_LINK");
 
-			Navigator.gotoNavTab(navTab = "Design");
-
 			Click(
 				ariaLabel = "Edit Master",
 				locator1 = "Link#ANY_WITH_ARIA_LABEL");
@@ -1574,6 +1548,8 @@ definition {
 				scope = "Master");
 
 			MastersPageTemplates.propagateChange();
+
+			Navigator.gotoBack();
 
 			WebContentDisplayPortlet.viewMessage();
 		}
@@ -1975,17 +1951,13 @@ definition {
 
 		task ("When adding a web content with email and telephone") {
 			task ("Create a web content structure") {
-				WebContentStructures.openWebContentStructuresAdmin(siteURLKey = "site-name");
+				WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
 
-				WebContentStructures.addCP(structureName = "Contact Information");
+				NavItem.gotoStructures();
 
-				for (var fieldFieldLabel : list "Name,Email,Phone,Personal Web") {
-					DataEngine.addField(
-						fieldFieldLabel = ${fieldFieldLabel},
-						fieldName = "Text");
-				}
-
-				WebContentStructures.saveCP();
+				WebContentStructures.importStructure(
+					structureName = "Contact Information",
+					uploadFileName = "Structure_Contact_Information_Fields.json");
 			}
 
 			task ("Create a Web Content from Contact Information") {

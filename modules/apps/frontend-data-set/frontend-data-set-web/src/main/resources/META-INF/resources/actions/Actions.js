@@ -1,25 +1,17 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {openConfirmModal} from 'frontend-js-web';
+import {navigate, openConfirmModal} from 'frontend-js-web';
 import PropTypes from 'prop-types';
 import React, {useContext, useState} from 'react';
 
 import FrontendDataSetContext from '../FrontendDataSetContext';
 import {ACTION_ITEM_TARGETS} from '../utils/actionItems/constants';
 import {formatActionURL} from '../utils/index';
-import {openPermissionsModal, resolveModalSize} from '../utils/modals/index';
+import {openPermissionsModal} from '../utils/modals/openPermissionsModal';
+import {resolveModalSize} from '../utils/modals/resolveModalSize';
 import ViewsContext from '../views/ViewsContext';
 import ActionsDropdown from './ActionsDropdown';
 import QuickActions from './QuickActions';
@@ -36,7 +28,14 @@ const formatActions = (actions, itemData) => {
 	return actions
 		? actions.reduce((actions, action) => {
 				if (action.data?.permissionKey) {
-					if (itemData.actions[action.data.permissionKey]) {
+					if (
+						itemData.actions &&
+						Object.keys(itemData.actions).some(
+							(itemAction) =>
+								itemAction.toLowerCase() ===
+								action.data.permissionKey.toLowerCase()
+						)
+					) {
 						if (action.target === 'headless') {
 							return [
 								...actions,
@@ -102,6 +101,7 @@ function Actions({actions, itemData, itemId, menuActive, onMenuActiveChange}) {
 		const {
 			confirmationMessage,
 			errorMessage,
+			size,
 			status,
 			successMessage,
 			title,
@@ -109,7 +109,7 @@ function Actions({actions, itemData, itemId, menuActive, onMenuActiveChange}) {
 
 		const url = formatActionURL(href, itemData);
 
-		const doAction = () => {
+		const doAction = ({defaultPrevented}) => {
 			if (target?.includes('modal')) {
 				event.preventDefault();
 
@@ -118,7 +118,7 @@ function Actions({actions, itemData, itemId, menuActive, onMenuActiveChange}) {
 				}
 				else {
 					openModal({
-						size: resolveModalSize(target),
+						size: size || resolveModalSize(target),
 						title,
 						url,
 					});
@@ -174,14 +174,26 @@ function Actions({actions, itemData, itemId, menuActive, onMenuActiveChange}) {
 			if (onActionDropdownItemClick) {
 				onActionDropdownItemClick(exposedProps);
 			}
+
+			if (target === 'link' && defaultPrevented) {
+				navigate(url);
+			}
 		};
 
 		if (confirmationMessage) {
+			let defaultPrevented = false;
+
+			if (target === 'link') {
+				event.preventDefault();
+
+				defaultPrevented = true;
+			}
+
 			openConfirmModal({
 				message: confirmationMessage,
 				onConfirm: (isConfirmed) => {
 					if (isConfirmed) {
-						doAction();
+						doAction({defaultPrevented});
 					}
 				},
 				status,
@@ -189,7 +201,7 @@ function Actions({actions, itemData, itemId, menuActive, onMenuActiveChange}) {
 			});
 		}
 		else {
-			doAction();
+			doAction({defaultPrevented: false});
 		}
 
 		if (closeMenu) {
@@ -229,11 +241,13 @@ const actionType = PropTypes.shape({
 		errorMessage: PropTypes.string,
 		method: PropTypes.oneOf(['delete', 'get', 'patch', 'post']),
 		permissionKey: PropTypes.string,
+		size: PropTypes.oneOf(['sm', 'lg', 'full-screen']),
 		successMessage: PropTypes.string,
+		title: PropTypes.string,
 	}),
 	href: PropTypes.string,
 	icon: PropTypes.string,
-	label: PropTypes.string.isRequired,
+	label: PropTypes.string,
 	method: PropTypes.oneOf(['delete', 'get', 'patch', 'post']),
 	onClick: PropTypes.func,
 	target: PropTypes.oneOf([

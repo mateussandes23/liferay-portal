@@ -1,10 +1,11 @@
 definition {
 
-	macro _addCommerceProductsWithSpecifications {
+	@summary = "Default summary"
+	macro _addCommerceProductsWithSpecifications(catalogName = null, specificationKey = null) {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		var catalogId = CommerceJSONCatalogsAPI._getCommerceCatalogIdByName(catalogName = ${catalogName});
@@ -66,11 +67,58 @@ definition {
 		JSONCurlUtil.post(${curl});
 	}
 
-	macro _deleteAllCommerceSpecifications {
+	@summary = "Default summary"
+	macro _addCommerceSpecification() {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
+		}
+
+		if (!(isSet(specificationLabelDescription))) {
+			var specificationLabelDescription = "";
+		}
+
+		if (!(isSet(specificationLabelFacetable))) {
+			var specificationLabelFacetable = "false";
+		}
+
+		if (!(isSet(specificationLabelKey))) {
+			var specificationLabelKey = CommerceUtilities.convertStringToKey(string = ${specificationLabelTitle});
+		}
+
+		if (isSet(specificationLabelTitle)) {
+			var specificationLabelTitle = ${specificationLabelTitle};
+		}
+
+		var userLoginInfo = JSONUtil2.formatJSONUser();
+
+		var curl = '''
+			${baseURL}/o/headless-commerce-admin-catalog/v1.0/specifications \
+				-u ${userLoginInfo} \
+				-H 'accept: application/json' \
+				-H 'Content-Type: application/json' \
+				-d '{
+					"description": {
+						"en_US": "${specificationLabelDescription}"
+					},
+					"facetable": ${specificationLabelFacetable},
+					"key": "${specificationLabelKey}",
+					"title": {
+						"en_US": "${specificationLabelTitle}"
+					}
+				}'
+		''';
+
+		JSONCurlUtil.post(${curl});
+	}
+
+	@summary = "Default summary"
+	macro _deleteAllCommerceSpecifications() {
+		var baseURL = ${baseURL};
+
+		if (!(isSet(baseURL))) {
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		var specificationsCount = CommerceJSONSpecificationsAPI._getCommerceSpecificationsCount();
@@ -97,11 +145,12 @@ definition {
 		}
 	}
 
-	macro _getCommerceSpecificationIdBySpecKey {
+	@summary = "Default summary"
+	macro _getCommerceSpecificationIdBySpecKey(specificationKey = null) {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		var userLoginInfo = JSONUtil2.formatJSONUser();
@@ -117,11 +166,12 @@ definition {
 		return ${optionCategoryId};
 	}
 
-	macro _getCommerceSpecificationIds {
+	@summary = "Default summary"
+	macro _getCommerceSpecificationIds(specificationCount = null) {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (isSet(specificationCount)) {
@@ -144,11 +194,12 @@ definition {
 		return ${specificationIds};
 	}
 
-	macro _getCommerceSpecificationsCount {
+	@summary = "Default summary"
+	macro _getCommerceSpecificationsCount() {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		var userLoginInfo = JSONUtil2.formatJSONUser();

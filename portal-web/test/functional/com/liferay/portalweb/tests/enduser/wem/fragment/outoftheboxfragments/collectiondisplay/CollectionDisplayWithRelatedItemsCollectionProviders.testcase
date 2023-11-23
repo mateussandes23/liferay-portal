@@ -1,6 +1,7 @@
 @component-name = "portal-wcm"
 definition {
 
+	property ci.retries.disabled = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Fragments";
@@ -21,17 +22,6 @@ definition {
 				groupName = "Test Site Name",
 				layoutName = "Content Page Name",
 				type = "content");
-		}
-	}
-
-	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
-
-		if (${testPortalInstance} == "true") {
-			PortalInstances.tearDownCP();
-		}
-		else {
-			JSONGroup.deleteGroupByName(groupName = "Test Site Name");
 		}
 	}
 
@@ -87,10 +77,11 @@ definition {
 		}
 
 		task ("Add a dynamic collection for All Types") {
-			JSONAssetlist.addDynamicAssetListEntryWithItemType(
-				groupName = "Test Site Name",
-				itemType = "All Types",
-				title = "Dynamic Collection");
+			AssetListsAdmin.openAssetListsAdmin(siteURLKey = "test-site-name");
+
+			AssetListsAdmin.addDynamicSelection(assetListTitle = "Dynamic Collection");
+
+			AssetListsAdmin.configureItemTypeInDynamicCollection(itemType = "All Types");
 		}
 
 		task ("Add a Grid to page") {
@@ -182,93 +173,43 @@ definition {
 		}
 
 		task ("View the title of assets are shown in the first module") {
-			var n = 1;
-
 			for (var title : list "Document Title,Blogs Entry Title,Web Content Title") {
-				AssertTextEquals(
-					key_colPosition = 1,
-					key_element = "//div[@aria-label='Heading']//*[contains(@data-lfr-editable-id,'element-text')]",
-					key_fragmentName = "Collection Display",
-					key_rowPosition = ${n},
-					locator1 = "PageEditor#COLLECTION_CELL_NESTED_ELEMENT",
-					value1 = ${title});
-
-				var n = ${n} + 1;
+				AssertVisible(locator1 = "xpath=(//div[@aria-label='Collection Display'])[1]//div[@aria-label='Heading']//*[contains(@data-lfr-editable-id,'element-text')][normalize-space()='${title}']");
 			}
 		}
 
 		task ("View the name of associated categories are shown in the second module") {
-			var n = 1;
-
-			for (var title : list "Category Name 1,Category Name 2,Category Name 3") {
-				AssertTextEquals(
-					key_colPosition = 1,
-					key_element = "//div[contains(@class,'row')][${n}]//div[@aria-label='Button']//*[contains(@data-lfr-editable-id,'link')]",
-					key_fragmentName = "Collection Display",
-					key_rowPosition = 1,
-					locator1 = "PageEditor#COLLECTION_CELL_NESTED_ELEMENT",
-					value1 = ${title});
-
-				var n = ${n} + 1;
+			for (var n : list "1,2,3") {
+				AssertVisible(locator1 = "xpath=((//div[@aria-label='Collection Display'])[2]//div[@aria-label='Button']//*[contains(@data-lfr-editable-id,'link')][normalize-space()='Category Name 1'])[${n}]");
 			}
 
-			var n = 1;
-
-			for (var title : list "Category Name 1,Category Name 2") {
-				AssertTextEquals(
-					key_colPosition = 1,
-					key_element = "//div[contains(@class,'row')][${n}]//div[@aria-label='Button']//*[contains(@data-lfr-editable-id,'link')]",
-					key_fragmentName = "Collection Display",
-					key_rowPosition = 2,
-					locator1 = "PageEditor#COLLECTION_CELL_NESTED_ELEMENT",
-					value1 = ${title});
-
-				var n = ${n} + 1;
+			for (var n : list "1,2") {
+				AssertVisible(locator1 = "xpath=((//div[@aria-label='Collection Display'])[2]//div[@aria-label='Button']//*[contains(@data-lfr-editable-id,'link')][normalize-space()='Category Name 2'])[${n}]");
 			}
 
-			AssertTextEquals(
-				key_colPosition = 1,
-				key_element = "//div[contains(@class,'row')]//div[@aria-label='Button']//*[contains(@data-lfr-editable-id,'link')]",
-				key_fragmentName = "Collection Display",
-				key_rowPosition = 3,
-				locator1 = "PageEditor#COLLECTION_CELL_NESTED_ELEMENT",
-				value1 = "Category Name 1");
-
-			PageEditor.publish();
+			AssertVisible(locator1 = "xpath=(//div[@aria-label='Collection Display'])[2]//div[@aria-label='Button']//*[contains(@data-lfr-editable-id,'link')][normalize-space()='Category Name 3']");
 		}
 
 		task ("Navigate to page at view mode") {
-			ContentPagesNavigator.openViewContentPage(
-				pageName = "Content Page Name",
-				siteName = "Test Site Name");
+			PageEditor.publish();
 		}
 
 		task ("View the title of assets are shown in the first module") {
-			var n = 1;
-
 			for (var title : list "Document Title,Blogs Entry Title,Web Content Title") {
-				ContentPages.viewFragmentText(
-					fragmentName = "heading",
-					id = "element-text",
-					position = ${n},
-					text = ${title});
-
-				var n = ${n} + 1;
+				AssertVisible(locator1 = "xpath=(//div[contains(@class,'lfr-layout-structure-item-collection')])[1]//*[contains(@data-lfr-editable-id,'element-text')][normalize-space()='${title}']");
 			}
 		}
 
 		task ("View the name of associated categories are shown in the second module") {
-			var n = 1;
-
-			for (var title : list "Category Name 1,Category Name 2,Category Name 3,Category Name 1,Category Name 2,Category Name 1") {
-				ContentPages.viewFragmentText(
-					fragmentName = "button",
-					id = "link",
-					position = ${n},
-					text = ${title});
-
-				var n = ${n} + 1;
+			for (var n : list "1,2,3") {
+				AssertVisible(locator1 = "xpath=((//div[contains(@class,'lfr-layout-structure-item-collection')])[2]//*[contains(@data-lfr-editable-id,'link')][normalize-space()='Category Name 1'])[${n}]");
 			}
+
+			for (var n : list "1,2") {
+				AssertVisible(locator1 = "xpath=((//div[contains(@class,'lfr-layout-structure-item-collection')])[2]//*[contains(@data-lfr-editable-id,'link')][normalize-space()='Category Name 2'])[${n}]");
+			}
+
+			AssertVisible(locator1 = "xpath=(//div[contains(@class,'lfr-layout-structure-item-collection')])[2]//*[contains(@data-lfr-editable-id,'link')][normalize-space()='Category Name 3']");
 		}
 	}
 
@@ -1065,7 +1006,10 @@ definition {
 	@priority = 5
 	test PreviewMappedContentOfCollectionItemOnDisplayPageTemplateForCategory {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "CollectionDisplayWithRelatedItemsCollectionProviders#PreviewMappedContentOfCollectionItemOnDisplayPageTemplateForCategory";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
+
+		var groupId = JSONGroupSetter.setGroupId(groupName = "Test Site Name");
 
 		task ("Enable the DDMStructure and DLFileEntry feature via gogo shell") {
 			GogoShell.openGogoShellAdmin();
@@ -1081,13 +1025,13 @@ definition {
 
 		task ("Add a vocabulary") {
 			JSONCategory.addVocabulary(
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				title = "Vocabulary Name");
 		}
 
 		task ("Add a category") {
 			var categoryId = JSONCategory.addCategory(
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				title = "Category Name",
 				vocabularyName = "Vocabulary Name");
 		}
@@ -1096,26 +1040,24 @@ definition {
 			JSONWebcontent.addWebContent(
 				assetCategoryIds = ${categoryId},
 				content = "Web Content Content",
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				title = "Web Content Title");
 		}
 
 		task ("Add a blogs entry with category") {
-			BlogsNavigator.openBlogsAdmin(siteURLKey = "test-site-name");
-
-			Blogs.addEntryWithCategory(
-				categoryName = "Category Name",
-				entryContent = "Blogs Entry Content",
-				entryTitle = "Blogs Entry Title",
-				vocabularyName = "Vocabulary Name");
+			HeadlessBlog.addBlogEntry(
+				assetCategoryIds = ${categoryId},
+				content = "Blogs Entry Content",
+				groupId = ${groupId},
+				title = "Blogs Entry Title");
 		}
 
 		task ("Add a document with category") {
 			JSONDocument.addFileWithUploadedFile(
 				assetCategoryIds = ${categoryId},
 				dmDocumentTitle = "Document Title",
-				groupName = "Test Site Name",
 				mimeType = "image/jpeg",
+				repositoryId = ${groupId},
 				sourceFileName = "Document_1.jpg");
 		}
 
@@ -1124,7 +1066,7 @@ definition {
 				JSONLayoutpagetemplate.addDisplayPageTemplateEntry(
 					contentType = "Category",
 					displayPageTemplateEntryName = "Display Page Name ${n}",
-					groupName = "Test Site Name");
+					groupId = ${groupId});
 			}
 		}
 
@@ -1256,24 +1198,13 @@ definition {
 				imageDescription = "",
 				imageFileName = "Document_1.jpg");
 		}
-
-		task ("Disable the DDMStructure and DLFileEntry feature via gogo shell") {
-			GogoShell.openGogoShellAdmin();
-
-			GogoShell.executeCommand(commandName = "scr:disable com.liferay.journal.web.internal.instance.lifecycle.DDMStructureModelListener");
-
-			GogoShell.viewOutput(outputContent = "true");
-
-			GogoShell.executeCommand(commandName = "scr:disable com.liferay.document.library.web.internal.model.listener.DLFileEntryTypeModelListener");
-
-			GogoShell.viewOutput(outputContent = "true");
-		}
 	}
 
 	@description = "This is a test for LPS-127025. The DPT author can view the available mappable fields of collection item in DPT for Category."
 	@priority = 4
 	test ViewAvailableMappableFieldsOfCollectionItemOnDisplayPageTemplateForCategory {
-		property test.name.skip.portal.instance = "CollectionDisplayWithRelatedItemsCollectionProviders#ViewAvailableMappableFieldsOfCollectionItemOnDisplayPageTemplateForCategory";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Enable the DDMStructure and DLFileEntry feature via gogo shell") {
 			GogoShell.openGogoShellAdmin();
@@ -1369,7 +1300,7 @@ definition {
 			AssertElementPresent(
 				key_fieldLabel = "Field",
 				key_groupLabel = "Display Page",
-				key_value = "Display Page URL",
+				key_value = "Default",
 				locator1 = "Select#GROUPED_SELECT_VALUE");
 
 			for (var field : list "All Categories,Topic,Tags") {
@@ -1433,7 +1364,7 @@ definition {
 					locator1 = "Select#GROUPED_SELECT_VALUE");
 			}
 
-			for (var field : list "Display Page URL,Description,Display Date") {
+			for (var field : list "Description,Display Date") {
 				AssertElementPresent(
 					key_fieldLabel = "Field",
 					key_groupLabel = "Configuration",
@@ -1448,6 +1379,12 @@ definition {
 					key_value = ${field},
 					locator1 = "Select#GROUPED_SELECT_VALUE");
 			}
+
+			AssertElementPresent(
+				key_fieldLabel = "Field",
+				key_groupLabel = "Display Page",
+				key_value = "Default",
+				locator1 = "Select#GROUPED_SELECT_VALUE");
 
 			for (var field : list "Reading Time (Simple),Reading Time (Descriptive)") {
 				AssertElementPresent(
@@ -1505,7 +1442,7 @@ definition {
 			AssertElementPresent(
 				key_fieldLabel = "Field",
 				key_groupLabel = "Display Page",
-				key_value = "Display Page URL",
+				key_value = "Default",
 				locator1 = "Select#GROUPED_SELECT_VALUE");
 
 			for (var field : list "All Categories,Topic,Tags") {
@@ -1562,7 +1499,7 @@ definition {
 			AssertElementPresent(
 				key_fieldLabel = "Field",
 				key_groupLabel = "Display Page",
-				key_value = "Display Page URL",
+				key_value = "Default",
 				locator1 = "Select#GROUPED_SELECT_VALUE");
 
 			for (var field : list "All Categories,Topic,Tags") {
@@ -1635,7 +1572,7 @@ definition {
 			AssertElementPresent(
 				key_fieldLabel = "Field",
 				key_groupLabel = "Display Page",
-				key_value = "Display Page URL",
+				key_value = "Default",
 				locator1 = "Select#GROUPED_SELECT_VALUE");
 
 			for (var field : list "All Categories,Topic,Tags") {
@@ -1646,25 +1583,14 @@ definition {
 					locator1 = "Select#GROUPED_SELECT_VALUE");
 			}
 		}
-
-		task ("Disable the DDMStructure and DLFileEntry feature via gogo shell") {
-			GogoShell.openGogoShellAdmin();
-
-			GogoShell.executeCommand(commandName = "scr:disable com.liferay.journal.web.internal.instance.lifecycle.DDMStructureModelListener");
-
-			GogoShell.viewOutput(outputContent = "true");
-
-			GogoShell.executeCommand(commandName = "scr:disable com.liferay.document.library.web.internal.model.listener.DLFileEntryTypeModelListener");
-
-			GogoShell.viewOutput(outputContent = "true");
-		}
 	}
 
 	@description = "This is a test for LPS-127025. The DPT author can use Basic Document related item collection provider in DPT for Category."
 	@priority = 5
 	test ViewCollectionItemsBasedOnBasicDocumentOnDisplayPageTemplateForCategory {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "CollectionDisplayWithRelatedItemsCollectionProviders#ViewCollectionItemsBasedOnBasicDocumentOnDisplayPageTemplateForCategory";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Enable the DLFileEntry feature via gogo shell") {
 			GogoShell.openGogoShellAdmin();
@@ -1772,21 +1698,14 @@ definition {
 				key_rowPosition = 2,
 				locator1 = "PageEditor#COLLECTION_ITEM");
 		}
-
-		task ("Disable the DLFileEntry feature via gogo shell") {
-			GogoShell.openGogoShellAdmin();
-
-			GogoShell.executeCommand(commandName = "scr:disable com.liferay.document.library.web.internal.model.listener.DLFileEntryTypeModelListener");
-
-			GogoShell.viewOutput(outputContent = "true");
-		}
 	}
 
 	@description = "This is a test for LPS-127025. The DPT author can use Basic Web Content related item collection provider in DPT for Category."
 	@priority = 5
 	test ViewCollectionItemsBasedOnBasicWebContentOnDisplayPageTemplateForCategory {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "CollectionDisplayWithRelatedItemsCollectionProviders#ViewCollectionItemsBasedOnBasicWebContentOnDisplayPageTemplateForCategory";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Enable the DDMStructure feature via gogo shell") {
 			GogoShell.openGogoShellAdmin();
@@ -1886,14 +1805,6 @@ definition {
 				key_fragmentName = "Collection Display",
 				key_position = 2,
 				locator1 = "PageEditor#COLLECTION_ITEM_CONTENT_IN_BORDERED_LIST_AT_VIEW_MODE");
-		}
-
-		task ("Disable the DDMStructure feature via gogo shell") {
-			GogoShell.openGogoShellAdmin();
-
-			GogoShell.executeCommand(commandName = "scr:disable com.liferay.journal.web.internal.instance.lifecycle.DDMStructureModelListener");
-
-			GogoShell.viewOutput(outputContent = "true");
 		}
 	}
 
@@ -2012,7 +1923,8 @@ definition {
 	@description = "This is a test for LPS-127025. The DPT author can use custom document type related item collection provider in DPT for Category."
 	@priority = 4
 	test ViewCollectionItemsBasedOnCustomDocumentTypeOnDisplayPageTemplateForCategory {
-		property test.name.skip.portal.instance = "CollectionDisplayWithRelatedItemsCollectionProviders#ViewCollectionItemsBasedOnCustomDocumentTypeOnDisplayPageTemplateForCategory";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Enable the DLFileEntry feature via gogo shell") {
 			GogoShell.openGogoShellAdmin();
@@ -2132,20 +2044,13 @@ definition {
 				key_position = 2,
 				locator1 = "PageEditor#COLLECTION_ITEM_CONTENT_IN_BORDERED_LIST_AT_VIEW_MODE");
 		}
-
-		task ("Disable the DLFileEntry feature via gogo shell") {
-			GogoShell.openGogoShellAdmin();
-
-			GogoShell.executeCommand(commandName = "scr:disable com.liferay.document.library.web.internal.model.listener.DLFileEntryTypeModelListener");
-
-			GogoShell.viewOutput(outputContent = "true");
-		}
 	}
 
 	@description = "This is a test for LPS-127025. The DPT author can use custom web content structure related item collection provider in DPT for Category."
 	@priority = 4
 	test ViewCollectionItemsBasedOnCustomWebContentStructureOnDisplayPageTemplateForCategory {
-		property test.name.skip.portal.instance = "CollectionDisplayWithRelatedItemsCollectionProviders#ViewCollectionItemsBasedOnCustomWebContentStructureOnDisplayPageTemplateForCategory";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Enable the DDMStructure feature via gogo shell") {
 			GogoShell.openGogoShellAdmin();
@@ -2275,14 +2180,6 @@ definition {
 				key_fragmentName = "Collection Display",
 				key_position = 2,
 				locator1 = "PageEditor#COLLECTION_ITEM_CONTENT_IN_BORDERED_LIST_AT_VIEW_MODE");
-		}
-
-		task ("Disable the DDMStructure feature via gogo shell") {
-			GogoShell.openGogoShellAdmin();
-
-			GogoShell.executeCommand(commandName = "scr:disable com.liferay.journal.web.internal.instance.lifecycle.DDMStructureModelListener");
-
-			GogoShell.viewOutput(outputContent = "true");
 		}
 	}
 
@@ -2562,11 +2459,13 @@ definition {
 		property portal.acceptance = "true";
 		property testray.component.names = "Display Page Templates,Fragments";
 
+		var groupId = JSONGroupSetter.setGroupId(groupName = "Test Site Name");
+
 		task ("Add a display page template for Web Content Article and Basic Web Content") {
 			JSONLayoutpagetemplate.addDisplayPageTemplateEntry(
 				contentType = "Web Content Article",
 				displayPageTemplateEntryName = "Web Content DPT",
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				subType = "Basic Web Content");
 		}
 
@@ -2574,14 +2473,14 @@ definition {
 			JSONLayoutpagetemplate.addDisplayPageTemplateEntry(
 				contentType = "Blogs Entry",
 				displayPageTemplateEntryName = "Blogs Entry DPT",
-				groupName = "Test Site Name");
+				groupId = ${groupId});
 		}
 
 		task ("Add a display page template for Document and Basic Document") {
 			JSONLayoutpagetemplate.addDisplayPageTemplateEntry(
 				contentType = "Document",
 				displayPageTemplateEntryName = "Document DPT",
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				subType = "Basic Document");
 		}
 
@@ -2613,25 +2512,25 @@ definition {
 			PageEditor.publish();
 		}
 
-		task ("Add a Web Content Article, a Blogs Entry and a Document") {
-			JSONWebcontent.addWebContent(
-				content = "Web Content Content",
-				groupName = "Test Site Name",
-				title = "Web Content Title");
-
-			HeadlessBlog.addBlogEntry(
+		task ("Add a Blogs Entry and a Document") {
+			var entryId = HeadlessBlog.addBlogEntry(
 				content = "Blogs Entry Content",
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				title = "Blogs Entry Title");
-
-			JSONDocument.addFileWithUploadedFile(
+			var fileEntryId = JSONDocument.addFileWithUploadedFile(
 				dmDocumentTitle = "Document Title",
-				groupName = "Test Site Name",
 				mimeType = "image/jpeg",
+				repositoryId = ${groupId},
 				sourceFileName = "Document_1.jpg");
 		}
 
-		task ("Edit the web content, Select display page template and Select related assets") {
+		task ("Add a web content, Select display page template and Select related assets") {
+			HeadlessWebcontent.addBasicWebContent(
+				content = "Web Content Content",
+				groupId = ${groupId},
+				relatedContents = "{\"contentType\": \"BlogPosting\", \"id\": ${entryId}},{\"contentType\": \"Document\", \"id\": ${fileEntryId}}",
+				title = "Web Content Title");
+
 			WebContentNavigator.openWebContentAdmin(siteURLKey = "test-site-name");
 
 			WebContentNavigator.gotoEditCP(webContentTitle = "Web Content Title");
@@ -2640,28 +2539,16 @@ definition {
 				pageName = "Web Content DPT",
 				pageType = "Display Page Templates");
 
-			RelatedAssets.selectAsset(
-				assetTitle = "Blogs Entry Title",
-				assetType = "Blogs Entry");
-
-			WaitForElementNotPresent(locator1 = "IFrame#DIALOG");
-
-			RelatedAssets.selectAsset(
-				assetTitle = "Document Title",
-				assetType = "Basic Document");
-
-			WaitForElementNotPresent(locator1 = "IFrame#DIALOG");
-
 			PortletEntry.publish();
 		}
 
 		task ("Add a widget page and Add an Asset Publisher to page") {
 			JSONLayout.addPublicLayout(
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				layoutName = "Test Page Name");
 
 			JSONLayout.addWidgetToPublicLayout(
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				layoutName = "Test Page Name",
 				widgetName = "Asset Publisher");
 		}
@@ -2675,17 +2562,10 @@ definition {
 
 			ControlMenu.viewHeaderTitle(headerTitle = "Web Content Title");
 
-			var n = 1;
-
 			for (var title : list "Document Title,Blogs Entry Title") {
-				AssertTextEquals(
-					key_colPosition = 1,
-					key_fragmentName = "heading",
-					key_rowPosition = ${n},
-					locator1 = "Fragment#CONTRIBUTED_FRAGMENT_INLINE_CONTENT_IN_COLLECTION_DISPLAY",
-					value1 = ${title});
-
-				var n = ${n} + 1;
+				AssertVisible(
+					key_text = ${title},
+					locator1 = "Fragment#EDITABLE_FIELD_CONTENT");
 			}
 		}
 
@@ -2735,16 +2615,10 @@ definition {
 
 			ControlMenu.viewHeaderTitle(headerTitle = "Blogs Entry Title");
 
-			var n = 1;
-
 			for (var title : list "Web Content Title,Document Title") {
 				AssertVisible(
-					key_entryContent = "[normalize-space(text())='${title}']",
-					key_fragmentName = "Collection Display",
-					key_position = ${n},
-					locator1 = "PageEditor#COLLECTION_ITEM_CONTENT_IN_BORDERED_LIST_AT_VIEW_MODE");
-
-				var n = ${n} + 1;
+					key_text = ${title},
+					locator1 = "PageEditor#COLLECTION_ITEM_CONTENT");
 			}
 		}
 
@@ -2794,14 +2668,10 @@ definition {
 
 			ControlMenu.viewHeaderTitle(headerTitle = "Document Title");
 
-			var n = 1;
-
 			for (var content : list "Blogs Entry Title,Web Content Title") {
-				ContentPages.viewFragmentTextInCollectionDisplay(
-					row = ${n},
-					text = ${content});
-
-				var n = ${n} + 1;
+				AssertVisible(
+					key_text = ${content},
+					locator1 = "PageEditor#COLLECTION_ITEM_CONTENT");
 			}
 		}
 	}
@@ -2811,11 +2681,13 @@ definition {
 	test ViewRelatedCategoriesInCollectionDisplayWithCategoriesForThisItem {
 		property portal.acceptance = "true";
 
+		var groupId = JSONGroupSetter.setGroupId(groupName = "Test Site Name");
+
 		task ("Add a display page template for Web Content Article and Basic Web Content") {
 			JSONLayoutpagetemplate.addDisplayPageTemplateEntry(
 				contentType = "Web Content Article",
 				displayPageTemplateEntryName = "Web Content DPT",
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				subType = "Basic Web Content");
 		}
 
@@ -2823,14 +2695,14 @@ definition {
 			JSONLayoutpagetemplate.addDisplayPageTemplateEntry(
 				contentType = "Blogs Entry",
 				displayPageTemplateEntryName = "Blogs Entry DPT",
-				groupName = "Test Site Name");
+				groupId = ${groupId});
 		}
 
 		task ("Add a display page template for Document and Basic Document") {
 			JSONLayoutpagetemplate.addDisplayPageTemplateEntry(
 				contentType = "Document",
 				displayPageTemplateEntryName = "Document DPT",
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				subType = "Basic Document");
 		}
 
@@ -2864,21 +2736,21 @@ definition {
 
 		task ("Add a vocabulary") {
 			JSONCategory.addVocabulary(
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				title = "Vocabulary Name");
 		}
 
 		task ("Add three categories in vocabulary") {
 			var firstCategoryId = JSONCategory.addCategory(
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				title = "Category Name 1",
 				vocabularyName = "Vocabulary Name");
 			var secondCategoryId = JSONCategory.addCategory(
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				title = "Category Name 2",
 				vocabularyName = "Vocabulary Name");
 			var thirdCategoryId = JSONCategory.addCategory(
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				title = "Category Name 3",
 				vocabularyName = "Vocabulary Name");
 		}
@@ -2887,7 +2759,7 @@ definition {
 			JSONWebcontent.addWebContent(
 				assetCategoryIds = "${firstCategoryId},${secondCategoryId},${thirdCategoryId}",
 				content = "Web Content Content",
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				title = "Web Content Title");
 		}
 
@@ -2907,7 +2779,7 @@ definition {
 			HeadlessBlog.addBlogEntry(
 				assetCategoryIds = "${firstCategoryId},${secondCategoryId},${thirdCategoryId}",
 				content = "Blogs Entry Content",
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				title = "Blogs Entry Title");
 		}
 
@@ -2927,8 +2799,8 @@ definition {
 			JSONDocument.addFileWithUploadedFile(
 				assetCategoryIds = "${firstCategoryId},${secondCategoryId},${thirdCategoryId}",
 				dmDocumentTitle = "Document Title",
-				groupName = "Test Site Name",
 				mimeType = "image/jpeg",
+				repositoryId = ${groupId},
 				sourceFileName = "Document_1.jpg");
 		}
 
@@ -2948,11 +2820,11 @@ definition {
 
 		task ("Add a widget page then add an Asset Publisher to page") {
 			JSONLayout.addPublicLayout(
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				layoutName = "Test Page Name");
 
 			JSONLayout.addWidgetToPublicLayout(
-				groupName = "Test Site Name",
+				groupId = ${groupId},
 				layoutName = "Test Page Name",
 				widgetName = "Asset Publisher");
 		}

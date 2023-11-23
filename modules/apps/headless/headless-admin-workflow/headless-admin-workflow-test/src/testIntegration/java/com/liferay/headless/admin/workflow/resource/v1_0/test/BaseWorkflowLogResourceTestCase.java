@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.admin.workflow.resource.v1_0.test;
@@ -42,6 +33,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -213,7 +205,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 			workflowLogResource.getWorkflowInstanceWorkflowLogsPage(
 				workflowInstanceId, null, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantWorkflowInstanceId != null) {
 			WorkflowLog irrelevantWorkflowLog =
@@ -222,13 +214,13 @@ public abstract class BaseWorkflowLogResourceTestCase {
 					randomIrrelevantWorkflowLog());
 
 			page = workflowLogResource.getWorkflowInstanceWorkflowLogsPage(
-				irrelevantWorkflowInstanceId, null, Pagination.of(1, 2));
+				irrelevantWorkflowInstanceId, null,
+				Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantWorkflowLog),
-				(List<WorkflowLog>)page.getItems());
+			assertContains(
+				irrelevantWorkflowLog, (List<WorkflowLog>)page.getItems());
 			assertValid(
 				page,
 				testGetWorkflowInstanceWorkflowLogsPage_getExpectedActions(
@@ -246,11 +238,10 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		page = workflowLogResource.getWorkflowInstanceWorkflowLogsPage(
 			workflowInstanceId, null, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(workflowLog1, workflowLog2),
-			(List<WorkflowLog>)page.getItems());
+		assertContains(workflowLog1, (List<WorkflowLog>)page.getItems());
+		assertContains(workflowLog2, (List<WorkflowLog>)page.getItems());
 		assertValid(
 			page,
 			testGetWorkflowInstanceWorkflowLogsPage_getExpectedActions(
@@ -274,6 +265,12 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		Long workflowInstanceId =
 			testGetWorkflowInstanceWorkflowLogsPage_getWorkflowInstanceId();
 
+		Page<WorkflowLog> workflowLogPage =
+			workflowLogResource.getWorkflowInstanceWorkflowLogsPage(
+				workflowInstanceId, null, null);
+
+		int totalCount = GetterUtil.getInteger(workflowLogPage.getTotalCount());
+
 		WorkflowLog workflowLog1 =
 			testGetWorkflowInstanceWorkflowLogsPage_addWorkflowLog(
 				workflowInstanceId, randomWorkflowLog());
@@ -288,17 +285,18 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 		Page<WorkflowLog> page1 =
 			workflowLogResource.getWorkflowInstanceWorkflowLogsPage(
-				workflowInstanceId, null, Pagination.of(1, 2));
+				workflowInstanceId, null, Pagination.of(1, totalCount + 2));
 
 		List<WorkflowLog> workflowLogs1 = (List<WorkflowLog>)page1.getItems();
 
-		Assert.assertEquals(workflowLogs1.toString(), 2, workflowLogs1.size());
+		Assert.assertEquals(
+			workflowLogs1.toString(), totalCount + 2, workflowLogs1.size());
 
 		Page<WorkflowLog> page2 =
 			workflowLogResource.getWorkflowInstanceWorkflowLogsPage(
-				workflowInstanceId, null, Pagination.of(2, 2));
+				workflowInstanceId, null, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<WorkflowLog> workflowLogs2 = (List<WorkflowLog>)page2.getItems();
 
@@ -306,11 +304,12 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 		Page<WorkflowLog> page3 =
 			workflowLogResource.getWorkflowInstanceWorkflowLogsPage(
-				workflowInstanceId, null, Pagination.of(1, 3));
+				workflowInstanceId, null,
+				Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(workflowLog1, workflowLog2, workflowLog3),
-			(List<WorkflowLog>)page3.getItems());
+		assertContains(workflowLog1, (List<WorkflowLog>)page3.getItems());
+		assertContains(workflowLog2, (List<WorkflowLog>)page3.getItems());
+		assertContains(workflowLog3, (List<WorkflowLog>)page3.getItems());
 	}
 
 	protected WorkflowLog
@@ -413,7 +412,7 @@ public abstract class BaseWorkflowLogResourceTestCase {
 			workflowLogResource.getWorkflowTaskWorkflowLogsPage(
 				workflowTaskId, null, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantWorkflowTaskId != null) {
 			WorkflowLog irrelevantWorkflowLog =
@@ -421,13 +420,13 @@ public abstract class BaseWorkflowLogResourceTestCase {
 					irrelevantWorkflowTaskId, randomIrrelevantWorkflowLog());
 
 			page = workflowLogResource.getWorkflowTaskWorkflowLogsPage(
-				irrelevantWorkflowTaskId, null, Pagination.of(1, 2));
+				irrelevantWorkflowTaskId, null,
+				Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantWorkflowLog),
-				(List<WorkflowLog>)page.getItems());
+			assertContains(
+				irrelevantWorkflowLog, (List<WorkflowLog>)page.getItems());
 			assertValid(
 				page,
 				testGetWorkflowTaskWorkflowLogsPage_getExpectedActions(
@@ -445,11 +444,10 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		page = workflowLogResource.getWorkflowTaskWorkflowLogsPage(
 			workflowTaskId, null, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(workflowLog1, workflowLog2),
-			(List<WorkflowLog>)page.getItems());
+		assertContains(workflowLog1, (List<WorkflowLog>)page.getItems());
+		assertContains(workflowLog2, (List<WorkflowLog>)page.getItems());
 		assertValid(
 			page,
 			testGetWorkflowTaskWorkflowLogsPage_getExpectedActions(
@@ -473,6 +471,12 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		Long workflowTaskId =
 			testGetWorkflowTaskWorkflowLogsPage_getWorkflowTaskId();
 
+		Page<WorkflowLog> workflowLogPage =
+			workflowLogResource.getWorkflowTaskWorkflowLogsPage(
+				workflowTaskId, null, null);
+
+		int totalCount = GetterUtil.getInteger(workflowLogPage.getTotalCount());
+
 		WorkflowLog workflowLog1 =
 			testGetWorkflowTaskWorkflowLogsPage_addWorkflowLog(
 				workflowTaskId, randomWorkflowLog());
@@ -487,17 +491,18 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 		Page<WorkflowLog> page1 =
 			workflowLogResource.getWorkflowTaskWorkflowLogsPage(
-				workflowTaskId, null, Pagination.of(1, 2));
+				workflowTaskId, null, Pagination.of(1, totalCount + 2));
 
 		List<WorkflowLog> workflowLogs1 = (List<WorkflowLog>)page1.getItems();
 
-		Assert.assertEquals(workflowLogs1.toString(), 2, workflowLogs1.size());
+		Assert.assertEquals(
+			workflowLogs1.toString(), totalCount + 2, workflowLogs1.size());
 
 		Page<WorkflowLog> page2 =
 			workflowLogResource.getWorkflowTaskWorkflowLogsPage(
-				workflowTaskId, null, Pagination.of(2, 2));
+				workflowTaskId, null, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<WorkflowLog> workflowLogs2 = (List<WorkflowLog>)page2.getItems();
 
@@ -505,11 +510,11 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 		Page<WorkflowLog> page3 =
 			workflowLogResource.getWorkflowTaskWorkflowLogsPage(
-				workflowTaskId, null, Pagination.of(1, 3));
+				workflowTaskId, null, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(workflowLog1, workflowLog2, workflowLog3),
-			(List<WorkflowLog>)page3.getItems());
+		assertContains(workflowLog1, (List<WorkflowLog>)page3.getItems());
+		assertContains(workflowLog2, (List<WorkflowLog>)page3.getItems());
+		assertContains(workflowLog3, (List<WorkflowLog>)page3.getItems());
 	}
 
 	protected WorkflowLog testGetWorkflowTaskWorkflowLogsPage_addWorkflowLog(
@@ -759,14 +764,19 @@ public abstract class BaseWorkflowLogResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1113,9 +1123,47 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		}
 
 		if (entityFieldName.equals("commentLog")) {
-			sb.append("'");
-			sb.append(String.valueOf(workflowLog.getCommentLog()));
-			sb.append("'");
+			Object object = workflowLog.getCommentLog();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1153,9 +1201,47 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		}
 
 		if (entityFieldName.equals("description")) {
-			sb.append("'");
-			sb.append(String.valueOf(workflowLog.getDescription()));
-			sb.append("'");
+			Object object = workflowLog.getDescription();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1181,17 +1267,93 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		}
 
 		if (entityFieldName.equals("previousState")) {
-			sb.append("'");
-			sb.append(String.valueOf(workflowLog.getPreviousState()));
-			sb.append("'");
+			Object object = workflowLog.getPreviousState();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("previousStateLabel")) {
-			sb.append("'");
-			sb.append(String.valueOf(workflowLog.getPreviousStateLabel()));
-			sb.append("'");
+			Object object = workflowLog.getPreviousStateLabel();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1202,17 +1364,93 @@ public abstract class BaseWorkflowLogResourceTestCase {
 		}
 
 		if (entityFieldName.equals("state")) {
-			sb.append("'");
-			sb.append(String.valueOf(workflowLog.getState()));
-			sb.append("'");
+			Object object = workflowLog.getState();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("stateLabel")) {
-			sb.append("'");
-			sb.append(String.valueOf(workflowLog.getStateLabel()));
-			sb.append("'");
+			Object object = workflowLog.getStateLabel();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

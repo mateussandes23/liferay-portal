@@ -1,7 +1,7 @@
 definition {
 
-	@summary = "This calls the JSON WS API to empty recycle bin"
-	macro emptyRecycleBin {
+	@summary = "Default summary"
+	macro emptyRecycleBin(grandParentGroupName = null, parentGroupName = null) {
 		var portalURL = JSONCompany.getPortalURL();
 
 		if (!(isSet(groupName))) {

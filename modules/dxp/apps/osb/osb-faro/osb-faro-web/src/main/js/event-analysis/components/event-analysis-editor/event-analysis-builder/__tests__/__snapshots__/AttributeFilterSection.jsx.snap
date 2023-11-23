@@ -51,7 +51,7 @@ exports[`AttributeFilterSection renders w/ filter 1`] = `
                     role="presentation"
                   >
                     <use
-                      xlink:href="#text"
+                      href="#text"
                     />
                   </svg>
                 </div>
@@ -69,6 +69,7 @@ exports[`AttributeFilterSection renders w/ filter 1`] = `
                 </div>
               </button>
               <button
+                aria-label="Close"
                 class="button-root remove-button btn btn-unstyled"
                 type="button"
               >
@@ -77,7 +78,7 @@ exports[`AttributeFilterSection renders w/ filter 1`] = `
                   role="presentation"
                 >
                   <use
-                    xlink:href="#times-circle"
+                    href="#times-circle"
                   />
                 </svg>
               </button>
@@ -92,6 +93,7 @@ exports[`AttributeFilterSection renders w/ filter 1`] = `
           aria-controls="clay-dropdown-menu-3"
           aria-expanded="false"
           aria-haspopup="true"
+          aria-label="Add"
           class="dropdown-toggle button-root add-attribute btn btn-outline-borderless btn-sm btn-outline-secondary"
           type="button"
         >
@@ -100,7 +102,7 @@ exports[`AttributeFilterSection renders w/ filter 1`] = `
             role="presentation"
           >
             <use
-              xlink:href="#plus"
+              href="#plus"
             />
           </svg>
         </button>

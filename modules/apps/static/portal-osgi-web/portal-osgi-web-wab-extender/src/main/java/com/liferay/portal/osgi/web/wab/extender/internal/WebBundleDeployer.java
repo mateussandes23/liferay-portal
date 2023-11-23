@@ -1,21 +1,13 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.osgi.web.wab.extender.internal;
 
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.PropertiesUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.osgi.web.servlet.JSPServletFactory;
@@ -23,7 +15,6 @@ import com.liferay.portal.osgi.web.servlet.JSPTaglibHelper;
 import com.liferay.portal.profile.PortalProfile;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import java.net.URL;
 
@@ -72,34 +63,33 @@ public class WebBundleDeployer {
 			return null;
 		}
 
-		URL url = enumeration.nextElement();
+		try {
+			Properties properties = PropertiesUtil.load(
+				enumeration.nextElement());
 
-		Properties properties = new Properties();
+			Set<String> portalProfileNames = SetUtil.fromArray(
+				StringUtil.split(
+					properties.getProperty("liferay-portal-profile-names")));
 
-		try (InputStream inputStream = url.openStream()) {
-			properties.load(inputStream);
+			if (portalProfileNames.isEmpty()) {
+				_initWabBundle(bundle);
+
+				return null;
+			}
+
+			portalProfileNames.add(bundle.getSymbolicName());
+
+			return _bundleContext.registerService(
+				PortalProfile.class,
+				new WarModuleProfile(bundle, portalProfileNames), null);
 		}
 		catch (IOException ioException) {
 			if (_log.isDebugEnabled()) {
 				_log.debug(ioException);
 			}
-		}
-
-		Set<String> portalProfileNames = SetUtil.fromArray(
-			StringUtil.split(
-				properties.getProperty("liferay-portal-profile-names")));
-
-		if (portalProfileNames.isEmpty()) {
-			_initWabBundle(bundle);
 
 			return null;
 		}
-
-		portalProfileNames.add(bundle.getSymbolicName());
-
-		return _bundleContext.registerService(
-			PortalProfile.class,
-			new WarModuleProfile(bundle, portalProfileNames), null);
 	}
 
 	public void doStop(Bundle bundle) {

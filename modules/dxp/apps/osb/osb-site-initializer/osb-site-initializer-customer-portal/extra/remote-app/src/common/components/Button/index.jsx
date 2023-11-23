@@ -1,24 +1,20 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import {Button as ClayButton} from '@clayui/core';
 import ClayIcon from '@clayui/icon';
 import classNames from 'classnames';
-import {forwardRef} from 'react';
+import {forwardRef, useMemo} from 'react';
+import {navigationIcons} from '~/routes/customer-portal/containers/SideMenu/utils/navigationIcons';
 
 const ButtonBase = (
 	{
 		appendIcon,
 		appendIconClassName,
 		children,
+		iconKey,
 		isImagePrependIcon,
 		isLoading,
 		prependIcon,
@@ -27,8 +23,28 @@ const ButtonBase = (
 	},
 	ref
 ) => {
+	const Icon = useMemo(() => {
+		try {
+			if (iconKey) {
+				const [activeIcon] = navigationIcons[iconKey];
+
+				return activeIcon;
+			}
+		} catch (error) {
+			console.error('Error:', error);
+		}
+	}, [iconKey]);
+
 	return (
-		<ClayButton ref={ref} {...props}>
+		<ClayButton
+			aria-label={
+				typeof props.children === 'string' ? props.children : ''
+			}
+			ref={ref}
+			{...props}
+		>
+			{iconKey && <Icon className="mr-2" />}
+
 			{prependIcon && (
 				<span
 					className={classNames(
@@ -53,7 +69,10 @@ const ButtonBase = (
 						appendIconClassName
 					)}
 				>
-					<ClayIcon symbol={appendIcon} />
+					<ClayIcon
+						aria-label={`Icon ${appendIcon}}`}
+						symbol={appendIcon}
+					/>
 				</span>
 			)}
 

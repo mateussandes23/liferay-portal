@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.catalog.resource.v1_0.test;
@@ -42,6 +33,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -201,6 +193,66 @@ public abstract class BaseAttachmentResourceTestCase {
 	}
 
 	@Test
+	public void testDeleteAttachmentByExternalReferenceCode() throws Exception {
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		Attachment attachment =
+			testDeleteAttachmentByExternalReferenceCode_addAttachment();
+
+		assertHttpResponseStatusCode(
+			204,
+			attachmentResource.
+				deleteAttachmentByExternalReferenceCodeHttpResponse(
+					attachment.getExternalReferenceCode()));
+	}
+
+	protected Attachment
+			testDeleteAttachmentByExternalReferenceCode_addAttachment()
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testDeleteAttachment() throws Exception {
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		Attachment attachment = testDeleteAttachment_addAttachment();
+
+		assertHttpResponseStatusCode(
+			204,
+			attachmentResource.deleteAttachmentHttpResponse(
+				attachment.getId()));
+	}
+
+	protected Attachment testDeleteAttachment_addAttachment() throws Exception {
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
+	public void testGraphQLDeleteAttachment() throws Exception {
+		Attachment attachment = testGraphQLDeleteAttachment_addAttachment();
+
+		Assert.assertTrue(
+			JSONUtil.getValueAsBoolean(
+				invokeGraphQLMutation(
+					new GraphQLField(
+						"deleteAttachment",
+						new HashMap<String, Object>() {
+							{
+								put("id", attachment.getId());
+							}
+						})),
+				"JSONObject/data", "Object/deleteAttachment"));
+	}
+
+	protected Attachment testGraphQLDeleteAttachment_addAttachment()
+		throws Exception {
+
+		return testGraphQLAttachment_addAttachment();
+	}
+
+	@Test
 	public void testGetProductByExternalReferenceCodeAttachmentsPage()
 		throws Exception {
 
@@ -213,7 +265,7 @@ public abstract class BaseAttachmentResourceTestCase {
 			attachmentResource.getProductByExternalReferenceCodeAttachmentsPage(
 				externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantExternalReferenceCode != null) {
 			Attachment irrelevantAttachment =
@@ -224,13 +276,13 @@ public abstract class BaseAttachmentResourceTestCase {
 			page =
 				attachmentResource.
 					getProductByExternalReferenceCodeAttachmentsPage(
-						irrelevantExternalReferenceCode, Pagination.of(1, 2));
+						irrelevantExternalReferenceCode,
+						Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantAttachment),
-				(List<Attachment>)page.getItems());
+			assertContains(
+				irrelevantAttachment, (List<Attachment>)page.getItems());
 			assertValid(
 				page,
 				testGetProductByExternalReferenceCodeAttachmentsPage_getExpectedActions(
@@ -249,15 +301,18 @@ public abstract class BaseAttachmentResourceTestCase {
 			attachmentResource.getProductByExternalReferenceCodeAttachmentsPage(
 				externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(attachment1, attachment2),
-			(List<Attachment>)page.getItems());
+		assertContains(attachment1, (List<Attachment>)page.getItems());
+		assertContains(attachment2, (List<Attachment>)page.getItems());
 		assertValid(
 			page,
 			testGetProductByExternalReferenceCodeAttachmentsPage_getExpectedActions(
 				externalReferenceCode));
+
+		attachmentResource.deleteAttachment(attachment1.getId());
+
+		attachmentResource.deleteAttachment(attachment2.getId());
 	}
 
 	protected Map<String, Map<String, String>>
@@ -277,6 +332,12 @@ public abstract class BaseAttachmentResourceTestCase {
 		String externalReferenceCode =
 			testGetProductByExternalReferenceCodeAttachmentsPage_getExternalReferenceCode();
 
+		Page<Attachment> attachmentPage =
+			attachmentResource.getProductByExternalReferenceCodeAttachmentsPage(
+				externalReferenceCode, null);
+
+		int totalCount = GetterUtil.getInteger(attachmentPage.getTotalCount());
+
 		Attachment attachment1 =
 			testGetProductByExternalReferenceCodeAttachmentsPage_addAttachment(
 				externalReferenceCode, randomAttachment());
@@ -291,17 +352,18 @@ public abstract class BaseAttachmentResourceTestCase {
 
 		Page<Attachment> page1 =
 			attachmentResource.getProductByExternalReferenceCodeAttachmentsPage(
-				externalReferenceCode, Pagination.of(1, 2));
+				externalReferenceCode, Pagination.of(1, totalCount + 2));
 
 		List<Attachment> attachments1 = (List<Attachment>)page1.getItems();
 
-		Assert.assertEquals(attachments1.toString(), 2, attachments1.size());
+		Assert.assertEquals(
+			attachments1.toString(), totalCount + 2, attachments1.size());
 
 		Page<Attachment> page2 =
 			attachmentResource.getProductByExternalReferenceCodeAttachmentsPage(
-				externalReferenceCode, Pagination.of(2, 2));
+				externalReferenceCode, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<Attachment> attachments2 = (List<Attachment>)page2.getItems();
 
@@ -309,11 +371,11 @@ public abstract class BaseAttachmentResourceTestCase {
 
 		Page<Attachment> page3 =
 			attachmentResource.getProductByExternalReferenceCodeAttachmentsPage(
-				externalReferenceCode, Pagination.of(1, 3));
+				externalReferenceCode, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(attachment1, attachment2, attachment3),
-			(List<Attachment>)page3.getItems());
+		assertContains(attachment1, (List<Attachment>)page3.getItems());
+		assertContains(attachment2, (List<Attachment>)page3.getItems());
+		assertContains(attachment3, (List<Attachment>)page3.getItems());
 	}
 
 	protected Attachment
@@ -422,7 +484,7 @@ public abstract class BaseAttachmentResourceTestCase {
 			attachmentResource.getProductByExternalReferenceCodeImagesPage(
 				externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantExternalReferenceCode != null) {
 			Attachment irrelevantAttachment =
@@ -432,13 +494,13 @@ public abstract class BaseAttachmentResourceTestCase {
 
 			page =
 				attachmentResource.getProductByExternalReferenceCodeImagesPage(
-					irrelevantExternalReferenceCode, Pagination.of(1, 2));
+					irrelevantExternalReferenceCode,
+					Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantAttachment),
-				(List<Attachment>)page.getItems());
+			assertContains(
+				irrelevantAttachment, (List<Attachment>)page.getItems());
 			assertValid(
 				page,
 				testGetProductByExternalReferenceCodeImagesPage_getExpectedActions(
@@ -456,15 +518,18 @@ public abstract class BaseAttachmentResourceTestCase {
 		page = attachmentResource.getProductByExternalReferenceCodeImagesPage(
 			externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(attachment1, attachment2),
-			(List<Attachment>)page.getItems());
+		assertContains(attachment1, (List<Attachment>)page.getItems());
+		assertContains(attachment2, (List<Attachment>)page.getItems());
 		assertValid(
 			page,
 			testGetProductByExternalReferenceCodeImagesPage_getExpectedActions(
 				externalReferenceCode));
+
+		attachmentResource.deleteAttachment(attachment1.getId());
+
+		attachmentResource.deleteAttachment(attachment2.getId());
 	}
 
 	protected Map<String, Map<String, String>>
@@ -484,6 +549,12 @@ public abstract class BaseAttachmentResourceTestCase {
 		String externalReferenceCode =
 			testGetProductByExternalReferenceCodeImagesPage_getExternalReferenceCode();
 
+		Page<Attachment> attachmentPage =
+			attachmentResource.getProductByExternalReferenceCodeImagesPage(
+				externalReferenceCode, null);
+
+		int totalCount = GetterUtil.getInteger(attachmentPage.getTotalCount());
+
 		Attachment attachment1 =
 			testGetProductByExternalReferenceCodeImagesPage_addAttachment(
 				externalReferenceCode, randomAttachment());
@@ -498,17 +569,18 @@ public abstract class BaseAttachmentResourceTestCase {
 
 		Page<Attachment> page1 =
 			attachmentResource.getProductByExternalReferenceCodeImagesPage(
-				externalReferenceCode, Pagination.of(1, 2));
+				externalReferenceCode, Pagination.of(1, totalCount + 2));
 
 		List<Attachment> attachments1 = (List<Attachment>)page1.getItems();
 
-		Assert.assertEquals(attachments1.toString(), 2, attachments1.size());
+		Assert.assertEquals(
+			attachments1.toString(), totalCount + 2, attachments1.size());
 
 		Page<Attachment> page2 =
 			attachmentResource.getProductByExternalReferenceCodeImagesPage(
-				externalReferenceCode, Pagination.of(2, 2));
+				externalReferenceCode, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<Attachment> attachments2 = (List<Attachment>)page2.getItems();
 
@@ -516,11 +588,11 @@ public abstract class BaseAttachmentResourceTestCase {
 
 		Page<Attachment> page3 =
 			attachmentResource.getProductByExternalReferenceCodeImagesPage(
-				externalReferenceCode, Pagination.of(1, 3));
+				externalReferenceCode, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(attachment1, attachment2, attachment3),
-			(List<Attachment>)page3.getItems());
+		assertContains(attachment1, (List<Attachment>)page3.getItems());
+		assertContains(attachment2, (List<Attachment>)page3.getItems());
+		assertContains(attachment3, (List<Attachment>)page3.getItems());
 	}
 
 	protected Attachment
@@ -622,7 +694,7 @@ public abstract class BaseAttachmentResourceTestCase {
 		Page<Attachment> page = attachmentResource.getProductIdAttachmentsPage(
 			id, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantId != null) {
 			Attachment irrelevantAttachment =
@@ -630,13 +702,12 @@ public abstract class BaseAttachmentResourceTestCase {
 					irrelevantId, randomIrrelevantAttachment());
 
 			page = attachmentResource.getProductIdAttachmentsPage(
-				irrelevantId, Pagination.of(1, 2));
+				irrelevantId, Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantAttachment),
-				(List<Attachment>)page.getItems());
+			assertContains(
+				irrelevantAttachment, (List<Attachment>)page.getItems());
 			assertValid(
 				page,
 				testGetProductIdAttachmentsPage_getExpectedActions(
@@ -652,13 +723,16 @@ public abstract class BaseAttachmentResourceTestCase {
 		page = attachmentResource.getProductIdAttachmentsPage(
 			id, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(attachment1, attachment2),
-			(List<Attachment>)page.getItems());
+		assertContains(attachment1, (List<Attachment>)page.getItems());
+		assertContains(attachment2, (List<Attachment>)page.getItems());
 		assertValid(
 			page, testGetProductIdAttachmentsPage_getExpectedActions(id));
+
+		attachmentResource.deleteAttachment(attachment1.getId());
+
+		attachmentResource.deleteAttachment(attachment2.getId());
 	}
 
 	protected Map<String, Map<String, String>>
@@ -676,6 +750,11 @@ public abstract class BaseAttachmentResourceTestCase {
 
 		Long id = testGetProductIdAttachmentsPage_getId();
 
+		Page<Attachment> attachmentPage =
+			attachmentResource.getProductIdAttachmentsPage(id, null);
+
+		int totalCount = GetterUtil.getInteger(attachmentPage.getTotalCount());
+
 		Attachment attachment1 = testGetProductIdAttachmentsPage_addAttachment(
 			id, randomAttachment());
 
@@ -686,27 +765,28 @@ public abstract class BaseAttachmentResourceTestCase {
 			id, randomAttachment());
 
 		Page<Attachment> page1 = attachmentResource.getProductIdAttachmentsPage(
-			id, Pagination.of(1, 2));
+			id, Pagination.of(1, totalCount + 2));
 
 		List<Attachment> attachments1 = (List<Attachment>)page1.getItems();
 
-		Assert.assertEquals(attachments1.toString(), 2, attachments1.size());
+		Assert.assertEquals(
+			attachments1.toString(), totalCount + 2, attachments1.size());
 
 		Page<Attachment> page2 = attachmentResource.getProductIdAttachmentsPage(
-			id, Pagination.of(2, 2));
+			id, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<Attachment> attachments2 = (List<Attachment>)page2.getItems();
 
 		Assert.assertEquals(attachments2.toString(), 1, attachments2.size());
 
 		Page<Attachment> page3 = attachmentResource.getProductIdAttachmentsPage(
-			id, Pagination.of(1, 3));
+			id, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(attachment1, attachment2, attachment3),
-			(List<Attachment>)page3.getItems());
+		assertContains(attachment1, (List<Attachment>)page3.getItems());
+		assertContains(attachment2, (List<Attachment>)page3.getItems());
+		assertContains(attachment3, (List<Attachment>)page3.getItems());
 	}
 
 	protected Attachment testGetProductIdAttachmentsPage_addAttachment(
@@ -793,7 +873,7 @@ public abstract class BaseAttachmentResourceTestCase {
 		Page<Attachment> page = attachmentResource.getProductIdImagesPage(
 			id, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantId != null) {
 			Attachment irrelevantAttachment =
@@ -801,13 +881,12 @@ public abstract class BaseAttachmentResourceTestCase {
 					irrelevantId, randomIrrelevantAttachment());
 
 			page = attachmentResource.getProductIdImagesPage(
-				irrelevantId, Pagination.of(1, 2));
+				irrelevantId, Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantAttachment),
-				(List<Attachment>)page.getItems());
+			assertContains(
+				irrelevantAttachment, (List<Attachment>)page.getItems());
 			assertValid(
 				page,
 				testGetProductIdImagesPage_getExpectedActions(irrelevantId));
@@ -822,12 +901,15 @@ public abstract class BaseAttachmentResourceTestCase {
 		page = attachmentResource.getProductIdImagesPage(
 			id, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(attachment1, attachment2),
-			(List<Attachment>)page.getItems());
+		assertContains(attachment1, (List<Attachment>)page.getItems());
+		assertContains(attachment2, (List<Attachment>)page.getItems());
 		assertValid(page, testGetProductIdImagesPage_getExpectedActions(id));
+
+		attachmentResource.deleteAttachment(attachment1.getId());
+
+		attachmentResource.deleteAttachment(attachment2.getId());
 	}
 
 	protected Map<String, Map<String, String>>
@@ -843,6 +925,11 @@ public abstract class BaseAttachmentResourceTestCase {
 	public void testGetProductIdImagesPageWithPagination() throws Exception {
 		Long id = testGetProductIdImagesPage_getId();
 
+		Page<Attachment> attachmentPage =
+			attachmentResource.getProductIdImagesPage(id, null);
+
+		int totalCount = GetterUtil.getInteger(attachmentPage.getTotalCount());
+
 		Attachment attachment1 = testGetProductIdImagesPage_addAttachment(
 			id, randomAttachment());
 
@@ -853,27 +940,28 @@ public abstract class BaseAttachmentResourceTestCase {
 			id, randomAttachment());
 
 		Page<Attachment> page1 = attachmentResource.getProductIdImagesPage(
-			id, Pagination.of(1, 2));
+			id, Pagination.of(1, totalCount + 2));
 
 		List<Attachment> attachments1 = (List<Attachment>)page1.getItems();
 
-		Assert.assertEquals(attachments1.toString(), 2, attachments1.size());
+		Assert.assertEquals(
+			attachments1.toString(), totalCount + 2, attachments1.size());
 
 		Page<Attachment> page2 = attachmentResource.getProductIdImagesPage(
-			id, Pagination.of(2, 2));
+			id, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<Attachment> attachments2 = (List<Attachment>)page2.getItems();
 
 		Assert.assertEquals(attachments2.toString(), 1, attachments2.size());
 
 		Page<Attachment> page3 = attachmentResource.getProductIdImagesPage(
-			id, Pagination.of(1, 3));
+			id, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(attachment1, attachment2, attachment3),
-			(List<Attachment>)page3.getItems());
+		assertContains(attachment1, (List<Attachment>)page3.getItems());
+		assertContains(attachment2, (List<Attachment>)page3.getItems());
+		assertContains(attachment3, (List<Attachment>)page3.getItems());
 	}
 
 	protected Attachment testGetProductIdImagesPage_addAttachment(
@@ -1102,6 +1190,22 @@ public abstract class BaseAttachmentResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("fileEntryId", additionalAssertFieldName)) {
+				if (attachment.getFileEntryId() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("galleryEnabled", additionalAssertFieldName)) {
+				if (attachment.getGalleryEnabled() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("neverExpire", additionalAssertFieldName)) {
 				if (attachment.getNeverExpire() == null) {
 					valid = false;
@@ -1128,6 +1232,14 @@ public abstract class BaseAttachmentResourceTestCase {
 
 			if (Objects.equals("src", additionalAssertFieldName)) {
 				if (attachment.getSrc() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("tags", additionalAssertFieldName)) {
+				if (attachment.getTags() == null) {
 					valid = false;
 				}
 
@@ -1181,14 +1293,19 @@ public abstract class BaseAttachmentResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1351,6 +1468,28 @@ public abstract class BaseAttachmentResourceTestCase {
 				continue;
 			}
 
+			if (Objects.equals("fileEntryId", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						attachment1.getFileEntryId(),
+						attachment2.getFileEntryId())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("galleryEnabled", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						attachment1.getGalleryEnabled(),
+						attachment2.getGalleryEnabled())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("id", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						attachment1.getId(), attachment2.getId())) {
@@ -1396,6 +1535,16 @@ public abstract class BaseAttachmentResourceTestCase {
 			if (Objects.equals("src", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
 						attachment1.getSrc(), attachment2.getSrc())) {
+
+					return false;
+				}
+
+				continue;
+			}
+
+			if (Objects.equals("tags", additionalAssertFieldName)) {
+				if (!Objects.deepEquals(
+						attachment1.getTags(), attachment2.getTags())) {
 
 					return false;
 				}
@@ -1528,9 +1677,47 @@ public abstract class BaseAttachmentResourceTestCase {
 		sb.append(" ");
 
 		if (entityFieldName.equals("attachment")) {
-			sb.append("'");
-			sb.append(String.valueOf(attachment.getAttachment()));
-			sb.append("'");
+			Object object = attachment.getAttachment();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1541,17 +1728,93 @@ public abstract class BaseAttachmentResourceTestCase {
 		}
 
 		if (entityFieldName.equals("cdnURL")) {
-			sb.append("'");
-			sb.append(String.valueOf(attachment.getCdnURL()));
-			sb.append("'");
+			Object object = attachment.getCdnURL();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("contentType")) {
-			sb.append("'");
-			sb.append(String.valueOf(attachment.getContentType()));
-			sb.append("'");
+			Object object = attachment.getContentType();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1626,11 +1889,59 @@ public abstract class BaseAttachmentResourceTestCase {
 		}
 
 		if (entityFieldName.equals("externalReferenceCode")) {
-			sb.append("'");
-			sb.append(String.valueOf(attachment.getExternalReferenceCode()));
-			sb.append("'");
+			Object object = attachment.getExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
+		}
+
+		if (entityFieldName.equals("fileEntryId")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
+
+		if (entityFieldName.equals("galleryEnabled")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
 		}
 
 		if (entityFieldName.equals("id")) {
@@ -1655,11 +1966,54 @@ public abstract class BaseAttachmentResourceTestCase {
 		}
 
 		if (entityFieldName.equals("src")) {
-			sb.append("'");
-			sb.append(String.valueOf(attachment.getSrc()));
-			sb.append("'");
+			Object object = attachment.getSrc();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
+		}
+
+		if (entityFieldName.equals("tags")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
 		}
 
 		if (entityFieldName.equals("title")) {
@@ -1727,6 +2081,8 @@ public abstract class BaseAttachmentResourceTestCase {
 				expirationDate = RandomTestUtil.nextDate();
 				externalReferenceCode = StringUtil.toLowerCase(
 					RandomTestUtil.randomString());
+				fileEntryId = RandomTestUtil.randomLong();
+				galleryEnabled = RandomTestUtil.randomBoolean();
 				id = RandomTestUtil.randomLong();
 				neverExpire = RandomTestUtil.randomBoolean();
 				priority = RandomTestUtil.randomDouble();

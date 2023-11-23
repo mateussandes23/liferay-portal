@@ -1,37 +1,21 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.asset.list.service.impl;
 
-import com.liferay.asset.kernel.AssetRendererFactoryRegistryUtil;
-import com.liferay.asset.kernel.model.AssetEntry;
-import com.liferay.asset.kernel.model.AssetRendererFactory;
-import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.asset.list.exception.AssetListEntryAssetEntryRelPostionException;
 import com.liferay.asset.list.model.AssetListEntryAssetEntryRel;
 import com.liferay.asset.list.service.base.AssetListEntryAssetEntryRelLocalServiceBaseImpl;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.SystemEventConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.transaction.TransactionCommitCallbackUtil;
-import com.liferay.portal.kernel.util.ListUtil;
 
 import java.util.Date;
 import java.util.List;
@@ -151,33 +135,24 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 	public List<AssetListEntryAssetEntryRel> getAssetListEntryAssetEntryRels(
 		long assetListEntryId, int start, int end) {
 
-		List<AssetListEntryAssetEntryRel> assetListEntryAssetEntryRels =
-			assetListEntryAssetEntryRelPersistence.findByAssetListEntryId(
-				assetListEntryId, start, end);
-
-		return _getAssetListEntryAssetEntryRels(assetListEntryAssetEntryRels);
+		return assetListEntryAssetEntryRelPersistence.findByAssetListEntryId(
+			assetListEntryId, start, end);
 	}
 
 	@Override
 	public List<AssetListEntryAssetEntryRel> getAssetListEntryAssetEntryRels(
 		long assetListEntryId, long segmentsEntryId, int start, int end) {
 
-		List<AssetListEntryAssetEntryRel> assetListEntryAssetEntryRels =
-			assetListEntryAssetEntryRelPersistence.findByA_S(
-				assetListEntryId, segmentsEntryId, start, end);
-
-		return _getAssetListEntryAssetEntryRels(assetListEntryAssetEntryRels);
+		return assetListEntryAssetEntryRelPersistence.findByA_S(
+			assetListEntryId, segmentsEntryId, start, end);
 	}
 
 	@Override
 	public List<AssetListEntryAssetEntryRel> getAssetListEntryAssetEntryRels(
 		long assetListEntryId, long[] segmentsEntryIds, int start, int end) {
 
-		List<AssetListEntryAssetEntryRel> assetListEntryAssetEntryRels =
-			assetListEntryAssetEntryRelPersistence.findByA_S(
-				assetListEntryId, segmentsEntryIds, start, end);
-
-		return _getAssetListEntryAssetEntryRels(assetListEntryAssetEntryRels);
+		return assetListEntryAssetEntryRelPersistence.findByA_S(
+			assetListEntryId, segmentsEntryIds, start, end);
 	}
 
 	@Override
@@ -192,14 +167,6 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 
 		return assetListEntryAssetEntryRelPersistence.countByA_S(
 			assetListEntryId, segmentsEntryId);
-	}
-
-	@Override
-	public int getAssetListEntryAssetEntryRelsCount(
-		long assetLIstEntryId, long segmentsEntryId, boolean visible) {
-
-		return assetListEntryAssetEntryRelFinder.countByA_S(
-			assetLIstEntryId, segmentsEntryId, visible);
 	}
 
 	@Override
@@ -306,44 +273,6 @@ public class AssetListEntryAssetEntryRelLocalServiceImpl
 		return assetListEntryAssetEntryRelPersistence.update(
 			assetListEntryAssetEntryRel);
 	}
-
-	private List<AssetListEntryAssetEntryRel> _getAssetListEntryAssetEntryRels(
-		List<AssetListEntryAssetEntryRel> assetListEntryAssetEntryRels) {
-
-		return ListUtil.filter(
-			assetListEntryAssetEntryRels,
-			assetListEntryAssetEntryRel -> {
-				AssetEntry assetEntry = _assetEntryLocalService.fetchEntry(
-					assetListEntryAssetEntryRel.getAssetEntryId());
-
-				if ((assetEntry == null) || !assetEntry.isVisible()) {
-					return false;
-				}
-
-				AssetRendererFactory<?> assetRendererFactory =
-					AssetRendererFactoryRegistryUtil.
-						getAssetRendererFactoryByClassName(
-							assetEntry.getClassName());
-
-				if (assetRendererFactory == null) {
-					if (_log.isWarnEnabled()) {
-						_log.warn(
-							"No asset renderer factory found for class " +
-								assetEntry.getClassName());
-					}
-
-					return false;
-				}
-
-				return true;
-			});
-	}
-
-	private static final Log _log = LogFactoryUtil.getLog(
-		AssetListEntryAssetEntryRelLocalServiceImpl.class);
-
-	@Reference
-	private AssetEntryLocalService _assetEntryLocalService;
 
 	@Reference
 	private UserLocalService _userLocalService;

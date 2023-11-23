@@ -1,4 +1,4 @@
-import BaseCard from 'cerebro-shared/components/base-card';
+import BaseCard from 'shared/components/base-card';
 import Card from 'shared/components/Card';
 import MetricChart from './MetricChart';
 import MetricTabs from './MetricTabs';
@@ -63,6 +63,7 @@ function MetricBaseCard<TChartData>({
 	chartDataMapFn = getMetricsChartData,
 	label,
 	legacyDropdownRangeKey = false,
+	id,
 	metrics,
 	queries,
 	showIntervals = false,
@@ -98,6 +99,7 @@ function MetricBaseCard<TChartData>({
 			<MetricContextActions.Provider value={actions}>
 				<BaseCard
 					className='analytics-metrics-card'
+					id={id}
 					label={label}
 					legacyDropdownRangeKey={legacyDropdownRangeKey}
 					minHeight={605}

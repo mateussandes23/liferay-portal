@@ -1,21 +1,13 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.notification.service.impl;
 
 import com.liferay.notification.constants.NotificationTemplateConstants;
 import com.liferay.notification.context.NotificationContext;
+import com.liferay.notification.internal.template.util.NotificationTemplateUtil;
 import com.liferay.notification.model.NotificationQueueEntry;
 import com.liferay.notification.model.NotificationRecipient;
 import com.liferay.notification.model.NotificationRecipientSetting;
@@ -68,10 +60,14 @@ public class NotificationTemplateLocalServiceImpl
 			NotificationContext notificationContext)
 		throws PortalException {
 
-		_validate(notificationContext);
-
 		NotificationTemplate notificationTemplate =
 			notificationContext.getNotificationTemplate();
+
+		NotificationTemplateUtil.validateInvokerBundle(
+			"Only allowed bundles can add system notification templates",
+			notificationTemplate.isSystem());
+
+		_validate(notificationContext);
 
 		notificationTemplate.setNotificationTemplateId(
 			counterLocalService.increment());
@@ -96,8 +92,9 @@ public class NotificationTemplateLocalServiceImpl
 		notificationRecipient.setClassPK(
 			notificationTemplate.getNotificationTemplateId());
 
-		_notificationRecipientLocalService.updateNotificationRecipient(
-			notificationRecipient);
+		notificationRecipient =
+			_notificationRecipientLocalService.updateNotificationRecipient(
+				notificationRecipient);
 
 		for (NotificationRecipientSetting notificationRecipientSetting :
 				notificationContext.getNotificationRecipientSettings()) {
@@ -144,6 +141,7 @@ public class NotificationTemplateLocalServiceImpl
 		notificationTemplate.setEditorType(
 			NotificationTemplateConstants.EDITOR_TYPE_RICH_TEXT);
 		notificationTemplate.setName(externalReferenceCode);
+		notificationTemplate.setSystem(false);
 		notificationTemplate.setType(type);
 
 		notificationTemplate = notificationTemplatePersistence.update(
@@ -166,8 +164,9 @@ public class NotificationTemplateLocalServiceImpl
 		notificationRecipient.setClassPK(
 			notificationTemplate.getNotificationTemplateId());
 
-		_notificationRecipientLocalService.updateNotificationRecipient(
-			notificationRecipient);
+		notificationRecipient =
+			_notificationRecipientLocalService.updateNotificationRecipient(
+				notificationRecipient);
 
 		_addNotificationRecipientSetting(
 			null, "from", notificationRecipient.getNotificationRecipientId(),
@@ -203,6 +202,10 @@ public class NotificationTemplateLocalServiceImpl
 	public NotificationTemplate deleteNotificationTemplate(
 			NotificationTemplate notificationTemplate)
 		throws PortalException {
+
+		NotificationTemplateUtil.validateInvokerBundle(
+			"Only allowed bundles can delete system notification templates",
+			notificationTemplate.isSystem());
 
 		notificationTemplate = notificationTemplatePersistence.remove(
 			notificationTemplate);
@@ -258,6 +261,16 @@ public class NotificationTemplateLocalServiceImpl
 			NotificationContext notificationContext)
 		throws PortalException {
 
+		NotificationTemplate notificationTemplate =
+			notificationContext.getNotificationTemplate();
+
+		notificationTemplate = notificationTemplatePersistence.findByPrimaryKey(
+			notificationTemplate.getNotificationTemplateId());
+
+		NotificationTemplateUtil.validateInvokerBundle(
+			"Only allowed bundles can update system notification templates",
+			notificationTemplate.isSystem());
+
 		_validate(notificationContext);
 
 		NotificationRecipient notificationRecipient =
@@ -284,9 +297,8 @@ public class NotificationTemplateLocalServiceImpl
 					notificationRecipientSetting);
 		}
 
-		NotificationTemplate notificationTemplate =
-			notificationTemplatePersistence.update(
-				notificationContext.getNotificationTemplate());
+		notificationTemplate = notificationTemplatePersistence.update(
+			notificationContext.getNotificationTemplate());
 
 		List<Long> oldAttachmentObjectFieldIds = new ArrayList<>();
 

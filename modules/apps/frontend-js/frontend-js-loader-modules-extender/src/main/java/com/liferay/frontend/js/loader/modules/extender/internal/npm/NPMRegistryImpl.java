@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.frontend.js.loader.modules.extender.internal.npm;
@@ -26,8 +17,8 @@ import com.liferay.frontend.js.loader.modules.extender.npm.JSModule;
 import com.liferay.frontend.js.loader.modules.extender.npm.JSModuleAlias;
 import com.liferay.frontend.js.loader.modules.extender.npm.JSPackage;
 import com.liferay.frontend.js.loader.modules.extender.npm.JSPackageDependency;
-import com.liferay.frontend.js.loader.modules.extender.npm.JavaScriptAwarePortalWebResources;
 import com.liferay.frontend.js.loader.modules.extender.npm.ModuleNameUtil;
+import com.liferay.frontend.js.loader.modules.extender.npm.NPMJavaScriptLastModifiedUtil;
 import com.liferay.frontend.js.loader.modules.extender.npm.NPMRegistry;
 import com.liferay.frontend.js.loader.modules.extender.npm.NPMRegistryUpdate;
 import com.liferay.frontend.js.loader.modules.extender.npm.NPMRegistryUpdatesListener;
@@ -45,10 +36,8 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProxyFactory;
-import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.URLUtil;
 import com.liferay.portal.kernel.util.Validator;
-
-import java.io.IOException;
 
 import java.net.URL;
 
@@ -349,9 +338,6 @@ public class NPMRegistryImpl implements NPMRegistry {
 		_applyVersioning = details.applyVersioning();
 
 		_serviceTracker = _openServiceTracker();
-
-		_javaScriptAwarePortalWebResources = ServiceTrackerListFactory.open(
-			bundleContext, JavaScriptAwarePortalWebResources.class);
 	}
 
 	@Deactivate
@@ -359,8 +345,6 @@ public class NPMRegistryImpl implements NPMRegistry {
 		if (_npmRegistryUpdatesListeners != null) {
 			_npmRegistryUpdatesListeners.close();
 		}
-
-		_javaScriptAwarePortalWebResources.close();
 
 		_serviceTracker.close();
 
@@ -461,24 +445,7 @@ public class NPMRegistryImpl implements NPMRegistry {
 				return null;
 			}
 
-			String content;
-
-			try {
-				content = StringUtil.read(url.openStream());
-			}
-			catch (IOException ioException) {
-				if (_log.isDebugEnabled()) {
-					_log.debug(ioException);
-				}
-
-				return null;
-			}
-
-			if (content == null) {
-				return null;
-			}
-
-			return _jsonFactory.createJSONObject(content);
+			return _jsonFactory.createJSONObject(URLUtil.toString(url));
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
@@ -601,8 +568,6 @@ public class NPMRegistryImpl implements NPMRegistry {
 		new DCLSingleton<>();
 	private volatile Supplier<DataBag> _dataBagSupplier;
 	private final Map<String, String> _globalAliases = new HashMap<>();
-	private ServiceTrackerList<JavaScriptAwarePortalWebResources>
-		_javaScriptAwarePortalWebResources;
 
 	@Reference
 	private JSBundleProcessor _jsBundleProcessor;
@@ -687,13 +652,8 @@ public class NPMRegistryImpl implements NPMRegistry {
 
 				_notifyNPMRegistryUpdatesListeners();
 
-				for (JavaScriptAwarePortalWebResources
-						javaScriptAwarePortalWebResources :
-							_javaScriptAwarePortalWebResources) {
-
-					javaScriptAwarePortalWebResources.updateLastModifed(
-						bundle.getLastModified());
-				}
+				NPMJavaScriptLastModifiedUtil.updateLastModified(
+					bundle.getLastModified());
 			}
 
 			return jsBundle;

@@ -1,6 +1,7 @@
 definition {
 
-	macro setGroupId {
+	@summary = "Default summary"
+	macro setGroupId(groupName = null, grandParentGroupName = null, parentGroupName = null) {
 		Variables.assertDefined(parameterList = ${groupName});
 
 		if (!(isSet(site))) {
@@ -8,18 +9,25 @@ definition {
 		}
 
 		var groupId = JSONGroupAPI._getGroupIdByName(
+			grandParentGroupName = ${grandParentGroupName},
 			groupName = ${groupName},
+			parentGroupName = ${parentGroupName},
 			site = ${site});
 
 		return ${groupId};
 	}
 
-	macro setSiteNavigationMenuId {
-		Variables.assertDefined(parameterList = "${groupName},${siteNavigationMenuName}");
+	@summary = "Default summary"
+	macro setSiteNavigationMenuId(groupName = null, site = null, siteNavigationMenuName = null, grandParentGroupName = null, parentGroupName = null) {
+		Variables.assertDefined(parameterList = ${siteNavigationMenuName});
 
-		var groupId = JSONSitenavigationSetter.setGroupId(
-			groupName = ${groupName},
-			site = ${site});
+		if (!(isSet(groupId))) {
+			var groupId = JSONSitenavigationSetter.setGroupId(
+				grandParentGroupName = ${grandParentGroupName},
+				groupName = ${groupName},
+				parentGroupName = ${parentGroupName},
+				site = ${site});
+		}
 
 		var siteNavigationMenuId = JSONSitenavigationAPI._getSiteNavigationMenuIdByName(
 			groupId = ${groupId},
@@ -28,11 +36,14 @@ definition {
 		return ${siteNavigationMenuId};
 	}
 
-	macro setSiteNavigationMenuItemId {
+	@summary = "Default summary"
+	macro setSiteNavigationMenuItemId(groupName = null, site = null, siteNavigationMenuName = null, grandParentGroupName = null, parentGroupName = null, siteNavigationMenuItemName = null) {
 		Variables.assertDefined(parameterList = "${groupName},${siteNavigationMenuItemName},${siteNavigationMenuName}");
 
 		var groupId = JSONSitenavigationSetter.setGroupId(
+			grandParentGroupName = ${grandParentGroupName},
 			groupName = ${groupName},
+			parentGroupName = ${parentGroupName},
 			site = ${site});
 
 		var siteNavigationMenuId = JSONSitenavigationAPI._getSiteNavigationMenuIdByName(
@@ -46,7 +57,8 @@ definition {
 		return ${siteNavigationMenuItemId};
 	}
 
-	macro setTypeSettings {
+	@summary = "Default summary"
+	macro setTypeSettings(groupId = null, type = null, privateLayout = null, url = null, siteNavigationMenuItemName = null, useNewTab = null) {
 		Variables.assertDefined(parameterList = "${siteNavigationMenuItemName},${type}");
 
 		if (${type} == "layout") {

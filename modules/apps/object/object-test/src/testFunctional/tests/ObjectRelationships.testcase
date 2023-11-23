@@ -14,9 +14,9 @@ definition {
 	tearDown {
 		ObjectAdmin.deleteAllCustomObjectsViaAPI();
 
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 	}
@@ -24,7 +24,8 @@ definition {
 	@description = "LPS-145393 - Verify it is possible to relate 2 entries from a Custom Object entry with the same Native Object entry in a One-to-Many relation"
 	@priority = 4
 	test CanAddMultipleOneToManyRelationsWithNativeObject {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanAddMultipleOneToManyRelationsWithNativeObject";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 288",
@@ -44,16 +45,6 @@ definition {
 			userFirstName = "userfn",
 			userLastName = "userln",
 			userScreenName = "usersn");
-
-		ObjectAdmin.openObjectAdmin();
-
-		ObjectPortlet.selectCustomObject(label = "User");
-
-		CreateObject.selectTitleField(fieldLabel = "First Name");
-
-		CreateObject.saveObject();
-
-		Navigator.openURL();
 
 		ObjectAdmin.addObjectRelationshipViaAPI(
 			objectName_1 = "User",
@@ -90,7 +81,8 @@ definition {
 	@priority = 5
 	test CanAddOneToManyRelationWithNativeObject {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "ObjectRelationships#CanAddOneToManyRelationWithNativeObject";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 289",
@@ -110,16 +102,6 @@ definition {
 			userFirstName = "userfn",
 			userLastName = "userln",
 			userScreenName = "usersn");
-
-		ObjectAdmin.openObjectAdmin();
-
-		ObjectPortlet.selectCustomObject(label = "User");
-
-		CreateObject.selectTitleField(fieldLabel = "First Name");
-
-		CreateObject.saveObject();
-
-		Navigator.openURL();
 
 		ObjectAdmin.addObjectRelationshipViaAPI(
 			objectName_1 = "User",
@@ -147,7 +129,8 @@ definition {
 	@priority = 4
 	test CanAddTabsForSelfMMRelationship {
 		task ("Given an object related to itself, in a Many-to-Many relationship") {
-			property test.name.skip.portal.instance = "ObjectRelationships#CanAddTabsForSelfMMRelationship";
+			property test.liferay.virtual.instance = "false";
+			property test.run.type = "single";
 
 			ObjectAdmin.addObjectViaAPI(
 				labelName = "Custom Object",
@@ -188,7 +171,7 @@ definition {
 
 			ObjectAdmin.goToLayoutsTab();
 
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+			ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 			ObjectAdmin.goToLayoutTabOnLayouts();
 
@@ -219,7 +202,8 @@ definition {
 	@description = "LPS-146754 - Verify that it's possible to create a Many-to-Many relationship between a Custom Object and Native Object"
 	@priority = 5
 	test CanCreateManyToManyRelationshipWithNativeObject {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanCreateManyToManyRelationshipWithNativeObject";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 290",
@@ -263,7 +247,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -302,7 +286,8 @@ definition {
 	@priority = 5
 	test CanCreateObjectWithRelationshipParameter {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "ObjectRelationships#CanCreateObjectWithRelationshipParameter";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Create a custom object, and a self relationship") {
 			ObjectAdmin.addObjectViaAPI(
@@ -345,7 +330,8 @@ definition {
 	@priority = 5
 	test CanCreateOneToManyForNativeObject {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "ObjectRelationships#CanCreateOneToManyForNativeObject";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 290",
@@ -371,7 +357,8 @@ definition {
 	@description = "LPS-151676 - Verify that it's possible to create a One-to-Many relationship between a Custom Object and Native Object"
 	@priority = 5
 	test CanCreateOneToManyRelationshipWithNativeObject {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanCreateOneToManyRelationshipWithNativeObject";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 290",
@@ -437,7 +424,7 @@ definition {
 
 			ObjectAdmin.goToLayoutsTab();
 
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+			ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 			ObjectAdmin.markLayoutAsDefault();
 
@@ -509,7 +496,8 @@ definition {
 	@description = "LPS-146754 - Verify that it's possible to delete a relationship between a Custom Object entry and Native Object entry (Many-to-Many)"
 	@priority = 4
 	test CanDeleteManyToManyRelationshipBetweenCustomObjectEntryAndNativeObjectEntry {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanDeleteManyToManyRelationshipBetweenCustomObjectEntryAndNativeObjectEntry";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Add two users to relate to Custom Object entries") {
 			for (var userNum : list "1,2") {
@@ -557,7 +545,7 @@ definition {
 			ObjectAdmin.goToLayoutsTab();
 
 			ObjectAdmin.selectSpecificKebabMenuOption(
-				kebabOption = "View",
+				kebabOption = "Edit",
 				objectLabel = "Custom Layout");
 
 			ObjectAdmin.markLayoutAsDefault();
@@ -575,16 +563,6 @@ definition {
 				tabName = "Relationship Tab");
 
 			PortletEntry.save();
-		}
-
-		task ("Define First Name as a title field on the native object") {
-			ObjectAdmin.openObjectAdmin();
-
-			ObjectPortlet.selectCustomObject(label = "User");
-
-			CreateObject.selectTitleField(fieldLabel = "First Name");
-
-			CreateObject.saveObject();
 		}
 
 		task ("Add 2 entries by API to relate to user entries") {
@@ -636,7 +614,8 @@ definition {
 	@description = "LPS-152508 - Verify that it's possible to delete a Many-to-Many relationship from the parent side"
 	@priority = 5
 	test CanDeleteManyToManyRelationshipFromParentSide {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanDeleteManyToManyRelationshipFromParentSide";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Create Custom Object") {
 			ObjectAdmin.addObjectViaAPI(
@@ -678,7 +657,8 @@ definition {
 	@description = "LPS-151676 - Verify that it's possible to delete a relationship between a Custom Object entry and Native Object entry (One-to-Many)"
 	@priority = 4
 	test CanDeleteOneToManyRelationship {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanDeleteOneToManyRelationship";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Create Custom Object") {
 			ObjectAdmin.addObjectViaAPI(
@@ -699,14 +679,6 @@ definition {
 				userFirstName = "userfn",
 				userLastName = "userln",
 				userScreenName = "usersn");
-
-			ObjectAdmin.openObjectAdmin();
-
-			ObjectPortlet.selectCustomObject(label = "User");
-
-			CreateObject.selectTitleField(fieldLabel = "First Name");
-
-			CreateObject.saveObject();
 		}
 
 		task ("Add a relationship between a Custom Object and Native Object") {
@@ -753,7 +725,8 @@ definition {
 	@ignore = "true"
 	@priority = 4
 	test CanDeleteOneToManyRelationshipBetweenCustomObjectEntryAndNativeObjectEntry {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanDeleteOneToManyRelationshipBetweenCustomObjectEntryAndNativeObjectEntry";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Add 2 users entries to relate to custom object entries") {
 			JSONUser.addUser(
@@ -805,7 +778,7 @@ definition {
 			ObjectAdmin.goToLayoutsTab();
 
 			ObjectAdmin.selectSpecificKebabMenuOption(
-				kebabOption = "View",
+				kebabOption = "Edit",
 				objectLabel = "Custom Layout");
 
 			ObjectAdmin.markLayoutAsDefault();
@@ -823,16 +796,6 @@ definition {
 				tabName = "Relationship Tab");
 
 			PortletEntry.save();
-		}
-
-		task ("Define First Name as a title field on the native object") {
-			ObjectAdmin.openObjectAdmin();
-
-			ObjectPortlet.selectCustomObject(label = "User");
-
-			CreateObject.selectTitleField(fieldLabel = "First Name");
-
-			CreateObject.saveObject();
 		}
 
 		task ("Add 2 entries by API to relate to user entries") {
@@ -878,7 +841,8 @@ definition {
 	@description = "LPS-147906 - Verify it is possible to do a nested relation in a One-to-Many relationship"
 	@priority = 4
 	test CanDoNestedRelation {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanDoNestedRelation";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 149249",
@@ -914,7 +878,7 @@ definition {
 
 		ObjectAdmin.goToLayoutsTab();
 
-		ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+		ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 		ObjectAdmin.markLayoutAsDefault();
 
@@ -1017,7 +981,7 @@ definition {
 
 			ObjectAdmin.goToLayoutsTab();
 
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+			ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 			ObjectAdmin.markLayoutAsDefault();
 
@@ -1172,7 +1136,8 @@ definition {
 	@description = "LPS-155537 - Verify that it's possible to edit a relationship parameter"
 	@priority = 4
 	test CanEditRelationshipParameter {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanEditRelationshipParameter";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Create a custom object, and a self relationship") {
 			ObjectAdmin.addObjectViaAPI(
@@ -1224,7 +1189,8 @@ definition {
 	@description = "LPS-163654 - Verify that it's possible to identify the Parent and Child relationship through specific labels"
 	@priority = 4
 	test CanIdentifyParentChildRelationship {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanIdentifyParentChildRelationship";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Given an object related to itself, in a Many-to-Many relationship") {
 			ObjectAdmin.addObjectViaAPI(
@@ -1275,43 +1241,11 @@ definition {
 		}
 	}
 
-	@description = "LPS-146754 - Verify that it's not possible for a Custom Object to create a Many-to-Many relationship with itself"
-	@priority = 4
-	test CannotCreateManytoManyRelationshipWithItself {
-		property test.name.skip.portal.instance = "ObjectRelationships#CannotCreateManytoManyRelationshipWithItself";
-
-		task ("Create Custom Object") {
-			ObjectAdmin.addObjectViaAPI(
-				labelName = "Custom Object 290",
-				objectName = "CustomObject290",
-				pluralLabelName = "Custom Objects 290");
-
-			ObjectAdmin.openObjectAdmin();
-
-			ObjectPortlet.selectCustomObject(label = "Custom Object 290");
-		}
-
-		task ("Go to Relationships tab and click to create a Many-to-Many relationship") {
-			ObjectAdmin.gotoRelationshipsTab();
-
-			LexiconEntry.gotoAdd();
-
-			ObjectField.selectType(fieldType = "Many to Many");
-		}
-
-		task ("Assert that the Custom Object created is not present") {
-			Click(locator1 = "ObjectCustomViews#SELECT_AUTO_COMPLETE");
-
-			AssertElementNotPresent(
-				key_columnOption = "Custom Objects 290",
-				locator1 = "ObjectCustomViews#SELECT_AUTO_COMPLETE_OPTION");
-		}
-	}
-
 	@description = "LPS-152508 - Verify that it's not possible to delete a Many-to-Many relationship from the child side"
 	@priority = 4
 	test CannotDeleteManyToManyRelationshipFromChildSide {
-		property test.name.skip.portal.instance = "ObjectRelationships#CannotDeleteManyToManyRelationshipFromChildSide";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Create Custom Object") {
 			ObjectAdmin.addObjectViaAPI(
@@ -1353,7 +1287,8 @@ definition {
 	@description = "LPS-152508 - Verify that it's not possible to delete a relationship with an incorrect input"
 	@priority = 4
 	test CannotDeleteRelationshipWithIncorrectInput {
-		property test.name.skip.portal.instance = "ObjectRelationships#CannotDeleteRelationshipWithIncorrectInput";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Create a custom object and a relationship to itself") {
 			ObjectAdmin.addObjectViaAPI(
@@ -1401,7 +1336,8 @@ definition {
 	@description = "LPS-135400 - Verify it is not possible to leave the Relationship Label blank"
 	@priority = 4
 	test CannotLeaveRelationshipLabelBlank {
-		property test.name.skip.portal.instance = "ObjectRelationships#CannotLeaveRelationshipLabelBlank";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 147736",
@@ -1428,7 +1364,8 @@ definition {
 	@description = "LPS-135397 - Verify that it is not possible to leave a layout with a Relationship tab on first place by removing the fields tab"
 	@priority = 4
 	test CannotLeaveRelationshipTabOnFirstPlaceByRemovingFieldsTab {
-		property test.name.skip.portal.instance = "ObjectRelationships#CannotLeaveRelationshipTabOnFirstPlaceByRemovingFieldsTab";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Create a custom object and a relationship to itself") {
 			ObjectAdmin.addObjectViaAPI(
@@ -1463,7 +1400,7 @@ definition {
 
 			ObjectAdmin.goToLayoutsTab();
 
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+			ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 			ObjectAdmin.markLayoutAsDefault();
 
@@ -1501,7 +1438,8 @@ definition {
 	@priority = 5
 	test CannotRelateAnEntryWithItself {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "ObjectRelationships#CannotRelateAnEntryWithItself";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Given: An object related to itself, in a Many-to-Many relationship") {
 			ObjectAdmin.addObjectViaAPI(
@@ -1542,7 +1480,7 @@ definition {
 
 			ObjectAdmin.goToLayoutsTab();
 
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+			ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 			ObjectAdmin.markLayoutAsDefault();
 
@@ -1583,68 +1521,11 @@ definition {
 		}
 	}
 
-	@description = "LPS-155537 - Verify that it's not possible to see the parameter when adding relationships that don't require it"
-	@priority = 3
-	test CannotSeeParameterWhenNotRequiredByRelationship {
-		property test.name.skip.portal.instance = "ObjectRelationships#CannotSeeParameterWhenNotRequiredByRelationship";
-
-		task ("Create a custom object, and a relationship non-require by API") {
-			ObjectAdmin.addObjectViaAPI(
-				labelName = "Custom Object",
-				objectName = "CustomObject",
-				pluralLabelName = "Custom Objects");
-
-			ObjectAdmin.addObjectFieldViaAPI(
-				fieldBusinessType = "Text",
-				fieldLabelName = "Custom Field",
-				fieldName = "customField",
-				fieldType = "String",
-				isRequired = "false",
-				objectName = "CustomObject");
-
-			ObjectAdmin.addObjectRelationshipViaAPI(
-				objectName_1 = "CustomObject",
-				objectName_2 = "AccountEntry",
-				relationshipLabel = "Non-require relationship",
-				relationshipName = "Non-requirerelationship",
-				relationshipType = "oneToMany");
-
-			ObjectAdmin.publishObjectViaAPI(objectName = "CustomObject");
-		}
-
-		task ("Verify it's not possible to see the parameter when adding relationships that don't require it") {
-			ObjectAdmin.openObjectAdmin();
-
-			ObjectPortlet.selectCustomObject(label = "Postal Address");
-
-			ObjectAdmin.gotoRelationshipsTab();
-
-			LexiconEntry.gotoAdd();
-
-			Click(locator1 = "ObjectAdmin#RELATIONSHIPS_TYPE_FORM");
-
-			Click(
-				key_type = "One to Many",
-				locator1 = "ObjectAdmin#SELECT_RELATIONSHIPS_TYPE_OPTION");
-
-			Click(locator1 = "ObjectCustomViews#SELECT_AUTO_COMPLETE");
-
-			Click(
-				key_columnOption = "Custom Object",
-				locator1 = "ObjectCustomViews#SELECT_AUTO_COMPLETE_OPTION");
-
-			Click(locator1 = "ObjectRelationships#SELECT_PARAMETER_FORM");
-
-			AssertElementNotPresent(
-				key_parameterOption = "Non-require relationship",
-				locator1 = "ObjectRelationships#SELECT_PARAMETER_OPTION");
-		}
-	}
-
 	@description = "LPS-139803 - It is not possible to select a Relationship field for the Object Entry Title"
 	@priority = 4
 	test CannotSelectRelationshipFieldForObjectEntryTitle {
-		property test.name.skip.portal.instance = "ObjectRelationships#CannotSelectRelationshipFieldForObjectEntryTitle";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 147735",
@@ -1668,7 +1549,8 @@ definition {
 	@description = "LPS-163655 - Verify that the user is not allowed to update the Name, Type or Object from the parent Relationship"
 	@priority = 4
 	test CannotUpdateNameTypeObjectFromParentRelationship {
-		property test.name.skip.portal.instance = "ObjectRelationships#CannotUpdateNameTypeObjectFromParentRelationship";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Given an object related to itself, in a Many-to-Many relationship") {
 			ObjectAdmin.addObjectViaAPI(
@@ -1716,8 +1598,10 @@ definition {
 		}
 
 		task ("Then the fields Name, Type and Object can not be updated") {
+			AssertElementPresent(locator1 = "CreateObject#DISABLED_OBJECT_NAME");
+
 			AssertElementPresent(
-				key_relation = "relationship",
+				key_relation = "Relationship",
 				locator1 = "ObjectRelationships#OPTIONS_TAB_RELATIONSHIPS_DISABLED_NAME_OR_TYPE");
 
 			AssertElementPresent(
@@ -1725,7 +1609,7 @@ definition {
 				locator1 = "ObjectRelationships#OPTIONS_TAB_RELATIONSHIPS_DISABLED_NAME_OR_TYPE");
 
 			AssertElementPresent(
-				key_relationObject = "CustomObjectLPS163655",
+				key_relationObject = "Custom Object LPS163655",
 				locator1 = "ObjectRelationships#OPTIONS_TAB_RELATIONSHIPS_DISABLED_OBJECT");
 		}
 	}
@@ -1734,7 +1618,8 @@ definition {
 	@priority = 5
 	test CanRelateManyToManyCustomObjectEntryWithNativeObjectEntries {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "ObjectRelationships#CanRelateManyToManyCustomObjectEntryWithNativeObjectEntries";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Add 2 users entries to relate to custom object entries") {
 			JSONUser.addUser(
@@ -1796,7 +1681,7 @@ definition {
 			ObjectAdmin.goToLayoutsTab();
 
 			ObjectAdmin.selectSpecificKebabMenuOption(
-				kebabOption = "View",
+				kebabOption = "Edit",
 				objectLabel = "Custom Layout");
 
 			ObjectAdmin.markLayoutAsDefault();
@@ -1827,16 +1712,6 @@ definition {
 			}
 		}
 
-		task ("Define First Name as a title field on the native object") {
-			ObjectAdmin.openObjectAdmin();
-
-			ObjectPortlet.selectCustomObject(label = "User");
-
-			CreateObject.selectTitleField(fieldLabel = "First Name");
-
-			CreateObject.saveObject();
-		}
-
 		task ("Relates custom object entries to user object entries") {
 			Navigator.openURL();
 
@@ -1864,7 +1739,8 @@ definition {
 	@priority = 5
 	test CanRelateOneToManyCustomObjectEntryWithNativeObjectEntries {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "ObjectRelationships#CanRelateOneToManyCustomObjectEntryWithNativeObjectEntries";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Add 3 users entries to relate to custom object entries") {
 			for (var userNum : list "1,2,3") {
@@ -1905,16 +1781,6 @@ definition {
 				value = "Entry A");
 		}
 
-		task ("Define First Name as a title field on the native object") {
-			ObjectAdmin.openObjectAdmin();
-
-			ObjectPortlet.selectCustomObject(label = "User");
-
-			CreateObject.selectTitleField(fieldLabel = "First Name");
-
-			CreateObject.saveObject();
-		}
-
 		task ("Add layout with relationship tab") {
 			ObjectAdmin.addObjectLayoutViaAPI(
 				layoutName = "Custom Layout",
@@ -1927,7 +1793,7 @@ definition {
 			ObjectAdmin.goToLayoutsTab();
 
 			ObjectAdmin.selectSpecificKebabMenuOption(
-				kebabOption = "View",
+				kebabOption = "Edit",
 				objectLabel = "Custom Layout");
 
 			ObjectAdmin.markLayoutAsDefault();
@@ -1965,7 +1831,8 @@ definition {
 	@description = "LPS-145393 - Verify it is possible to add a One-to-Many relation from a Custom Object scoped by Site entry with a Native Object entry"
 	@priority = 4
 	test CanRelateOneToManyNativeObjectWithCustomSiteScoped {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanRelateOneToManyNativeObjectWithCustomSiteScoped";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 291",
@@ -1979,16 +1846,6 @@ definition {
 			userFirstName = "userfn",
 			userLastName = "userln",
 			userScreenName = "usersn");
-
-		ObjectAdmin.openObjectAdmin();
-
-		ObjectPortlet.selectCustomObject(label = "User");
-
-		CreateObject.selectTitleField(fieldLabel = "First Name");
-
-		CreateObject.saveObject();
-
-		Navigator.openURL();
 
 		ObjectAdmin.addObjectRelationshipViaAPI(
 			objectName_1 = "User",
@@ -2015,7 +1872,8 @@ definition {
 	@description = "LPS-163660 - Verify that a label is displayed on the creation of a Relationship Tab, to differentiate parent (left side) information from child (right side) information"
 	@priority = 4
 	test CanSeeLabelWhenCreatingRelationshipTab {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanSeeLabelWhenCreatingRelationshipTab";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Create an Object and add an attachment field") {
 			ObjectAdmin.addObjectViaAPI(
@@ -2058,7 +1916,7 @@ definition {
 
 			ObjectAdmin.goToLayoutsTab();
 
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+			ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 			ObjectAdmin.markLayoutAsDefault();
 
@@ -2080,17 +1938,19 @@ definition {
 				key_type = "Relationships",
 				locator1 = "ObjectAdmin#TAB_TYPE");
 
-			Click(locator1 = "ObjectAdmin#LAYOUT_ENTRY_CHOOSE_OPTION");
+			Click(
+				key_labelName = "Relationship",
+				locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON");
 		}
 
 		task ("Assert that a label indicating the Parent and Child relationships are displayed") {
 			AssertElementPresent(
-				key_relationType = "Parent",
-				locator1 = "ObjectRelationships#OPTIONS_TAB_RELATIONSHIPS");
+				key_optionName = "Parent",
+				locator1 = "ObjectAdmin#CLAY_GENERIC_DROPDOWN_ITEM");
 
 			AssertElementPresent(
-				key_relationType = "Child",
-				locator1 = "ObjectRelationships#OPTIONS_TAB_RELATIONSHIPS");
+				key_optionName = "Child",
+				locator1 = "ObjectAdmin#CLAY_GENERIC_DROPDOWN_ITEM");
 		}
 	}
 
@@ -2161,9 +2021,10 @@ definition {
 	test CanSeeRelatedEntriesOnTab {
 		property ci.retries.disabled = "true";
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "ObjectRelationships#CanSeeRelatedEntriesOnTab";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
-		task ("Given an object related to itself, in a Many-to-Many relationship and a custom entry") {
+		task ("Given a custom object that contains a text field and a relationship with itself (Many to Many)") {
 			ObjectAdmin.addObjectViaAPI(
 				labelName = "Custom Object 163657",
 				objectName = "CustomObject163657",
@@ -2184,6 +2045,10 @@ definition {
 				relationshipName = "relationship",
 				relationshipType = "manyToMany");
 
+			ObjectAdmin.publishObjectViaAPI(objectName = "CustomObject163657");
+		}
+
+		task ("And given a custom layout for the custom object") {
 			ObjectAdmin.addObjectLayoutViaAPI(
 				layoutName = "Layout Name",
 				objectName = "CustomObject163657");
@@ -2198,7 +2063,7 @@ definition {
 
 			ObjectAdmin.goToLayoutsTab();
 
-			ObjectAdmin.selectKebabMenuOption(kebabOption = "View");
+			ObjectAdmin.selectKebabMenuOption(kebabOption = "Edit");
 
 			ObjectAdmin.markLayoutAsDefault();
 
@@ -2219,44 +2084,47 @@ definition {
 			ObjectAdmin.publishObjectViaAPI(objectName = "CustomObject163657");
 		}
 
-		task ("When the user relates the entry to another entry") {
+		task ("And given two custom object entries") {
 			for (var fieldEntry : list "A,B") {
 				ObjectAdmin.addObjectSingleFieldEntryViaAPI(
 					fieldName = "customObjectField",
 					objectName = "CustomObject163657",
-					value = "Entry ${fieldEntry}");
+					value = "Entry Test ${fieldEntry}");
 			}
 
 			ObjectAdmin.goToCustomObject(objectName = "CustomObject163657");
+		}
 
-			ObjectPortlet.viewEntryDetails(entry = "Entry A");
+		task ("When an entry is added on the Relationship Tab") {
+			ObjectPortlet.viewEntryDetails(entry = "Entry Test A");
 
 			ObjectPortlet.gotoRelationshipTab();
 
-			CreateObject.addRelationshipAndSelectEntry(titleFieldName = "Entry B");
+			ObjectCustomLayouts.addEntryOnRelationshipTab(selectEntry = "Entry Test B");
+
+			WaitForElementPresent(
+				key_fieldLabel = "Entry Test B",
+				locator1 = "ObjectAdmin#VIEW_OBJECT_FIELD_LABEL");
 		}
 
-		task ("Then all related entries to the entry must be displayed on the relationship tab") {
-			WaitForVisible(
-				key_entry = "Entry B",
-				locator1 = "ObjectPortlet#ENTRY_VALUE");
-
+		task ("Then the related entry is present on the Relationship Tab") {
 			AssertElementPresent(
-				key_relatedObject = "Entry B",
-				locator1 = "CreateObject#VIEW_RELATED_OBJECT_ON_RELATIONSHIP_FIELD");
+				key_fieldLabel = "Entry Test B",
+				locator1 = "ObjectAdmin#VIEW_OBJECT_FIELD_LABEL");
 		}
 	}
 
 	@description = "LPS-145393 - Verify it is possible to set a Title Field for a Native Object"
 	@priority = 4
 	test CanSetTitleFieldForNativeObject {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanSetTitleFieldForNativeObject";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.openObjectAdmin();
 
 		ObjectPortlet.selectCustomObject(label = "User");
 
-		CreateObject.selectTitleField(fieldLabel = "First Name");
+		CreateObject.selectTitleField(fieldLabel = "Screen Name");
 
 		CreateObject.saveObject();
 
@@ -2264,15 +2132,114 @@ definition {
 
 		ObjectPortlet.selectCustomObject(label = "User");
 
-		AssertElementPresent(
-			locator1 = "CreateObject#TITLE_FIELD",
-			value1 = "First Name");
+		AssertTextEquals(
+			key_labelName = "Entry Title Field",
+			locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
+			value1 = "Screen Name");
+	}
+
+	@description = "LPS-193697 - Verify the user can switch the relationship order between the parent and child object definitions"
+	@priority = 4
+	test CanSwitchRelationshipOrder {
+		task ("Given an object folder with two object definitions") {
+			property custom.properties = "feature.flag.LPS-148856=true";
+
+			var objectFolderERC = JSONObjectFolder.addFolder(
+				folderLabel = "Custom Folder 193697",
+				folderName = "CustomFolder193697");
+
+			ObjectAdmin.addObjectViaAPI(
+				labelName = "Custom Object 193",
+				objectName = "CustomObject193",
+				pluralLabelName = "Custom Objects 193");
+
+			ObjectAdmin.addObjectViaAPI(
+				labelName = "Custom Object 697",
+				objectName = "CustomObject697",
+				pluralLabelName = "Custom Objects 697");
+
+			JSONObject.updateObject(
+				configKey = "objectFolderExternalReferenceCode",
+				configValue = ${objectFolderERC},
+				objectName = "CustomObject193");
+
+			JSONObject.updateObject(
+				configKey = "objectFolderExternalReferenceCode",
+				configValue = ${objectFolderERC},
+				objectName = "CustomObject697");
+		}
+
+		task ("and Given the user creates a 1:M relationship between them using the Add Relationship button") {
+			ObjectAdmin.openObjectAdmin();
+
+			Click(
+				key_label = "Custom Folder 193697",
+				locator1 = "ObjectPortlet#SELECT_OBJECT_FOLDER");
+
+			ObjectPortlet.selectCustomObject(label = "Custom Object 193");
+
+			ObjectAdmin.gotoRelationshipsTab();
+
+			LexiconEntry.gotoAdd();
+
+			Type(
+				locator1 = "ObjectAdmin#LABEL_OBJECT_RELATIONSHIP",
+				value1 = "Relationship");
+
+			ObjectAdmin.selectDropdownItem(
+				labelName = "Type",
+				optionName = "One to Many");
+
+			ObjectAdmin.selectDropdownItem(
+				labelName = "Many Records Of",
+				optionName = "Custom Object 697");
+		}
+
+		task ("When the user clicks on the switch button") {
+			Click(
+				key_text = "",
+				locator1 = "Button#ANY_SECONDARY");
+		}
+
+		task ("Then the parent and child object definitions are switched") {
+			AssertElementPresent(
+				key_relationObject = "Custom Object 697",
+				key_relationType = "One Record Of",
+				locator1 = "ObjectRelationships#SELECTED_OBJECT_IN_MODAL");
+
+			AssertElementPresent(
+				key_relationObject = "Custom Object 193",
+				key_relationType = "Many Records Of",
+				locator1 = "ObjectRelationships#SELECTED_OBJECT_IN_MODAL");
+		}
+
+		task ("and When the user clicks save") {
+			Button.clickSave();
+		}
+
+		task ("Then a relationship between the two object definitions is created") {
+			ObjectAdmin.openObjectAdmin();
+
+			Click(
+				key_label = "Custom Folder 193697",
+				locator1 = "ObjectPortlet#SELECT_OBJECT_FOLDER");
+
+			ObjectPortlet.selectCustomObject(label = "Custom Object 697");
+
+			ObjectAdmin.gotoRelationshipsTab();
+
+			AssertElementPresent(
+				key_label = "Relationship",
+				key_relatedObject = "CustomObject193",
+				locator1 = "ObjectRelationships#OPTIONS_TAB_RELATIONSHIPS_LABEL_AND_RELATED_OBJECT");
+		}
 	}
 
 	@description = "LPS-143021 - Verify it is possible to view and add entries on an Object after creating a Relationship One to Many for it"
 	@priority = 4
 	test CanViewAndAddObjectEntriesAfterCreateRelationship {
-		property test.name.skip.portal.instance = "ObjectRelationships#CanViewAndAddObjectEntriesAfterCreateRelationship";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 292",
@@ -2310,6 +2277,41 @@ definition {
 		ObjectAdmin.goToCustomObject(objectName = "CustomObject292");
 
 		ObjectPortlet.viewEntry(entry = "Entry Test");
+	}
+
+	@description = "LPS-193697 - Verify that switch button is not present when the M:M relationship is selected"
+	@priority = 3
+	test CheckSwitchNotPresentForManytoMany {
+		task ("Given an object definition") {
+			ObjectAdmin.addObjectViaAPI(
+				labelName = "Custom Object 195296",
+				objectName = "CustomObject195296",
+				pluralLabelName = "Custom Objects 195296");
+		}
+
+		task ("When the user selects the M:M relationship while creating a self relationship") {
+			ObjectAdmin.openObjectAdmin();
+
+			ObjectPortlet.selectCustomObject(label = "Custom Object 195296");
+
+			ObjectAdmin.gotoRelationshipsTab();
+
+			LexiconEntry.gotoAdd();
+
+			ObjectAdmin.selectDropdownItem(
+				labelName = "Type",
+				optionName = "Many to Many");
+
+			ObjectAdmin.selectDropdownItem(
+				labelName = "Many Records Of",
+				optionName = "Custom Object 195296");
+		}
+
+		task ("Then the switch button is no longer present") {
+			AssertElementNotPresent(
+				key_text = "",
+				locator1 = "Button#ANY_SECONDARY");
+		}
 	}
 
 }

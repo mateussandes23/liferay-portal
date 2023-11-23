@@ -1,21 +1,14 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.document.library.video.internal.portlet.action;
 
 import com.liferay.document.library.constants.DLFileVersionPreviewConstants;
+import com.liferay.document.library.kernel.model.DLProcessorConstants;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
+import com.liferay.document.library.kernel.util.DLProcessor;
 import com.liferay.document.library.kernel.util.DLProcessorRegistryUtil;
 import com.liferay.document.library.kernel.util.VideoProcessor;
 import com.liferay.document.library.service.DLFileVersionPreviewLocalService;
@@ -65,10 +58,12 @@ public class EmbedVideoStatusMVCResourceCommand extends BaseMVCResourceCommand {
 				ParamUtil.getLong(resourceRequest, "fileVersionId"));
 
 			if (fileVersion != null) {
+				VideoProcessor videoProcessor = (VideoProcessor)_dlProcessor;
+
 				if (_isPreviewFailure(fileVersion)) {
 					return HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 				}
-				else if (!_videoProcessor.hasVideo(fileVersion)) {
+				else if (!videoProcessor.hasVideo(fileVersion)) {
 					return HttpServletResponse.SC_ACCEPTED;
 				}
 
@@ -103,7 +98,10 @@ public class EmbedVideoStatusMVCResourceCommand extends BaseMVCResourceCommand {
 	@Reference
 	private DLFileVersionPreviewLocalService _dlFileVersionPreviewLocalService;
 
-	@Reference(policyOption = ReferencePolicyOption.GREEDY)
-	private VideoProcessor _videoProcessor;
+	@Reference(
+		policyOption = ReferencePolicyOption.GREEDY,
+		target = "(type=" + DLProcessorConstants.VIDEO_PROCESSOR + ")"
+	)
+	private DLProcessor _dlProcessor;
 
 }

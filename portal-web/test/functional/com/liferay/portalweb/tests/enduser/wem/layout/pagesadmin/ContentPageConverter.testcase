@@ -1,9 +1,9 @@
 @component-name = "portal-wcm"
 definition {
 
+	property ci.retries.disabled = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
-	property testcase.url = "http://localhost:8080";
 	property testray.main.component.name = "Page Administration";
 
 	static var randomSiteName = StringUtil.randomString(8);
@@ -11,6 +11,10 @@ definition {
 	var siteURLKey = StringUtil.toLowerCase(${randomSiteName});
 
 	setUp {
+		task ("Set up virtual instance") {
+			TestCase.setUpPortalInstance();
+		}
+
 		task ("Sign in") {
 			User.firstLoginPG();
 		}
@@ -124,9 +128,7 @@ definition {
 		}
 
 		task ("View plid is the same after conversion") {
-			TestUtils.assertEquals(
-				actual = ${plid2},
-				expected = ${plid1});
+			StringUtil.assertEquals(${plid1}, ${plid2});
 		}
 
 		task ("View fragments and widgets sidebar at edit mode") {
@@ -140,12 +142,15 @@ definition {
 	@priority = 5
 	test ConvertMultipleWidgetPagesToContentPagesViaAPI {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "ContentPageConverter#ConvertMultipleWidgetPagesToContentPagesViaAPI";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
+
+		var groupId = JSONGroupSetter.setGroupId(groupName = ${randomSiteName});
 
 		task ("Add 10 widget pages") {
 			for (var i : list "1,2,3,4,5,6,7,8,9,10") {
 				JSONLayout.addPublicLayout(
-					groupName = ${randomSiteName},
+					groupId = ${groupId},
 					layoutName = "Test Page Name ${i}");
 			}
 		}
@@ -155,7 +160,7 @@ definition {
 
 			for (var layoutTemplate : list "1 Column,2 Columns (50/50),2 Columns (30/70),2 Columns (70/30),3 Columns,1-2 Columns (30/70),1-2 Columns (70/30),1-2-1 Columns (50/50),1-2-1 Columns (70/30),1-3-1 Columns") {
 				JSONLayout.updateLayoutTemplateOfPublicLayout(
-					groupName = ${randomSiteName},
+					groupId = ${groupId},
 					layoutName = "Test Page Name ${i}",
 					layoutTemplate = ${layoutTemplate});
 
@@ -166,7 +171,7 @@ definition {
 		task ("Add an Asset Publisher to each widget page") {
 			for (var i : list "1,2,3,4,5,6,7,8,9,10") {
 				JSONLayout.addWidgetToPublicLayout(
-					groupName = ${randomSiteName},
+					groupId = ${groupId},
 					layoutName = "Test Page Name ${i}",
 					widgetName = "Asset Publisher");
 			}
@@ -220,21 +225,9 @@ definition {
 		task ("View output content") {
 			var output = selenium.getText("ServerAdministrationScript#OUTPUT_FIELD");
 
-			echo(${output});
+			StringUtil.contains(${output}, "Convertible layouts before conversion:[${plidsBeforeConversion}]", "");
 
-			if (contains(${output}, "Convertible layouts before conversion:[${plidsBeforeConversion}]")) {
-				echo("Returned convertible layouts plids array is correct");
-			}
-			else {
-				fail("Returned convertible layout plids array is wrong");
-			}
-
-			if (contains(${output}, "Convertible layouts after conversion: []")) {
-				echo("No convertiable layouts left");
-			}
-			else {
-				fail("There are convertiable layouts left");
-			}
+			StringUtil.contains(${output}, "Convertible layouts after conversion: []", "");
 		}
 
 		task ("Get plids of converted pages") {
@@ -261,18 +254,11 @@ definition {
 		}
 
 		task ("View output content") {
-			if (contains(${output}, "Converted layouts:[${plidsAfterConversion}]")) {
-				echo("Returned converted layouts plids array is correct");
-			}
-			else {
-				fail("Returned converted layout plids array is wrong");
-			}
+			StringUtil.contains(${output}, "Converted layouts:[${plidsAfterConversion}]", "");
 		}
 
 		task ("View plids are the same after conversion") {
-			TestUtils.assertEquals(
-				actual = ${plidsAfterConversion},
-				expected = ${plidsBeforeConversion});
+			StringUtil.assertEquals(${plidsBeforeConversion}, ${plidsAfterConversion});
 		}
 
 		task ("View current page type after conversion") {
@@ -325,7 +311,8 @@ definition {
 	@description = "This is a test for LPS-98325. If there is a site with several widget pages(that can be converted) and some content pages and an api to convert bulk widget pages to content pages is executed, you should be able to convert the widget pages."
 	@priority = 2
 	test ConvertMultipleWidgetPagesWithContentPagesViaAPI {
-		property test.name.skip.portal.instance = "ContentPageConverter#ConvertMultipleWidgetPagesWithContentPagesViaAPI";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Add 10 widget pages") {
 			for (var i : list "1,2,3,4,5,6,7,8,9,10") {
@@ -415,7 +402,8 @@ definition {
 	@priority = 5
 	test ConvertWidgetPagesWithNestedApplicationAndCustomizationSettingToContentPagesViaAPI {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "ContentPageConverter#ConvertWidgetPagesWithNestedApplicationAndCustomizationSettingToContentPagesViaAPI";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Add three widget pages") {
 			for (var i : list "1,2,3") {
@@ -619,7 +607,8 @@ definition {
 	@priority = 5
 	test ConvertWidgetPageWithNonStandardLayout {
 		property portal.acceptance = "true";
-		property test.name.skip.portal.instance = "ContentPageConverter#ConvertWidgetPageWithNonStandardLayout";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Upload the custom layout") {
 			ApplicationsMenu.gotoPortlet(
@@ -730,7 +719,8 @@ definition {
 	@description = "This is a test for LPS-105943. When convert a widget page with one Customizable column and a non-standard layout, there will be two warning messages shown in conversion preview"
 	@priority = 3
 	test ConvertWidgetPageWithNonStandardLayoutAndCustomizableColumns {
-		property test.name.skip.portal.instance = "ContentPageConverter#ConvertWidgetPageWithNonStandardLayoutAndCustomizableColumns";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Upload the custom layout") {
 			ApplicationsMenu.gotoPortlet(
@@ -849,7 +839,8 @@ definition {
 	@description = "This is a test for LPS-105943. When convert a widget page with one Nested Applications widget containing widgets and a non-standard layout, there will be two warning messages shown in conversion preview"
 	@priority = 3
 	test ConvertWidgetPageWithNonStandardLayoutAndNestedApplicationsContainingWidgets {
-		property test.name.skip.portal.instance = "ContentPageConverter#ConvertWidgetPageWithNonStandardLayoutAndNestedApplicationsContainingWidgets";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Upload the custom layout") {
 			ApplicationsMenu.gotoPortlet(
@@ -1098,6 +1089,12 @@ definition {
 		property custom.properties = "jsonws.web.service.paths.excludes=";
 		property portal.acceptance = "true";
 
+		var userEmailAddress = StringUtil.randomString(8);
+		var userFirstName = StringUtil.randomString(8);
+		var userLastName = StringUtil.randomString(8);
+		var userScreenName = StringUtil.randomString(8);
+		var randomRoleKey = StringUtil.randomString(8);
+
 		task ("Add a widget page") {
 			JSONLayout.addPublicLayout(
 				groupName = ${randomSiteName},
@@ -1155,44 +1152,44 @@ definition {
 
 		task ("Add a new user") {
 			JSONUser.addUser(
-				userEmailAddress = "userea@liferay.com",
-				userFirstName = "Userfn",
-				userLastName = "Userln",
-				userScreenName = "usersn");
+				userEmailAddress = StringUtil.toLowerCase("${userEmailAddress}@liferay.com"),
+				userFirstName = ${userFirstName},
+				userLastName = ${userLastName},
+				userScreenName = StringUtil.toLowerCase(${userScreenName}));
 
 			JSONUser.setFirstPassword(
 				agreeToTermsAndAnswerReminderQuery = "true",
 				requireReset = "false",
-				userEmailAddress = "userea@liferay.com");
+				userEmailAddress = StringUtil.toLowerCase("${userEmailAddress}@liferay.com"));
 		}
 
 		task ("Add a new site role") {
-			JSONRole.addSiteRole(roleTitle = "Roles Siterole Name");
+			JSONRole.addSiteRole(roleTitle = ${randomRoleKey});
 		}
 
 		task ("Define permission of new site role") {
 			Permissions.definePermissionViaJSONAPI(
 				resourceAction = "VIEW",
 				resourceName = "com_liferay_layout_admin_web_portlet_GroupPagesPortlet",
-				roleTitle = "Roles Siterole Name",
+				roleTitle = ${randomRoleKey},
 				roleType = "site");
 		}
 
 		task ("Assign the user to site") {
 			JSONUser.addUserToSite(
 				groupName = ${randomSiteName},
-				userEmailAddress = "userea@liferay.com");
+				userEmailAddress = StringUtil.toLowerCase("${userEmailAddress}@liferay.com"));
 		}
 
 		task ("Assign the user to site role") {
 			JSONRole.assignSiteRoleToUser(
 				groupName = ${randomSiteName},
-				roleTitle = "Roles Siterole Name",
-				userEmailAddress = "userea@liferay.com");
+				roleTitle = ${randomRoleKey},
+				userEmailAddress = StringUtil.toLowerCase("${userEmailAddress}@liferay.com"));
 		}
 
 		task ("Sign in as new user") {
-			User.logoutAndLoginPG(userLoginEmailAddress = "userea@liferay.com");
+			User.logoutAndLoginPG(userLoginEmailAddress = StringUtil.toLowerCase("${userEmailAddress}@liferay.com"));
 		}
 
 		task ("View user has no permission to edit a portlet") {
@@ -1214,16 +1211,16 @@ definition {
 			Permissions.definePermissionViaJSONAPI(
 				resourceAction = "MANAGE_LAYOUTS",
 				resourceName = "com.liferay.portal.kernel.model.Group",
-				roleTitle = "Roles Siterole Name",
+				roleTitle = ${randomRoleKey},
 				roleType = "site");
 		}
 
 		task ("View user has perimissions to edit a portlet") {
-			for (var widgetName : list "Asset Publisher,Documents and Media") {
-				Navigator.gotoSitePage(
-					pageName = "Test Page Name",
-					siteName = ${randomSiteName});
+			Navigator.gotoSitePage(
+				pageName = "Test Page Name",
+				siteName = ${randomSiteName});
 
+			for (var widgetName : list "Asset Publisher,Documents and Media") {
 				Portlet.configureCustomTitlePG(portletTitleName = ${widgetName});
 			}
 		}
@@ -1232,6 +1229,80 @@ definition {
 			for (var widgetName : list "Asset Publisher Custom,Documents and Media Custom") {
 				Portlet.viewSpecificPG(portletName = ${widgetName});
 			}
+		}
+	}
+
+	@description = "This is a test for LPS-159512. The user could view associated display page from of web content related."
+	@priority = 3
+	test NavigateToConvertedPageViaSearchResults {
+		task ("Given the user displays a web content on a converted content page") {
+			JSONLayout.addPublicLayout(
+				groupName = ${randomSiteName},
+				layoutName = "Search");
+
+			JSONLayout.addWidgetToPublicLayout(
+				groupName = ${randomSiteName},
+				layoutName = "Search",
+				widgetName = "Search Results");
+
+			JSONLayout.addPublicLayout(
+				groupName = ${randomSiteName},
+				layoutName = "Test Page Name");
+
+			JSONLayout.addWidgetToPublicLayout(
+				groupName = ${randomSiteName},
+				layoutName = "Test Page Name",
+				widgetName = "Asset Publisher");
+
+			Navigator.gotoSitePage(
+				pageName = "Test Page Name",
+				siteName = ${randomSiteName});
+
+			AssetPublisherPortlet.configureDisplaySettings(displaySettings = "Set as the Default Asset Publisher for This Page");
+
+			WebContentNavigator.openWebContentAdmin(siteURLKey = ${siteURLKey});
+
+			WebContentNavigator.gotoAddCP();
+
+			WebContent.addCP(
+				webContentContent = "Web Content Content",
+				webContentTitle = "Web Content Title");
+
+			WebContent.editDisplayPage(
+				pageName = "Test Page Name",
+				pageType = "Pages");
+
+			PortletEntry.publish();
+
+			PagesAdmin.openPagesAdmin(siteURLKey = ${randomSiteName});
+
+			PagesAdmin.gotoPageEllipsisMenuItem(
+				menuItem = "Convert to content page...",
+				pageName = "Test Page Name");
+
+			PageEditor.assertFragmentSidebarLoaded();
+
+			PageEditor.publish();
+		}
+
+		task ("When the user searches the web content") {
+			Navigator.gotoSitePage(
+				pageName = "Search",
+				siteName = ${randomSiteName});
+
+			SearchPage.searchEmbedded(searchTerm = "Web Content");
+		}
+
+		task ("Then the user could access to the display page via search results") {
+			SearchPage.gotoResultDetails(searchAssetTitle = "Web Content Title");
+
+			AssetPublisherPortlet.viewAssetPG(
+				assetContent = "Web Content Content",
+				assetTitle = "Web Content Title");
+
+			AssertVisible(locator1 = "Icon#BACK");
+
+			ControlMenu.viewHeaderTitle(headerTitle = "Test Page Name");
 		}
 	}
 

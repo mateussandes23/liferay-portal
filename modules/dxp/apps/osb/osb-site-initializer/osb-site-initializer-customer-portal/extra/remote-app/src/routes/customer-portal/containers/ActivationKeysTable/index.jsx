@@ -1,12 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 import {ButtonWithIcon} from '@clayui/core';
 import {useModal} from '@clayui/modal';
@@ -41,11 +35,16 @@ const messageNewKeyGeneratedAlert = i18n.translate(
 	'activation-key-was-generated-successfully'
 );
 
+const messageNewKeyGeneratedAlertForComplimentary = i18n.translate(
+	'complimentary-key-was-generated-successfully'
+);
+
 const messageDeactivateKey = i18n.translate(
 	'activation-keys-were-deactivated-successfully'
 );
 
 const ActivationKeysTable = ({
+	hasKeyComplimentary,
 	initialFilter,
 	productName,
 	project,
@@ -55,12 +54,11 @@ const ActivationKeysTable = ({
 	const [isVisibleModal, setIsVisibleModal] = useState(false);
 	const [downloadStatus, setDownloadStatus] = useState('');
 	const {state} = useLocation();
-	const {setHasQuickLinksPanel, setHasSideMenu} = useOutletContext();
+	const {setHasSideMenu} = useOutletContext();
 
 	useEffect(() => {
-		setHasQuickLinksPanel(true);
 		setHasSideMenu(true);
-	}, [setHasSideMenu, setHasQuickLinksPanel]);
+	}, [setHasSideMenu]);
 
 	const [
 		newKeyGeneratedAlertStatus,
@@ -82,15 +80,15 @@ const ActivationKeysTable = ({
 		statusfilterByTitle: [statusFilter, setStatusFilter],
 	} = useStatusCountNavigation(activationKeys);
 
-	const {activationKeysByStatusPaginated, paginationConfig} = usePagination(
-		activationKeys,
-		statusFilter
-	);
-
 	const [filters, setFilters] = useFilters(
 		setFilterTerm,
 		productName,
 		initialFilter
+	);
+
+	const {activationKeysByStatusPaginated, paginationConfig} = usePagination(
+		activationKeys,
+		statusFilter
 	);
 
 	const [currentActivationKey, setCurrentActivationKey] = useState();
@@ -251,7 +249,11 @@ const ActivationKeysTable = ({
 			{!!newKeyGeneratedAlertStatus && (
 				<DownloadAlert
 					downloadStatus={newKeyGeneratedAlertStatus}
-					message={messageNewKeyGeneratedAlert}
+					message={
+						!hasKeyComplimentary
+							? messageNewKeyGeneratedAlert
+							: messageNewKeyGeneratedAlertForComplimentary
+					}
 					setDownloadStatus={setNewKeyGeneratedAlertStatus}
 				/>
 			)}

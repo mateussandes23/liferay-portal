@@ -1,3 +1,8 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
 import ClayButton from '@clayui/button';
 import {ClayDropDownWithItems} from '@clayui/drop-down';
 import ClayManagementToolbar from '@clayui/management-toolbar';
@@ -6,9 +11,11 @@ import chevronRight from '../../assets/icons/chevron_right_icon.svg';
 import circleFill from '../../assets/icons/circle_fill_icon.svg';
 import dotsIcon from '../../assets/icons/dots_icon.svg';
 import emptyPicture from '../../assets/icons/empty_picture_icon.svg';
-import {showAccountImage} from '../../utils/util';
+import {getAccountImage} from '../../utils/util';
 
 import './NewAppToolBar.scss';
+
+import {Link} from 'react-router-dom';
 
 interface NewAppToolBarProps {
 	accountImage?: string;
@@ -18,6 +25,39 @@ interface NewAppToolBarProps {
 	enableDropdown?: boolean;
 }
 
+type Item = {
+	disabled?: boolean;
+	label?: string;
+	type?:
+		| 'checkbox'
+		| 'contextual'
+		| 'group'
+		| 'item'
+		| 'radio'
+		| 'radiogroup'
+		| 'divider';
+};
+
+const items: Item[] = [
+	{
+		disabled: true,
+		label: 'Publish app',
+	},
+	{
+		disabled: true,
+		label: 'Hide app',
+	},
+	{
+		label: 'Menu List Text',
+	},
+	{
+		type: 'divider',
+	},
+	{
+		label: 'Remove app',
+	},
+];
+
 export function NewAppToolBar({
 	accountImage,
 	accountName,
@@ -25,47 +65,14 @@ export function NewAppToolBar({
 	appName,
 	enableDropdown,
 }: NewAppToolBarProps) {
-	type Item = {
-		disabled?: boolean;
-		label?: string;
-		type?:
-			| 'checkbox'
-			| 'contextual'
-			| 'group'
-			| 'item'
-			| 'radio'
-			| 'radiogroup'
-			| 'divider';
-	};
-
-	const items: Item[] = [
-		{
-			disabled: true,
-			label: 'Publish app',
-		},
-		{
-			disabled: true,
-			label: 'Hide app',
-		},
-		{
-			label: 'Menu List Text',
-		},
-		{
-			type: 'divider',
-		},
-		{
-			label: 'Remove app',
-		},
-	];
-
 	return (
-		<div className="new-app-tool-bar-container">
+		<div className="container new-app-tool-bar-container">
 			<ClayManagementToolbar.ItemList expand>
 				<div className="new-app-tool-bar-main-account-logo">
 					<img
 						alt="Main account logo"
 						className="new-app-tool-bar-main-account-logo-img"
-						src={showAccountImage(accountImage)}
+						src={getAccountImage(accountImage)}
 					/>
 
 					<span className="new-app-tool-bar-main-account-logo-text">
@@ -106,7 +113,7 @@ export function NewAppToolBar({
 
 			<ClayManagementToolbar.ItemList>
 				<ClayButton.Group className="new-app-tool-bar-button-container">
-					<a href="/dashboard">
+					<Link to="../">
 						<ClayButton
 							className="new-app-tool-bar-button-exit"
 							displayType={null}
@@ -115,7 +122,7 @@ export function NewAppToolBar({
 								Exit
 							</span>
 						</ClayButton>
-					</a>
+					</Link>
 
 					<button className="new-app-tool-bar-button-save-draft">
 						Save as draft

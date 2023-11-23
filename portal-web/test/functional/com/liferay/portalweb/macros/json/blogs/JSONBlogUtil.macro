@@ -1,7 +1,7 @@
 definition {
 
-	@summary = "Helper function to help input content html info"
-	macro _convertToXML {
+	@summary = "Default summary"
+	macro _convertToXML(content = null) {
 		Variables.assertDefined(parameterList = ${content});
 
 		var contentXml = '''<p>${content}</p> ''';

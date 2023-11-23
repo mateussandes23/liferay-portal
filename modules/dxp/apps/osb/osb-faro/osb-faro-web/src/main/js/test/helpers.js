@@ -4,7 +4,8 @@ import {
 	getByPlaceholderText,
 	getByTestId,
 	getByText,
-	waitForElement
+	waitForElement,
+	waitForElementToBeRemoved
 } from '@testing-library/react';
 
 export const inputSearchText = (container, searchText) => {
@@ -38,7 +39,20 @@ export const waitForTable = async container => {
 };
 
 export const waitForLoading = async container => {
-	await waitForElement(() => container.querySelector('.spinner-root'));
+	await waitForElement(() => container.querySelector('.loading-root'));
+};
+
+export const waitForLoadingToBeRemoved = async (
+	container,
+	selector = '.loading-root'
+) => {
+	const loading = container.querySelector(selector);
+
+	if (loading) {
+		return await waitForElementToBeRemoved(loading);
+	}
+
+	return Promise.resolve();
 };
 
 export const selectDropdownItem = labelText => {

@@ -23,20 +23,18 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
-
-		// It is not possible to delete properties and data source after LRAC-13389. This functionality should return after LRAC-8040
-
-		//ACUtils.tearDownAC();
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		ACUtils.tearDownDXP();
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
 			JSONGroup.deleteGroupByName(groupName = "Site Name");
 		}
+
+		ACUtils.tearDownAC();
 	}
 
 	@description = "Feature ID: Legacy | Automation ID: LRAC-8370 | Test Summary: 180 Days time period filter in Interests List"
@@ -78,7 +76,7 @@ definition {
 		task ("Set time filter use 24 hours") {
 			ACTimeFilter.clickTimeFilterButton();
 
-			ACTimeFilter.setLast24Hours();
+			ACTimeFilter.setYesterday();
 
 			// Unable to perform the declaration because the data does not appear at the time
 
@@ -137,7 +135,7 @@ definition {
 		task ("Set time filter use 24 hours") {
 			ACTimeFilter.clickTimeFilterButton();
 
-			ACTimeFilter.setLast24Hours();
+			ACTimeFilter.setYesterday();
 
 			// Unable to perform the declaration because the data does not appear at the time
 
@@ -200,7 +198,7 @@ definition {
 		task ("Set time filter use 24 hours") {
 			ACTimeFilter.clickTimeFilterButton();
 
-			ACTimeFilter.setLast24Hours();
+			ACTimeFilter.setYesterday();
 
 			// Unable to perform the declaration because the data does not appear at the time
 

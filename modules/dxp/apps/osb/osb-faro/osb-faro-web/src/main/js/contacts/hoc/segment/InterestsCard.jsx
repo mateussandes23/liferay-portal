@@ -6,12 +6,13 @@ import React from 'react';
 import URLConstants from 'shared/util/url-constants';
 import {compositionListColumns} from 'shared/util/table-columns';
 import {CompositionTypes} from 'shared/util/constants';
+import {Containers} from 'shared/components/download-report/DownloadPDFReport';
 import {
 	getMapResultToProps,
 	mapCardPropsToOptions
 } from 'contacts/hoc/mappers/interests-query';
 import {graphql} from '@apollo/react-hoc';
-import {Routes, toRoute} from 'shared/util/router';
+import {PAGES, Routes, setUriQueryValue, toRoute} from 'shared/util/router';
 import {withTableData} from 'shared/hoc';
 
 const withData = () =>
@@ -45,12 +46,17 @@ const TableWithData = withTableData(withData, {
 			maxWidth: 200,
 			routeFn: ({data: {name}}) =>
 				name &&
-				toRoute(Routes.CONTACTS_SEGMENT_INTEREST_DETAILS, {
-					channelId,
-					groupId,
-					id,
-					interestId: name
-				}),
+				setUriQueryValue(
+					toRoute(Routes.CONTACTS_SEGMENT_INTEREST_DETAILS, {
+						channelId,
+						groupId,
+						id,
+						interestId: name,
+						tabId: PAGES
+					}),
+					'active',
+					true
+				),
 			sortable: false
 		}),
 		compositionListColumns.getRelativeMetricBar({
@@ -67,7 +73,11 @@ const TableWithData = withTableData(withData, {
 });
 
 const InterestsCard = ({channelId, groupId, id}) => (
-	<Card className='interests-card-root' minHeight={536}>
+	<Card
+		className='interests-card-root'
+		id={Containers.TopInterestsCard}
+		minHeight={536}
+	>
 		<Card.Header>
 			<Card.Title>{Liferay.Language.get('top-interests')}</Card.Title>
 		</Card.Header>
@@ -82,7 +92,8 @@ const InterestsCard = ({channelId, groupId, id}) => (
 		<Card.Footer>
 			<ClayLink
 				className='button-root'
-				displayType='unstyled'
+				decoration='none'
+				displayType='secondary'
 				href={toRoute(Routes.CONTACTS_SEGMENT_INTERESTS, {
 					channelId,
 					groupId,
@@ -92,7 +103,10 @@ const InterestsCard = ({channelId, groupId, id}) => (
 			>
 				{Liferay.Language.get('view-all-interests')}
 
-				<ClayIcon className='icon-root ml-2' symbol='angle-right' />
+				<ClayIcon
+					className='icon-root ml-2'
+					symbol='angle-right-small'
+				/>
 			</ClayLink>
 		</Card.Footer>
 	</Card>

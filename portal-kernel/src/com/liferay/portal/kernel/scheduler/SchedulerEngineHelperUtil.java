@@ -1,22 +1,13 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.kernel.scheduler;
 
 import com.liferay.portal.kernel.messaging.Message;
+import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.kernel.scheduler.messaging.SchedulerResponse;
-import com.liferay.portal.kernel.util.ServiceProxyFactory;
 
 import java.util.Date;
 import java.util.List;
@@ -31,71 +22,104 @@ public class SchedulerEngineHelperUtil {
 			String language, String script)
 		throws SchedulerException {
 
-		_schedulerEngineHelper.addScriptingJob(
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		schedulerEngineHelper.addScriptingJob(
 			trigger, storageType, description, language, script);
 	}
 
 	public static void delete(String groupName, StorageType storageType)
 		throws SchedulerException {
 
-		_schedulerEngineHelper.delete(groupName, storageType);
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		schedulerEngineHelper.delete(groupName, storageType);
 	}
 
 	public static void delete(
 			String jobName, String groupName, StorageType storageType)
 		throws SchedulerException {
 
-		_schedulerEngineHelper.delete(jobName, groupName, storageType);
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		schedulerEngineHelper.delete(jobName, groupName, storageType);
 	}
 
 	public static Date getEndTime(SchedulerResponse schedulerResponse) {
-		return _schedulerEngineHelper.getEndTime(schedulerResponse);
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		return schedulerEngineHelper.getEndTime(schedulerResponse);
 	}
 
 	public static SchedulerResponse getScheduledJob(
 			String jobName, String groupName, StorageType storageType)
 		throws SchedulerException {
 
-		return _schedulerEngineHelper.getScheduledJob(
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		return schedulerEngineHelper.getScheduledJob(
 			jobName, groupName, storageType);
 	}
 
 	public static List<SchedulerResponse> getScheduledJobs()
 		throws SchedulerException {
 
-		return _schedulerEngineHelper.getScheduledJobs();
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		return schedulerEngineHelper.getScheduledJobs();
 	}
 
 	public static List<SchedulerResponse> getScheduledJobs(
 			StorageType storageType)
 		throws SchedulerException {
 
-		return _schedulerEngineHelper.getScheduledJobs(storageType);
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		return schedulerEngineHelper.getScheduledJobs(storageType);
 	}
 
 	public static List<SchedulerResponse> getScheduledJobs(
 			String groupName, StorageType storageType)
 		throws SchedulerException {
 
-		return _schedulerEngineHelper.getScheduledJobs(groupName, storageType);
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		return schedulerEngineHelper.getScheduledJobs(groupName, storageType);
 	}
 
 	public static Date getStartTime(SchedulerResponse schedulerResponse) {
-		return _schedulerEngineHelper.getStartTime(schedulerResponse);
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		return schedulerEngineHelper.getStartTime(schedulerResponse);
 	}
 
 	public static void pause(
 			String jobName, String groupName, StorageType storageType)
 		throws SchedulerException {
 
-		_schedulerEngineHelper.pause(jobName, groupName, storageType);
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		schedulerEngineHelper.pause(jobName, groupName, storageType);
 	}
 
 	public static void resume(
 			String jobName, String groupName, StorageType storageType)
 		throws SchedulerException {
 
-		_schedulerEngineHelper.resume(jobName, groupName, storageType);
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		schedulerEngineHelper.resume(jobName, groupName, storageType);
 	}
 
 	public static void schedule(
@@ -103,7 +127,10 @@ public class SchedulerEngineHelperUtil {
 			String destinationName, Message message)
 		throws SchedulerException {
 
-		_schedulerEngineHelper.schedule(
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		schedulerEngineHelper.schedule(
 			trigger, storageType, description, destinationName, message);
 	}
 
@@ -112,20 +139,15 @@ public class SchedulerEngineHelperUtil {
 			String destinationName, Object payload)
 		throws SchedulerException {
 
-		_schedulerEngineHelper.schedule(
+		SchedulerEngineHelper schedulerEngineHelper =
+			_schedulerEngineHelperSnapshot.get();
+
+		schedulerEngineHelper.schedule(
 			trigger, storageType, description, destinationName, payload);
 	}
 
-	public static void unschedule(
-			String jobName, String groupName, StorageType storageType)
-		throws SchedulerException {
-
-		_schedulerEngineHelper.unschedule(jobName, groupName, storageType);
-	}
-
-	private static volatile SchedulerEngineHelper _schedulerEngineHelper =
-		ServiceProxyFactory.newServiceTrackedInstance(
-			SchedulerEngineHelper.class, SchedulerEngineHelperUtil.class,
-			"_schedulerEngineHelper", false);
+	private static final Snapshot<SchedulerEngineHelper>
+		_schedulerEngineHelperSnapshot = new Snapshot<>(
+			SchedulerEngineHelperUtil.class, SchedulerEngineHelper.class);
 
 }

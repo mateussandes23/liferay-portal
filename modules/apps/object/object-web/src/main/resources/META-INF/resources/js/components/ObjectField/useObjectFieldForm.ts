@@ -1,20 +1,12 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import {
 	REQUIRED_MSG,
 	invalidateRequired,
+	openToast,
 	useForm,
 } from '@liferay/object-js-components-web';
 import {sub} from 'frontend-js-web';
@@ -22,6 +14,8 @@ import {sub} from 'frontend-js-web';
 import {defaultLanguageId} from '../../utils/constants';
 import {normalizeFieldSettings} from '../../utils/fieldSettings';
 import {ObjectFieldErrors} from './ObjectFieldFormBase';
+
+const AUTO_INCREMENT_INITIAL_VALUE_REGEX = /^(?!0+$)\d+$/;
 
 interface IUseObjectFieldForm {
 	forbiddenChars?: string[];
@@ -100,6 +94,23 @@ export function useObjectFieldForm({
 
 		if (!field.businessType) {
 			errors.businessType = REQUIRED_MSG;
+		}
+		else if (
+			Liferay.FeatureFlags['LPS-196724'] &&
+			field.businessType === 'AutoIncrement'
+		) {
+			if (!settings.initialValue) {
+				errors.initialValue = REQUIRED_MSG;
+			}
+			else if (
+				!AUTO_INCREMENT_INITIAL_VALUE_REGEX.exec(
+					settings.initialValue as string
+				)
+			) {
+				errors.initialValue = Liferay.Language.get(
+					'this-value-cannot-be-less-than-1'
+				);
+			}
 		}
 		else if (field.businessType === 'Aggregation') {
 			if (!settings.function) {
@@ -197,20 +208,21 @@ export function useObjectFieldForm({
 			const thereIsDefaultValue = field.objectFieldSettings?.some(
 				(setting) => setting.name === 'defaultValue' && setting.value
 			);
-			if (Liferay.FeatureFlags['LPS-163716']) {
-				if (!field.id) {
-					if (field.state && !thereIsDefaultValue) {
-						errors.defaultValue = REQUIRED_MSG;
-					}
-				}
-				else {
-					if (thereIsDefaultValueType && !thereIsDefaultValue) {
-						errors.defaultValue = REQUIRED_MSG;
-					}
+
+			if (!field.id) {
+				if (field.state && !thereIsDefaultValue) {
+					errors.defaultValue = REQUIRED_MSG;
+
+					openToast({
+						message: Liferay.Language.get(
+							'please-fill-out-all-required-fields'
+						),
+						type: 'danger',
+					});
 				}
 			}
 			else {
-				if (field.state && !field.defaultValue) {
+				if (thereIsDefaultValueType && !thereIsDefaultValue) {
 					errors.defaultValue = REQUIRED_MSG;
 				}
 			}
@@ -219,14 +231,25 @@ export function useObjectFieldForm({
 		return errors;
 	};
 
-	const {errors, handleChange, handleSubmit, setValues, values} = useForm<
-		ObjectField,
-		{[key in ObjectFieldSettingName]: unknown}
-	>({
+	const {
+		errors,
+		handleChange,
+		handleSubmit,
+		handleValidate,
+		setValues,
+		values,
+	} = useForm<ObjectField, {[key in ObjectFieldSettingName]: unknown}>({
 		initialValues,
 		onSubmit,
 		validate,
 	});
 
-	return {errors, handleChange, handleSubmit, setValues, values};
+	return {
+		errors,
+		handleChange,
+		handleSubmit,
+		handleValidate,
+		setValues,
+		values,
+	};
 }

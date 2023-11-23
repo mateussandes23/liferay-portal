@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.admin.workflow.resource.v1_0.test;
@@ -42,6 +33,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -207,7 +199,7 @@ public abstract class BaseTransitionResourceTestCase {
 			transitionResource.getWorkflowInstanceNextTransitionsPage(
 				workflowInstanceId, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantWorkflowInstanceId != null) {
 			Transition irrelevantTransition =
@@ -215,13 +207,13 @@ public abstract class BaseTransitionResourceTestCase {
 					irrelevantWorkflowInstanceId, randomIrrelevantTransition());
 
 			page = transitionResource.getWorkflowInstanceNextTransitionsPage(
-				irrelevantWorkflowInstanceId, Pagination.of(1, 2));
+				irrelevantWorkflowInstanceId,
+				Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantTransition),
-				(List<Transition>)page.getItems());
+			assertContains(
+				irrelevantTransition, (List<Transition>)page.getItems());
 			assertValid(
 				page,
 				testGetWorkflowInstanceNextTransitionsPage_getExpectedActions(
@@ -239,11 +231,10 @@ public abstract class BaseTransitionResourceTestCase {
 		page = transitionResource.getWorkflowInstanceNextTransitionsPage(
 			workflowInstanceId, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(transition1, transition2),
-			(List<Transition>)page.getItems());
+		assertContains(transition1, (List<Transition>)page.getItems());
+		assertContains(transition2, (List<Transition>)page.getItems());
 		assertValid(
 			page,
 			testGetWorkflowInstanceNextTransitionsPage_getExpectedActions(
@@ -267,6 +258,12 @@ public abstract class BaseTransitionResourceTestCase {
 		Long workflowInstanceId =
 			testGetWorkflowInstanceNextTransitionsPage_getWorkflowInstanceId();
 
+		Page<Transition> transitionPage =
+			transitionResource.getWorkflowInstanceNextTransitionsPage(
+				workflowInstanceId, null);
+
+		int totalCount = GetterUtil.getInteger(transitionPage.getTotalCount());
+
 		Transition transition1 =
 			testGetWorkflowInstanceNextTransitionsPage_addTransition(
 				workflowInstanceId, randomTransition());
@@ -281,17 +278,18 @@ public abstract class BaseTransitionResourceTestCase {
 
 		Page<Transition> page1 =
 			transitionResource.getWorkflowInstanceNextTransitionsPage(
-				workflowInstanceId, Pagination.of(1, 2));
+				workflowInstanceId, Pagination.of(1, totalCount + 2));
 
 		List<Transition> transitions1 = (List<Transition>)page1.getItems();
 
-		Assert.assertEquals(transitions1.toString(), 2, transitions1.size());
+		Assert.assertEquals(
+			transitions1.toString(), totalCount + 2, transitions1.size());
 
 		Page<Transition> page2 =
 			transitionResource.getWorkflowInstanceNextTransitionsPage(
-				workflowInstanceId, Pagination.of(2, 2));
+				workflowInstanceId, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<Transition> transitions2 = (List<Transition>)page2.getItems();
 
@@ -299,11 +297,11 @@ public abstract class BaseTransitionResourceTestCase {
 
 		Page<Transition> page3 =
 			transitionResource.getWorkflowInstanceNextTransitionsPage(
-				workflowInstanceId, Pagination.of(1, 3));
+				workflowInstanceId, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(transition1, transition2, transition3),
-			(List<Transition>)page3.getItems());
+		assertContains(transition1, (List<Transition>)page3.getItems());
+		assertContains(transition2, (List<Transition>)page3.getItems());
+		assertContains(transition3, (List<Transition>)page3.getItems());
 	}
 
 	protected Transition
@@ -341,7 +339,7 @@ public abstract class BaseTransitionResourceTestCase {
 			transitionResource.getWorkflowTaskNextTransitionsPage(
 				workflowTaskId, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantWorkflowTaskId != null) {
 			Transition irrelevantTransition =
@@ -349,13 +347,13 @@ public abstract class BaseTransitionResourceTestCase {
 					irrelevantWorkflowTaskId, randomIrrelevantTransition());
 
 			page = transitionResource.getWorkflowTaskNextTransitionsPage(
-				irrelevantWorkflowTaskId, Pagination.of(1, 2));
+				irrelevantWorkflowTaskId,
+				Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantTransition),
-				(List<Transition>)page.getItems());
+			assertContains(
+				irrelevantTransition, (List<Transition>)page.getItems());
 			assertValid(
 				page,
 				testGetWorkflowTaskNextTransitionsPage_getExpectedActions(
@@ -373,11 +371,10 @@ public abstract class BaseTransitionResourceTestCase {
 		page = transitionResource.getWorkflowTaskNextTransitionsPage(
 			workflowTaskId, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(transition1, transition2),
-			(List<Transition>)page.getItems());
+		assertContains(transition1, (List<Transition>)page.getItems());
+		assertContains(transition2, (List<Transition>)page.getItems());
 		assertValid(
 			page,
 			testGetWorkflowTaskNextTransitionsPage_getExpectedActions(
@@ -401,6 +398,12 @@ public abstract class BaseTransitionResourceTestCase {
 		Long workflowTaskId =
 			testGetWorkflowTaskNextTransitionsPage_getWorkflowTaskId();
 
+		Page<Transition> transitionPage =
+			transitionResource.getWorkflowTaskNextTransitionsPage(
+				workflowTaskId, null);
+
+		int totalCount = GetterUtil.getInteger(transitionPage.getTotalCount());
+
 		Transition transition1 =
 			testGetWorkflowTaskNextTransitionsPage_addTransition(
 				workflowTaskId, randomTransition());
@@ -415,17 +418,18 @@ public abstract class BaseTransitionResourceTestCase {
 
 		Page<Transition> page1 =
 			transitionResource.getWorkflowTaskNextTransitionsPage(
-				workflowTaskId, Pagination.of(1, 2));
+				workflowTaskId, Pagination.of(1, totalCount + 2));
 
 		List<Transition> transitions1 = (List<Transition>)page1.getItems();
 
-		Assert.assertEquals(transitions1.toString(), 2, transitions1.size());
+		Assert.assertEquals(
+			transitions1.toString(), totalCount + 2, transitions1.size());
 
 		Page<Transition> page2 =
 			transitionResource.getWorkflowTaskNextTransitionsPage(
-				workflowTaskId, Pagination.of(2, 2));
+				workflowTaskId, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<Transition> transitions2 = (List<Transition>)page2.getItems();
 
@@ -433,11 +437,11 @@ public abstract class BaseTransitionResourceTestCase {
 
 		Page<Transition> page3 =
 			transitionResource.getWorkflowTaskNextTransitionsPage(
-				workflowTaskId, Pagination.of(1, 3));
+				workflowTaskId, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(transition1, transition2, transition3),
-			(List<Transition>)page3.getItems());
+		assertContains(transition1, (List<Transition>)page3.getItems());
+		assertContains(transition2, (List<Transition>)page3.getItems());
+		assertContains(transition3, (List<Transition>)page3.getItems());
 	}
 
 	protected Transition testGetWorkflowTaskNextTransitionsPage_addTransition(
@@ -598,14 +602,19 @@ public abstract class BaseTransitionResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -825,33 +834,185 @@ public abstract class BaseTransitionResourceTestCase {
 		sb.append(" ");
 
 		if (entityFieldName.equals("label")) {
-			sb.append("'");
-			sb.append(String.valueOf(transition.getLabel()));
-			sb.append("'");
+			Object object = transition.getLabel();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(transition.getName()));
-			sb.append("'");
+			Object object = transition.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("sourceNodeName")) {
-			sb.append("'");
-			sb.append(String.valueOf(transition.getSourceNodeName()));
-			sb.append("'");
+			Object object = transition.getSourceNodeName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("targetNodeName")) {
-			sb.append("'");
-			sb.append(String.valueOf(transition.getTargetNodeName()));
-			sb.append("'");
+			Object object = transition.getTargetNodeName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

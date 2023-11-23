@@ -58,6 +58,7 @@ exports[`Individuals Dashboard Individuals Interests renders 1`] = `
                           class="input-group-inset-item input-group-inset-item-after"
                         >
                           <button
+                            aria-label="Search"
                             class="button-root btn btn-unstyled"
                             type="button"
                           >
@@ -66,7 +67,7 @@ exports[`Individuals Dashboard Individuals Interests renders 1`] = `
                               role="presentation"
                             >
                               <use
-                                xlink:href="#search"
+                                href="#search"
                               />
                             </svg>
                           </button>
@@ -119,7 +120,7 @@ exports[`Individuals Dashboard Individuals Interests renders 1`] = `
                             role="presentation"
                           >
                             <use
-                              xlink:href="#order-arrow-down"
+                              href="#order-arrow-down"
                             />
                           </svg>
                         </span>
@@ -468,7 +469,7 @@ exports[`Individuals Dashboard Individuals Interests renders 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#caret-bottom"
+                        href="#caret-bottom"
                       />
                     </svg>
                   </button>
@@ -485,16 +486,16 @@ exports[`Individuals Dashboard Individuals Interests renders 1`] = `
                     class="page-item disabled"
                   >
                     <a
-                      class="button-root page-link btn btn-unstyled"
+                      class="button-root btn btn-unstyled page-link"
                       disabled=""
                       href="/?page=0"
                     >
                       <svg
-                        class="lexicon-icon lexicon-icon-angle-left icon-root"
+                        class="lexicon-icon lexicon-icon-angle-left-small icon-root"
                         role="presentation"
                       >
                         <use
-                          xlink:href="#angle-left"
+                          href="#angle-left-small"
                         />
                       </svg>
                     </a>
@@ -503,7 +504,7 @@ exports[`Individuals Dashboard Individuals Interests renders 1`] = `
                     class="page-item active"
                   >
                     <a
-                      class="button-root page-link btn btn-unstyled"
+                      class="button-root btn btn-unstyled page-link"
                       href="/?page=1"
                     >
                       1
@@ -513,7 +514,7 @@ exports[`Individuals Dashboard Individuals Interests renders 1`] = `
                     class="page-item"
                   >
                     <a
-                      class="button-root page-link btn btn-unstyled"
+                      class="button-root btn btn-unstyled page-link"
                       href="/?page=2"
                     >
                       2
@@ -523,7 +524,7 @@ exports[`Individuals Dashboard Individuals Interests renders 1`] = `
                     class="page-item"
                   >
                     <a
-                      class="button-root page-link btn btn-unstyled"
+                      class="button-root btn btn-unstyled page-link"
                       href="/?page=3"
                     >
                       3
@@ -533,15 +534,15 @@ exports[`Individuals Dashboard Individuals Interests renders 1`] = `
                     class="page-item"
                   >
                     <a
-                      class="button-root page-link btn btn-unstyled"
+                      class="button-root btn btn-unstyled page-link"
                       href="/?page=2"
                     >
                       <svg
-                        class="lexicon-icon lexicon-icon-angle-right icon-root"
+                        class="lexicon-icon lexicon-icon-angle-right-small icon-root"
                         role="presentation"
                       >
                         <use
-                          xlink:href="#angle-right"
+                          href="#angle-right-small"
                         />
                       </svg>
                     </a>
@@ -566,7 +567,7 @@ exports[`Individuals Dashboard Individuals Interests renders with data source em
       class="children-wrapper"
     >
       <div
-        class="no-results-root flex-grow-1 display-card"
+        class="no-results-root display-card flex-grow-1"
       >
         <div
           class="no-results-content"
@@ -579,7 +580,7 @@ exports[`Individuals Dashboard Individuals Interests renders with data source em
               role="presentation"
             >
               <use
-                xlink:href="#ac-satellite"
+                href="#ac-satellite"
               />
             </svg>
           </div>

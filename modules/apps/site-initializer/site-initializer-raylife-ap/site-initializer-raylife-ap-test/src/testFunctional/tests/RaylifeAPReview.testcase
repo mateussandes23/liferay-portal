@@ -21,7 +21,10 @@ definition {
 		task ("Create a new Raylife AP Site") {
 			Site.openSitesAdmin();
 
-			Raylife.createRaylifeSite(siteName = "Raylife D2C");
+			HeadlessSite.addSite(
+				siteName = "Raylife D2C",
+				templateName = "Raylife D2C",
+				templateType = "Site Initializer");
 
 			Raylife.createRaylifeSite(siteName = "Raylife AP");
 		}
@@ -36,7 +39,7 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		User.logoutPG();
 
@@ -44,7 +47,7 @@ definition {
 
 		Raylife.tearDownCP();
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -55,10 +58,11 @@ definition {
 	@description = "LPS-161338 - Check if the application has been set to a 'Bound' Status."
 	@priority = 3
 	test AssertNewApplicationBoundStatus {
-		property test.name.skip.portal.instance = "RaylifeAPReview#AssertNewApplicationBoundStatus";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Given that an user go to Raylife AP and start a new application") {
-			RaylifeAP.goToRaylifeUserProfileMenu(raylifeSite = "Raylife AP");
+			Navigator.openSiteURL(siteName = "Raylife AP");
 
 			RaylifeApplicationModal.openNewApplicationFlow(
 				insurance = "Personal",
@@ -92,7 +96,7 @@ definition {
 				highestEducation = "Masters",
 				lastName = "Model",
 				maritalStatus = "Single",
-				millitaryAffiliation = "None",
+				militaryAffiliation = "None",
 				occupation = "Engineer",
 				relationToContact = "Spouse");
 
@@ -121,7 +125,8 @@ definition {
 	@description = "LPS-146337 - Verify if user can see the application listed in the Applications section after a complete flow in new applications."
 	@priority = 5
 	test CanCreateNewApplication {
-		property test.name.skip.portal.instance = "RaylifeAPReview#CanCreateNewApplication";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		// Skip portal instance due to LRQA-79129. Unskip after it is resolved
 
@@ -158,7 +163,7 @@ definition {
 				highestEducation = "Masters",
 				lastName = "Model",
 				maritalStatus = "Single",
-				millitaryAffiliation = "None",
+				militaryAffiliation = "None",
 				occupation = "Engineer",
 				relationToContact = "Spouse");
 
@@ -187,12 +192,13 @@ definition {
 	@description = "LPS-161329 - Verify if user can delete a application made in New Applications."
 	@priority = 3
 	test CanDeleteIncompleteApplication {
-		property test.name.skip.portal.instance = "RaylifeAPReview#CanDeleteNewApplication";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		// Skip portal instance due to LRQA-79129. Unskip after it is resolved
 
 		task ("Given that an user created an uncompleted new application") {
-			RaylifeAP.goToRaylifeUserProfileMenu(raylifeSite = "Raylife AP");
+			Navigator.openSiteURL(siteName = "Raylife AP");
 
 			RaylifeApplicationModal.openNewApplicationFlow(
 				insurance = "Personal",
@@ -224,7 +230,7 @@ definition {
 				highestEducation = "Masters",
 				lastName = "Model",
 				maritalStatus = "Single",
-				millitaryAffiliation = "None",
+				militaryAffiliation = "None",
 				occupation = "Engineer",
 				relationToContact = "Spouse");
 

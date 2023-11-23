@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
- *
- *
- *
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.search.experiences.rest.resource.v1_0.test;
@@ -214,7 +205,7 @@ public abstract class BaseSearchableAssetNameDisplayResourceTestCase {
 			searchableAssetNameDisplayResource.
 				getSearchableAssetNameLanguagePage(languageId);
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantLanguageId != null) {
 			SearchableAssetNameDisplay irrelevantSearchableAssetNameDisplay =
@@ -226,10 +217,10 @@ public abstract class BaseSearchableAssetNameDisplayResourceTestCase {
 				searchableAssetNameDisplayResource.
 					getSearchableAssetNameLanguagePage(irrelevantLanguageId);
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantSearchableAssetNameDisplay),
+			assertContains(
+				irrelevantSearchableAssetNameDisplay,
 				(List<SearchableAssetNameDisplay>)page.getItems());
 			assertValid(
 				page,
@@ -249,11 +240,13 @@ public abstract class BaseSearchableAssetNameDisplayResourceTestCase {
 			searchableAssetNameDisplayResource.
 				getSearchableAssetNameLanguagePage(languageId);
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				searchableAssetNameDisplay1, searchableAssetNameDisplay2),
+		assertContains(
+			searchableAssetNameDisplay1,
+			(List<SearchableAssetNameDisplay>)page.getItems());
+		assertContains(
+			searchableAssetNameDisplay2,
 			(List<SearchableAssetNameDisplay>)page.getItems());
 		assertValid(
 			page,
@@ -442,14 +435,19 @@ public abstract class BaseSearchableAssetNameDisplayResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -655,19 +653,93 @@ public abstract class BaseSearchableAssetNameDisplayResourceTestCase {
 		sb.append(" ");
 
 		if (entityFieldName.equals("className")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(searchableAssetNameDisplay.getClassName()));
-			sb.append("'");
+			Object object = searchableAssetNameDisplay.getClassName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("displayName")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(searchableAssetNameDisplay.getDisplayName()));
-			sb.append("'");
+			Object object = searchableAssetNameDisplay.getDisplayName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

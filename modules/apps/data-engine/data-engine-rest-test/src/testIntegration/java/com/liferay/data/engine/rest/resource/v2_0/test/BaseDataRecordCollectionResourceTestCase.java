@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.data.engine.rest.resource.v2_0.test;
@@ -46,6 +37,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.RoleTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -312,7 +304,7 @@ public abstract class BaseDataRecordCollectionResourceTestCase {
 					dataDefinitionId, RandomTestUtil.randomString(),
 					Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantDataDefinitionId != null) {
 			DataRecordCollection irrelevantDataRecordCollection =
@@ -323,12 +315,13 @@ public abstract class BaseDataRecordCollectionResourceTestCase {
 			page =
 				dataRecordCollectionResource.
 					getDataDefinitionDataRecordCollectionsPage(
-						irrelevantDataDefinitionId, null, Pagination.of(1, 2));
+						irrelevantDataDefinitionId, null,
+						Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantDataRecordCollection),
+			assertContains(
+				irrelevantDataRecordCollection,
 				(List<DataRecordCollection>)page.getItems());
 			assertValid(
 				page,
@@ -349,11 +342,12 @@ public abstract class BaseDataRecordCollectionResourceTestCase {
 				getDataDefinitionDataRecordCollectionsPage(
 					dataDefinitionId, null, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(dataRecordCollection1, dataRecordCollection2),
-			(List<DataRecordCollection>)page.getItems());
+		assertContains(
+			dataRecordCollection1, (List<DataRecordCollection>)page.getItems());
+		assertContains(
+			dataRecordCollection2, (List<DataRecordCollection>)page.getItems());
 		assertValid(
 			page,
 			testGetDataDefinitionDataRecordCollectionsPage_getExpectedActions(
@@ -393,6 +387,14 @@ public abstract class BaseDataRecordCollectionResourceTestCase {
 		Long dataDefinitionId =
 			testGetDataDefinitionDataRecordCollectionsPage_getDataDefinitionId();
 
+		Page<DataRecordCollection> dataRecordCollectionPage =
+			dataRecordCollectionResource.
+				getDataDefinitionDataRecordCollectionsPage(
+					dataDefinitionId, null, null);
+
+		int totalCount = GetterUtil.getInteger(
+			dataRecordCollectionPage.getTotalCount());
+
 		DataRecordCollection dataRecordCollection1 =
 			testGetDataDefinitionDataRecordCollectionsPage_addDataRecordCollection(
 				dataDefinitionId, randomDataRecordCollection());
@@ -408,21 +410,21 @@ public abstract class BaseDataRecordCollectionResourceTestCase {
 		Page<DataRecordCollection> page1 =
 			dataRecordCollectionResource.
 				getDataDefinitionDataRecordCollectionsPage(
-					dataDefinitionId, null, Pagination.of(1, 2));
+					dataDefinitionId, null, Pagination.of(1, totalCount + 2));
 
 		List<DataRecordCollection> dataRecordCollections1 =
 			(List<DataRecordCollection>)page1.getItems();
 
 		Assert.assertEquals(
-			dataRecordCollections1.toString(), 2,
+			dataRecordCollections1.toString(), totalCount + 2,
 			dataRecordCollections1.size());
 
 		Page<DataRecordCollection> page2 =
 			dataRecordCollectionResource.
 				getDataDefinitionDataRecordCollectionsPage(
-					dataDefinitionId, null, Pagination.of(2, 2));
+					dataDefinitionId, null, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<DataRecordCollection> dataRecordCollections2 =
 			(List<DataRecordCollection>)page2.getItems();
@@ -434,12 +436,17 @@ public abstract class BaseDataRecordCollectionResourceTestCase {
 		Page<DataRecordCollection> page3 =
 			dataRecordCollectionResource.
 				getDataDefinitionDataRecordCollectionsPage(
-					dataDefinitionId, null, Pagination.of(1, 3));
+					dataDefinitionId, null,
+					Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				dataRecordCollection1, dataRecordCollection2,
-				dataRecordCollection3),
+		assertContains(
+			dataRecordCollection1,
+			(List<DataRecordCollection>)page3.getItems());
+		assertContains(
+			dataRecordCollection2,
+			(List<DataRecordCollection>)page3.getItems());
+		assertContains(
+			dataRecordCollection3,
 			(List<DataRecordCollection>)page3.getItems());
 	}
 
@@ -1032,14 +1039,19 @@ public abstract class BaseDataRecordCollectionResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1292,11 +1304,47 @@ public abstract class BaseDataRecordCollectionResourceTestCase {
 		}
 
 		if (entityFieldName.equals("dataRecordCollectionKey")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					dataRecordCollection.getDataRecordCollectionKey()));
-			sb.append("'");
+			Object object = dataRecordCollection.getDataRecordCollectionKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

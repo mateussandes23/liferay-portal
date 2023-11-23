@@ -18,15 +18,20 @@ definition {
 	var testSiteName = "Testray 2";
 
 	setUp {
-		task ("Login and create a Testray Site") {
+		task ("Set up instance and sign in") {
 			TestCase.setUpPortalInstance();
 
 			User.firstLoginPG();
-
-			Testray.addTestraySite(siteName = ${testSiteName});
 		}
 
-		task ("create all objects: projects, routine, teams, components, cases, case type, enviroment factors, product version, build, category and options") {
+		task ("Create a new Testray Site") {
+			HeadlessSite.addSite(
+				siteName = ${testSiteName},
+				templateName = "Testray",
+				templateType = "Site Initializer");
+		}
+
+		task ("create project, routine, team, component, case, case type, enviroment factor, product version, build, category and option via API") {
 			JSONTestray.addProject(
 				projectDescription = "Project Description 1",
 				projectName = ${projectName});
@@ -78,36 +83,36 @@ definition {
 		task ("Go to the build page") {
 			ApplicationsMenu.gotoSite(site = ${testSiteName});
 
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 
-			Testray.goToProjectPage(projectName = ${projectName});
+			Testray.clickTableEntry(tableEntry = ${projectName});
 
-			TestrayRoutines.goToRoutine(routineName = ${routineName});
+			Testray.clickTableEntry(tableEntry = ${routineName});
 		}
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		JSONTestrayAPI.deleteObjectViaAPI(
-			object = "routines",
-			objectName = ${routineName});
+		task ("Delete routine, case type, factor categorie and project via API, Testray Site and Client Extensions") {
+			JSONTestrayAPI.deleteObjectViaAPI(
+				object = "routines",
+				objectName = ${routineName});
 
-		JSONTestrayAPI.deleteObjectViaAPI(
-			object = "casetypes",
-			objectName = ${caseType});
+			JSONTestrayAPI.deleteObjectViaAPI(
+				object = "casetypes",
+				objectName = ${caseType});
 
-		JSONTestrayAPI.deleteObjectViaAPI(
-			object = "factorcategories",
-			objectName = "Category 1");
+			JSONTestrayAPI.deleteObjectViaAPI(
+				object = "factorcategories",
+				objectName = "Category 1");
 
-		JSONTestrayAPI.deleteProject(projectName = ${projectName});
+			JSONTestrayAPI.deleteProject(projectName = ${projectName});
 
-		Testray.testrayApisTearDown();
+			Testray.testrayApisTearDown();
+		}
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 	}
@@ -116,33 +121,22 @@ definition {
 	@priority = 3
 	test AdminCanFilterByBuildName {
 		task ("Given that the user has two builds different in the table") {
-			AssertElementPresent(
-				key_projectName = "Build 1",
-				locator1 = "Testray#ITEM_NAME");
-
-			AssertElementPresent(
-				key_projectName = "Build 2",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = "Build 1,Build 2");
 		}
 
 		task ("When the user select the build 2 in the filter") {
-			TestrayFilter.clickFilter();
-
-			TestrayFilter.typeFilter(
-				label = "Build Name",
-				value = "Build 2");
+			TestrayFilter.filterResults(
+				fieldType = "input",
+				inputFieldLabel = "Build Name",
+				inputValue = "Build 2");
 		}
 
 		task ("Then the user see only build 2 in the table") {
-			AssertElementPresent(
-				key_projectName = "Build 2",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = "Build 2");
 		}
 
 		task ("And do not see the build 1 in the table") {
-			AssertElementNotPresent(
-				key_projectName = "Build 1",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryListNotPresent(listEntry = "Build 1");
 		}
 	}
 
@@ -150,36 +144,22 @@ definition {
 	@priority = 3
 	test AdminCanFilterByProductVersion {
 		task ("Given that the user has two builds with different versions in the table") {
-			AssertElementPresent(
-				key_projectName = "7.0",
-				locator1 = "Testray#ITEM_NAME");
-
-			AssertElementPresent(
-				key_projectName = "1.2",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = "7.0,1.2");
 		}
 
 		task ("When the user select product version 7.0 in the filter") {
-			TestrayFilter.clickFilter();
-
-			Select(
-				locator1 = "Select#SELECT_FIELD_LABEL",
+			TestrayFilter.filterResults(
+				fieldType = "select",
 				selectFieldLabel = "Product Version",
-				value1 = "7.0");
-
-			Button.click(button = "Apply");
+				selectValue = "7.0");
 		}
 
 		task ("Then the user see only products with version 7.0 in the table") {
-			AssertElementPresent(
-				key_projectName = "7.0",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = "7.0");
 		}
 
 		task ("And do not see the products with other versions in the table") {
-			AssertElementNotPresent(
-				key_projectName = "1.2",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryListNotPresent(listEntry = "1.2");
 		}
 	}
 
@@ -187,36 +167,20 @@ definition {
 	@priority = 4
 	test AdminCanFilterWithMultipleOptions {
 		task ("When the user select multiple options in the filter") {
-			TestrayFilter.clickFilter();
-
-			Select(
-				locator1 = "Select#SELECT_FIELD_LABEL",
+			TestrayFilter.filterResults(
+				fieldType = "input,select",
+				inputFieldLabel = "Build Name",
+				inputValue = "Build 1",
 				selectFieldLabel = "Product Version",
-				value1 = "7.0");
-
-			TestrayFilter.typeFilter(
-				label = "Build Name",
-				value = "Build 1");
+				selectValue = "7.0");
 		}
 
 		task ("Then the user see only build 1 and version 7.0 in the table") {
-			AssertElementPresent(
-				key_projectName = "Build 1",
-				locator1 = "Testray#ITEM_NAME");
-
-			AssertElementPresent(
-				key_projectName = "7.0",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = "Build 1,7.0");
 		}
 
 		task ("And do not see the build 2 and version 1.2 in the table") {
-			AssertElementNotPresent(
-				key_projectName = "Build 2",
-				locator1 = "Testray#ITEM_NAME");
-
-			AssertElementNotPresent(
-				key_projectName = "1.2",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryListNotPresent(listEntry = "Build 2,1.2");
 		}
 	}
 
@@ -224,27 +188,18 @@ definition {
 	@priority = 3
 	test AdminCanNotFilterForNonExistentBuildName {
 		task ("Given that the user has two builds that existent in the table") {
-			AssertElementPresent(
-				key_projectName = "Build 1",
-				locator1 = "Testray#ITEM_NAME");
-
-			AssertElementPresent(
-				key_projectName = "Build 2",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = "Build 1,Build 2");
 		}
 
 		task ("When filtering a build by his non-existent name") {
-			TestrayFilter.clickFilter();
-
-			TestrayFilter.typeFilter(
-				label = "Build Name",
-				value = "Build 3");
+			TestrayFilter.filterResults(
+				fieldType = "input",
+				inputFieldLabel = "Build Name",
+				inputValue = "Build 3");
 		}
 
 		task ("Then the user is not present in the build table") {
-			AssertElementNotPresent(
-				key_projectName = "Build 3",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryListNotPresent(listEntry = "Build 3");
 		}
 	}
 
@@ -254,7 +209,7 @@ definition {
 		task ("When the user searches for a field called product version") {
 			TestrayFilter.clickFilter();
 
-			TestrayFilter.searchFilter(value = "Product Version");
+			TestrayFilter.searchFilter(filterName = "Product Version");
 		}
 
 		task ("Then the user can see the field label called product version") {
@@ -264,7 +219,7 @@ definition {
 		}
 
 		task ("When the user searches for a field that does not exist") {
-			TestrayFilter.searchFilter(value = "Product Version 2");
+			TestrayFilter.searchFilter(filterName = "Product Version 2");
 		}
 
 		task ("Then the user can no more see the label called product version in the filter") {

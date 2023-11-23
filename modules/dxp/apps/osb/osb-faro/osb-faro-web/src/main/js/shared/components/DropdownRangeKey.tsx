@@ -5,10 +5,11 @@ import DatePicker from './date-picker';
 import getCN from 'classnames';
 import moment from 'moment';
 import React, {useEffect, useState} from 'react';
-import {FORMAT} from 'shared/util/date';
+import {DEFAULT_DATE_FORMAT} from 'shared/util/date';
 import {MomentDateRange} from 'shared/components/DateRangeInput';
 import {RangeKeyTimeRanges} from 'shared/util/constants';
 import {RangeSelectors} from 'shared/types';
+import {useHistory} from 'react-router-dom';
 
 const {
 	Last7Days,
@@ -18,6 +19,17 @@ const {
 	Last90Days,
 	Yesterday
 } = RangeKeyTimeRanges;
+
+const initialRangeKeys = [Last24Hours, Last7Days, Last30Days, Last90Days];
+
+const legacyRangeKeys = [
+	Last24Hours,
+	Yesterday,
+	Last7Days,
+	Last28Days,
+	Last30Days,
+	Last90Days
+];
 
 type Item = {
 	description?: string;
@@ -41,7 +53,10 @@ const DropdownRangeKey: React.FC<DropdownRangeKeyIProps> = ({
 	items,
 	legacy = true, // legacy can be removed once we convert all uses of DropdownRangeKey to include the new values.
 	onChange,
-	rangeKeys = [Last24Hours, Last7Days, Last30Days, Last90Days],
+	/**
+	 * When legacy props is true, rangeKeys will be ignored.
+	 */
+	rangeKeys = initialRangeKeys,
 	rangeSelectors: {rangeEnd, rangeKey, rangeStart} = {
 		rangeEnd: '',
 		rangeKey: Last30Days,
@@ -50,11 +65,30 @@ const DropdownRangeKey: React.FC<DropdownRangeKeyIProps> = ({
 }) => {
 	const [active, setActive] = useState(false);
 	const [customDateRange, setCustomDateRange] = useState<MomentDateRange>({
-		end: rangeEnd ? moment(rangeEnd, FORMAT) : null,
-		start: rangeStart ? moment(rangeStart, FORMAT) : null
+		end: rangeEnd ? moment(rangeEnd, DEFAULT_DATE_FORMAT) : null,
+		start: rangeStart ? moment(rangeStart, DEFAULT_DATE_FORMAT) : null
 	});
 	const [seeMore, setSeeMore] = useState(false);
 	const [showDatePicker, setShowDatePicker] = useState(false);
+	const history = useHistory();
+
+	useEffect(() => {
+		const unlisten = history.listen(location => {
+			const query = new URLSearchParams(location.search);
+
+			if (query.get('downloadReport')) {
+				onChange({
+					rangeEnd: query.get('rangeEnd'),
+					rangeKey: RangeKeyTimeRanges.CustomRange,
+					rangeStart: query.get('rangeStart')
+				});
+			}
+		});
+
+		return () => {
+			unlisten();
+		};
+	}, []);
 
 	useEffect(() => {
 		if (customDateRange && customDateRange.end && customDateRange.start) {
@@ -66,9 +100,9 @@ const DropdownRangeKey: React.FC<DropdownRangeKeyIProps> = ({
 			};
 
 			onChange({
-				rangeEnd: customDateRange.end.format(FORMAT),
+				rangeEnd: customDateRange.end.format(DEFAULT_DATE_FORMAT),
 				rangeKey: dateRangeItem.value,
-				rangeStart: customDateRange.start.format(FORMAT)
+				rangeStart: customDateRange.start.format(DEFAULT_DATE_FORMAT)
 			});
 
 			setActive(false);
@@ -85,17 +119,15 @@ const DropdownRangeKey: React.FC<DropdownRangeKeyIProps> = ({
 	const filterItems = () => {
 		if (legacy) {
 			return items.filter(({value}) =>
-				[
-					Last24Hours,
-					Yesterday,
-					Last7Days,
-					Last28Days,
-					Last30Days,
-					Last90Days
-				].includes(value as RangeKeyTimeRanges)
+				legacyRangeKeys.includes(value as RangeKeyTimeRanges)
 			);
 		} else if (seeMore) {
-			return items;
+			return items.filter(
+				item =>
+					!initialRangeKeys
+						.filter(value => !rangeKeys.includes(value))
+						.includes(item.value)
+			);
 		}
 
 		return items.filter(

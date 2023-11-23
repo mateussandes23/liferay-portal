@@ -12,9 +12,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -367,7 +367,9 @@ definition {
 
 		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document Title");
 
-		DMDocument.viewDocumentTypePG(imageName = "Document_1.jpg");
+		DMDocument.viewDocumentTypePG(
+			imageName = "Document_1.jpg",
+			panelName = "DM Document Type Name");
 	}
 
 	@description = "Verify if user can upload an image from local storage"
@@ -389,7 +391,9 @@ definition {
 
 		DMNavigator.gotoDocumentCP(dmDocumentTitle = "DM Document Title");
 
-		DMDocument.viewDocumentTypePG(imageName = "Document_1.jpg");
+		DMDocument.viewDocumentTypePG(
+			imageName = "Document_1.jpg",
+			panelName = "DM Document Type Name");
 	}
 
 	@description = "Verify if user is not allowed to upload a file that is not an image"

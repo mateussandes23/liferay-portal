@@ -50,6 +50,7 @@ exports[`AccountDetails should render 1`] = `
                   role="presentation"
                 >
                   <button
+                    aria-label="Ascending"
                     class="btn-root nav-link nav-link-monospaced btn btn-outline-borderless btn-outline-unstyled"
                     type="button"
                   >
@@ -58,7 +59,7 @@ exports[`AccountDetails should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#order-arrow-ascending"
+                        href="#order-arrow-ascending"
                       />
                     </svg>
                   </button>
@@ -83,6 +84,7 @@ exports[`AccountDetails should render 1`] = `
                       class="input-group-inset-item input-group-inset-item-after"
                     >
                       <button
+                        aria-label="Search"
                         class="button-root btn btn-unstyled"
                         type="button"
                       >
@@ -91,7 +93,7 @@ exports[`AccountDetails should render 1`] = `
                           role="presentation"
                         >
                           <use
-                            xlink:href="#search"
+                            href="#search"
                           />
                         </svg>
                       </button>
@@ -160,7 +162,7 @@ exports[`AccountDetails should render 1`] = `
                         role="presentation"
                       >
                         <use
-                          xlink:href="#order-arrow-up"
+                          href="#order-arrow-up"
                         />
                       </svg>
                     </span>

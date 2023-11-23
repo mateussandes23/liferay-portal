@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.account.service.test;
@@ -35,6 +26,7 @@ import com.liferay.object.exception.ObjectValidationRuleEngineException;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectValidationRuleLocalService;
+import com.liferay.object.validation.rule.ObjectValidationRuleResult;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
@@ -43,7 +35,6 @@ import com.liferay.portal.kernel.exception.ModelListenerException;
 import com.liferay.portal.kernel.model.Address;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
-import com.liferay.portal.kernel.model.ListType;
 import com.liferay.portal.kernel.model.ListTypeConstants;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.model.OrganizationConstants;
@@ -64,7 +55,6 @@ import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
 import com.liferay.portal.kernel.service.WorkflowInstanceLinkLocalService;
-import com.liferay.portal.kernel.settings.SettingsFactoryUtil;
 import com.liferay.portal.kernel.test.rule.DataGuard;
 import com.liferay.portal.kernel.test.util.OrganizationTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -86,6 +76,7 @@ import com.liferay.portal.vulcan.util.LocalizedMapUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -189,16 +180,18 @@ public class AccountEntryLocalServiceTest {
 		Class<?> clazz = getClass();
 
 		_objectValidationRuleLocalService.addObjectValidationRule(
-			TestPropsValues.getUserId(),
+			StringPool.BLANK, TestPropsValues.getUserId(),
 			objectDefinition.getObjectDefinitionId(), true,
 			ObjectValidationRuleConstants.ENGINE_TYPE_GROOVY,
 			LocalizedMapUtil.getLocalizedMap("This name is invalid."),
 			LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+			ObjectValidationRuleConstants.OUTPUT_TYPE_FULL_VALIDATION,
 			StringUtil.read(
 				clazz,
 				StringBundler.concat(
 					"dependencies/", clazz.getSimpleName(), StringPool.PERIOD,
-					testName.getMethodName(), ".groovy")));
+					testName.getMethodName(), ".groovy")),
+			false, Collections.emptyList());
 
 		try {
 			AccountEntryTestUtil.addAccountEntry(
@@ -207,13 +200,29 @@ public class AccountEntryLocalServiceTest {
 			Assert.fail();
 		}
 		catch (ModelListenerException modelListenerException) {
-			String message = modelListenerException.getMessage();
-
-			Assert.assertTrue(message.contains("This name is invalid."));
-
 			Assert.assertTrue(
 				modelListenerException.getCause() instanceof
-					ObjectValidationRuleEngineException.InvalidFields);
+					ObjectValidationRuleEngineException);
+
+			ObjectValidationRuleEngineException
+				objectValidationRuleEngineException =
+					(ObjectValidationRuleEngineException)
+						modelListenerException.getCause();
+
+			List<ObjectValidationRuleResult> objectValidationRuleResults =
+				objectValidationRuleEngineException.
+					getObjectValidationRuleResults();
+
+			Assert.assertEquals(
+				objectValidationRuleResults.toString(), 1,
+				objectValidationRuleResults.size());
+
+			ObjectValidationRuleResult objectValidationRuleResult =
+				objectValidationRuleResults.get(0);
+
+			Assert.assertEquals(
+				"This name is invalid.",
+				objectValidationRuleResult.getErrorMessage());
 		}
 
 		try {
@@ -223,13 +232,29 @@ public class AccountEntryLocalServiceTest {
 			Assert.fail();
 		}
 		catch (ModelListenerException modelListenerException) {
-			String message = modelListenerException.getMessage();
-
-			Assert.assertTrue(message.contains("This name is invalid."));
-
 			Assert.assertTrue(
 				modelListenerException.getCause() instanceof
-					ObjectValidationRuleEngineException.InvalidFields);
+					ObjectValidationRuleEngineException);
+
+			ObjectValidationRuleEngineException
+				objectValidationRuleEngineException =
+					(ObjectValidationRuleEngineException)
+						modelListenerException.getCause();
+
+			List<ObjectValidationRuleResult> objectValidationRuleResults =
+				objectValidationRuleEngineException.
+					getObjectValidationRuleResults();
+
+			Assert.assertEquals(
+				objectValidationRuleResults.toString(), 1,
+				objectValidationRuleResults.size());
+
+			ObjectValidationRuleResult objectValidationRuleResult =
+				objectValidationRuleResults.get(0);
+
+			Assert.assertEquals(
+				"This name is invalid.",
+				objectValidationRuleResult.getErrorMessage());
 		}
 	}
 
@@ -350,8 +375,7 @@ public class AccountEntryLocalServiceTest {
 						AccountEntryEmailDomainsConfiguration.class.getName(),
 						HashMapDictionaryBuilder.<String, Object>put(
 							"blockedEmailDomains", blockedEmailAddressDomain
-						).build(),
-						SettingsFactoryUtil.getSettingsFactory())) {
+						).build())) {
 
 			for (String domain : invalidDomains) {
 				try {
@@ -473,15 +497,15 @@ public class AccountEntryLocalServiceTest {
 	public void testDeleteAccountEntryWithAddress() throws Exception {
 		AccountEntry accountEntry = AccountEntryTestUtil.addAccountEntry();
 
-		ListType listType = _listTypeLocalService.getListType(
-			"personal", ListTypeConstants.CONTACT_ADDRESS);
-
 		Address address = _addressLocalService.addAddress(
 			null, accountEntry.getUserId(), AccountEntry.class.getName(),
 			accountEntry.getAccountEntryId(), RandomTestUtil.randomString(),
 			RandomTestUtil.randomString(), RandomTestUtil.randomString(), null,
 			null, RandomTestUtil.randomString(), null, 0, 0,
-			listType.getListTypeId(), false, false, "1234567890",
+			_listTypeLocalService.getListTypeId(
+				accountEntry.getCompanyId(), "personal",
+				ListTypeConstants.CONTACT_ADDRESS),
+			false, false, "1234567890",
 			ServiceContextTestUtil.getServiceContext());
 
 		Assert.assertNotNull(address);

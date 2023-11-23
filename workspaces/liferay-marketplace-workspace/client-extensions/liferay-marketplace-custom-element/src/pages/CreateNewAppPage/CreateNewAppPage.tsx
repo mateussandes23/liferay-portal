@@ -1,3 +1,10 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+import {useSearchParams} from 'react-router-dom';
+
 import documentIcon from '../../assets/icons/document_icon.svg';
 import downloadIcon from '../../assets/icons/download_icon.svg';
 import {Header} from '../../components/Header/Header';
@@ -13,11 +20,10 @@ interface CreateNewAppPageProps {
 
 export function CreateNewAppPage({onClickContinue}: CreateNewAppPageProps) {
 	const [_, dispatch] = useAppContext();
-	const queryString = window.location.search;
 
-	const urlParams = new URLSearchParams(queryString);
-	
-	const catalogId = urlParams.get('catalogId');
+	const [searchParams] = useSearchParams();
+
+	const catalogId = searchParams.get('catalogId');
 
 	return (
 		<div className="create-new-app-container">

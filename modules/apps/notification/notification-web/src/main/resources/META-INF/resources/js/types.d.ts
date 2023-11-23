@@ -1,32 +1,24 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 type Locale = Liferay.Language.Locale;
 type LocalizedValue<T> = Liferay.Language.LocalizedValue<T>;
 
-interface LabelValueObject {
+interface LabelValueObject<T = string> {
 	label: string;
-	value: string;
+	value: T;
 }
 
-type editorTypeOptions = 'freemarker' | 'richText';
+type EditorTypeOptions = 'freemarker' | 'richText';
 
 type EmailRecipients = {
 	bcc: string;
 	cc: string;
 	from: string;
 	fromName: LocalizedValue<string>;
+	singleRecipient: boolean;
 	to: LocalizedValue<string>;
 };
 
@@ -37,7 +29,7 @@ interface NotificationTemplate {
 	attachmentObjectFieldIds: string[] | number[];
 	body: LocalizedValue<string>;
 	description: string;
-	editorType: editorTypeOptions;
+	editorType: EditorTypeOptions;
 	externalReferenceCode: string;
 	name: string;
 	objectDefinitionExternalReferenceCode: string;
@@ -48,6 +40,7 @@ interface NotificationTemplate {
 		| Partial<UserNotificationRecipients>[]
 		| [];
 	subject: LocalizedValue<string>;
+	system: boolean;
 	type: string;
 }
 

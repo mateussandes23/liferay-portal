@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.admin.address.internal.resource.v1_0;
@@ -20,6 +11,7 @@ import com.liferay.petra.function.UnsafeBiConsumer;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.GroupedModel;
 import com.liferay.portal.kernel.search.Sort;
@@ -29,9 +21,12 @@ import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
+import com.liferay.portal.kernel.servlet.ServletContextPool;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.SetUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.odata.filter.ExpressionConvert;
 import com.liferay.portal.odata.filter.FilterParser;
@@ -658,27 +653,33 @@ public abstract class BaseCountryResourceImpl
 			Collection<Country> countries, Map<String, Serializable> parameters)
 		throws Exception {
 
-		UnsafeConsumer<Country, Exception> countryUnsafeConsumer = null;
+		UnsafeFunction<Country, Country, Exception> countryUnsafeFunction =
+			null;
 
 		String createStrategy = (String)parameters.getOrDefault(
 			"createStrategy", "INSERT");
 
-		if ("INSERT".equalsIgnoreCase(createStrategy)) {
-			countryUnsafeConsumer = country -> postCountry(country);
+		if (StringUtil.equalsIgnoreCase(createStrategy, "INSERT")) {
+			countryUnsafeFunction = country -> postCountry(country);
 		}
 
-		if (countryUnsafeConsumer == null) {
+		if (countryUnsafeFunction == null) {
 			throw new NotSupportedException(
 				"Create strategy \"" + createStrategy +
 					"\" is not supported for Country");
 		}
 
-		if (contextBatchUnsafeConsumer != null) {
-			contextBatchUnsafeConsumer.accept(countries, countryUnsafeConsumer);
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(
+				countries, countryUnsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
+			contextBatchUnsafeConsumer.accept(
+				countries, countryUnsafeFunction::apply);
 		}
 		else {
 			for (Country country : countries) {
-				countryUnsafeConsumer.accept(country);
+				countryUnsafeFunction.apply(country);
 			}
 		}
 	}
@@ -758,37 +759,43 @@ public abstract class BaseCountryResourceImpl
 			Collection<Country> countries, Map<String, Serializable> parameters)
 		throws Exception {
 
-		UnsafeConsumer<Country, Exception> countryUnsafeConsumer = null;
+		UnsafeFunction<Country, Country, Exception> countryUnsafeFunction =
+			null;
 
 		String updateStrategy = (String)parameters.getOrDefault(
 			"updateStrategy", "UPDATE");
 
-		if ("PARTIAL_UPDATE".equalsIgnoreCase(updateStrategy)) {
-			countryUnsafeConsumer = country -> patchCountry(
+		if (StringUtil.equalsIgnoreCase(updateStrategy, "PARTIAL_UPDATE")) {
+			countryUnsafeFunction = country -> patchCountry(
 				country.getId() != null ? country.getId() :
 					_parseLong((String)parameters.get("countryId")),
 				country);
 		}
 
-		if ("UPDATE".equalsIgnoreCase(updateStrategy)) {
-			countryUnsafeConsumer = country -> putCountry(
+		if (StringUtil.equalsIgnoreCase(updateStrategy, "UPDATE")) {
+			countryUnsafeFunction = country -> putCountry(
 				country.getId() != null ? country.getId() :
 					_parseLong((String)parameters.get("countryId")),
 				country);
 		}
 
-		if (countryUnsafeConsumer == null) {
+		if (countryUnsafeFunction == null) {
 			throw new NotSupportedException(
 				"Update strategy \"" + updateStrategy +
 					"\" is not supported for Country");
 		}
 
-		if (contextBatchUnsafeConsumer != null) {
-			contextBatchUnsafeConsumer.accept(countries, countryUnsafeConsumer);
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(
+				countries, countryUnsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
+			contextBatchUnsafeConsumer.accept(
+				countries, countryUnsafeFunction::apply);
 		}
 		else {
 			for (Country country : countries) {
-				countryUnsafeConsumer.accept(country);
+				countryUnsafeFunction.apply(country);
 			}
 		}
 	}
@@ -813,6 +820,14 @@ public abstract class BaseCountryResourceImpl
 		this.contextAcceptLanguage = contextAcceptLanguage;
 	}
 
+	public void setContextBatchUnsafeBiConsumer(
+		UnsafeBiConsumer
+			<Collection<Country>, UnsafeFunction<Country, Country, Exception>,
+			 Exception> contextBatchUnsafeBiConsumer) {
+
+		this.contextBatchUnsafeBiConsumer = contextBatchUnsafeBiConsumer;
+	}
+
 	public void setContextBatchUnsafeConsumer(
 		UnsafeBiConsumer
 			<Collection<Country>, UnsafeConsumer<Country, Exception>, Exception>
@@ -829,6 +844,13 @@ public abstract class BaseCountryResourceImpl
 
 	public void setContextHttpServletRequest(
 		HttpServletRequest contextHttpServletRequest) {
+
+		if ((contextHttpServletRequest != null) &&
+			(contextHttpServletRequest.getAttribute(WebKeys.CTX) == null)) {
+
+			contextHttpServletRequest.setAttribute(
+				WebKeys.CTX, ServletContextPool.get(StringPool.BLANK));
+		}
 
 		this.contextHttpServletRequest = contextHttpServletRequest;
 	}
@@ -1074,6 +1096,9 @@ public abstract class BaseCountryResourceImpl
 	}
 
 	protected AcceptLanguage contextAcceptLanguage;
+	protected UnsafeBiConsumer
+		<Collection<Country>, UnsafeFunction<Country, Country, Exception>,
+		 Exception> contextBatchUnsafeBiConsumer;
 	protected UnsafeBiConsumer
 		<Collection<Country>, UnsafeConsumer<Country, Exception>, Exception>
 			contextBatchUnsafeConsumer;

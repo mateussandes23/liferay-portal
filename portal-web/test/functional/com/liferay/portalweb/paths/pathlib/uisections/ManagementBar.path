@@ -17,7 +17,7 @@
 </tr>
 <tr>
 	<td>FILTER_AND_ORDER</td>
-	<td>//nav[contains(@class,'management-bar')]//*[*[normalize-space(text())='Filter and Order']]</td>
+	<td>//nav[contains(@class,'management-bar')]//*[self::button or self::a][.//*[normalize-space(text())='Filter and Order']]</td>
 	<td></td>
 </tr>
 <tr>
@@ -83,6 +83,11 @@
 <tr>
 	<td>REMOVE</td>
 	<td>//nav[contains(@class,'management-bar')]//button[contains(@title,'Remove')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>SEARCH_FILTER_LABEL_X</td>
+	<td>//span[contains(@class,'label-item') and contains(.,'${key_filter}')]/..//button</td>
 	<td></td>
 </tr>
 <tr>

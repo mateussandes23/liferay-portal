@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.catalog.internal.resource.v1_0;
@@ -53,11 +44,13 @@ import com.liferay.commerce.product.type.CPType;
 import com.liferay.commerce.product.type.CPTypeRegistry;
 import com.liferay.commerce.product.type.virtual.constants.VirtualCPTypeConstants;
 import com.liferay.commerce.product.type.virtual.service.CPDefinitionVirtualSettingService;
+import com.liferay.commerce.service.CPDAvailabilityEstimateService;
 import com.liferay.commerce.service.CPDefinitionInventoryService;
 import com.liferay.commerce.shop.by.diagram.constants.CSDiagramCPTypeConstants;
 import com.liferay.commerce.shop.by.diagram.service.CSDiagramEntryService;
 import com.liferay.commerce.shop.by.diagram.service.CSDiagramPinService;
 import com.liferay.commerce.shop.by.diagram.service.CSDiagramSettingService;
+import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.expando.kernel.service.ExpandoColumnLocalService;
 import com.liferay.expando.kernel.service.ExpandoTableLocalService;
 import com.liferay.headless.commerce.admin.catalog.dto.v1_0.Attachment;
@@ -102,12 +95,13 @@ import com.liferay.headless.commerce.core.util.ExpandoUtil;
 import com.liferay.headless.commerce.core.util.LanguageUtils;
 import com.liferay.headless.commerce.core.util.ServiceContextHelper;
 import com.liferay.headless.common.spi.odata.entity.EntityFieldsUtil;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.change.tracking.CTAware;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.module.configuration.ConfigurationProvider;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
@@ -119,6 +113,8 @@ import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.odata.entity.EntityModel;
@@ -485,7 +481,86 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 		ProductShippingConfiguration productShippingConfiguration =
 			_getProductShippingConfiguration(product);
 		ProductSubscriptionConfiguration productSubscriptionConfiguration =
-			_getProductSubscriptionConfiguration(product);
+			product.getSubscriptionConfiguration();
+
+		boolean deliverySubscriptionEnable = false;
+		int deliverySubscriptionLength = 1;
+		long deliverySubscriptionMaxSubscriptionCycles = 0;
+		UnicodeProperties deliverySubscriptionTypeSettingsUnicodeProperties =
+			null;
+		String deliverySubscriptionTypeValue = StringPool.BLANK;
+		boolean subscriptionEnable = false;
+		int subscriptionLength = 1;
+		long subscriptionMaxSubscriptionCycles = 0;
+		UnicodeProperties subscriptionTypeSettingsUnicodeProperties = null;
+		String subscriptionTypeValue = StringPool.BLANK;
+
+		if (productSubscriptionConfiguration != null) {
+			deliverySubscriptionEnable = GetterUtil.getBoolean(
+				productSubscriptionConfiguration.
+					getDeliverySubscriptionEnable(),
+				deliverySubscriptionEnable);
+			deliverySubscriptionLength = GetterUtil.getInteger(
+				productSubscriptionConfiguration.
+					getDeliverySubscriptionLength(),
+				deliverySubscriptionLength);
+			deliverySubscriptionMaxSubscriptionCycles = GetterUtil.getLong(
+				productSubscriptionConfiguration.
+					getDeliverySubscriptionNumberOfLength(),
+				deliverySubscriptionMaxSubscriptionCycles);
+
+			if (Validator.isNotNull(
+					productSubscriptionConfiguration.
+						getDeliverySubscriptionTypeSettings())) {
+
+				deliverySubscriptionTypeSettingsUnicodeProperties =
+					UnicodePropertiesBuilder.create(
+						productSubscriptionConfiguration.
+							getDeliverySubscriptionTypeSettings(),
+						true
+					).build();
+			}
+
+			ProductSubscriptionConfiguration.DeliverySubscriptionType
+				deliverySubscriptionType =
+					productSubscriptionConfiguration.
+						getDeliverySubscriptionType();
+
+			if (deliverySubscriptionType != null) {
+				deliverySubscriptionTypeValue =
+					deliverySubscriptionType.getValue();
+			}
+
+			subscriptionEnable = GetterUtil.getBoolean(
+				productSubscriptionConfiguration.getEnable(),
+				subscriptionEnable);
+			subscriptionLength = GetterUtil.getInteger(
+				productSubscriptionConfiguration.getLength(),
+				subscriptionLength);
+			subscriptionMaxSubscriptionCycles = GetterUtil.getLong(
+				productSubscriptionConfiguration.getNumberOfLength(),
+				subscriptionMaxSubscriptionCycles);
+
+			if (Validator.isNotNull(
+					productSubscriptionConfiguration.
+						getSubscriptionTypeSettings())) {
+
+				subscriptionTypeSettingsUnicodeProperties =
+					UnicodePropertiesBuilder.create(
+						productSubscriptionConfiguration.
+							getSubscriptionTypeSettings(),
+						true
+					).build();
+			}
+
+			ProductSubscriptionConfiguration.SubscriptionType subscriptionType =
+				productSubscriptionConfiguration.getSubscriptionType();
+
+			if (subscriptionType != null) {
+				subscriptionTypeValue = subscriptionType.getValue();
+			}
+		}
+
 		ProductTaxConfiguration productTaxConfiguration =
 			_getProductTaxConfiguration(product);
 
@@ -615,16 +690,13 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 			expirationDateConfig.getDay(), expirationDateConfig.getYear(),
 			expirationDateConfig.getHour(), expirationDateConfig.getMinute(),
 			GetterUtil.getBoolean(product.getNeverExpire(), true),
-			product.getDefaultSku(),
-			GetterUtil.getBoolean(productSubscriptionConfiguration.getEnable()),
-			GetterUtil.getInteger(
-				productSubscriptionConfiguration.getLength(), 1),
-			GetterUtil.getString(
-				productSubscriptionConfiguration.getSubscriptionTypeAsString()),
-			null,
-			GetterUtil.getLong(
-				productSubscriptionConfiguration.getNumberOfLength()),
-			productStatus, serviceContext);
+			product.getDefaultSku(), subscriptionEnable, subscriptionLength,
+			subscriptionTypeValue, subscriptionTypeSettingsUnicodeProperties,
+			subscriptionMaxSubscriptionCycles, deliverySubscriptionEnable,
+			deliverySubscriptionLength, deliverySubscriptionTypeValue,
+			deliverySubscriptionTypeSettingsUnicodeProperties,
+			deliverySubscriptionMaxSubscriptionCycles, productStatus,
+			serviceContext);
 
 		if ((product.getActive() != null) && !product.getActive()) {
 			Map<String, Serializable> workflowContext = new HashMap<>();
@@ -723,12 +795,6 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 			contextAcceptLanguage.getPreferredLocale());
 	}
 
-	private Map<String, Serializable> _getExpandoBridgeAttributes(Sku sku) {
-		return CustomFieldsUtil.toMap(
-			CPInstance.class.getName(), contextCompany.getCompanyId(),
-			sku.getCustomFields(), contextAcceptLanguage.getPreferredLocale());
-	}
-
 	private ProductShippingConfiguration _getProductShippingConfiguration(
 		Product product) {
 
@@ -740,19 +806,6 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 		}
 
 		return new ProductShippingConfiguration();
-	}
-
-	private ProductSubscriptionConfiguration
-		_getProductSubscriptionConfiguration(Product product) {
-
-		ProductSubscriptionConfiguration productSubscriptionConfiguration =
-			product.getSubscriptionConfiguration();
-
-		if (productSubscriptionConfiguration != null) {
-			return productSubscriptionConfiguration;
-		}
-
-		return new ProductSubscriptionConfiguration();
 	}
 
 	private ProductTaxConfiguration _getProductTaxConfiguration(
@@ -789,11 +842,16 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 
 		// Product configuration
 
-		ProductConfiguration productConfiguration = product.getConfiguration();
+		ProductConfiguration productConfiguration =
+			product.getProductConfiguration();
 
 		if (productConfiguration != null) {
 			ProductConfigurationUtil.updateCPDefinitionInventory(
 				_cpDefinitionInventoryService, productConfiguration,
+				cpDefinition.getCPDefinitionId());
+
+			ProductConfigurationUtil.updateCPDAvailabilityEstimate(
+				_cpdAvailabilityEstimateService, productConfiguration,
 				cpDefinition.getCPDefinitionId());
 		}
 
@@ -862,11 +920,20 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 
 		if (productOptions != null) {
 			for (ProductOption productOption : productOptions) {
+				serviceContext.setExpandoBridgeAttributes(
+					CustomFieldsUtil.toMap(
+						CPDefinitionOptionRel.class.getName(),
+						contextCompany.getCompanyId(),
+						productOption.getCustomFields(),
+						contextAcceptLanguage.getPreferredLocale()));
+
 				CPDefinitionOptionRel cpDefinitionOptionRel =
 					ProductOptionUtil.addOrUpdateCPDefinitionOptionRel(
 						_cpDefinitionOptionRelService, _cpOptionService,
 						productOption, cpDefinition.getCPDefinitionId(),
 						serviceContext);
+
+				serviceContext.setExpandoBridgeAttributes(null);
 
 				ProductOptionValue[] productOptionValues =
 					productOption.getProductOptionValues();
@@ -908,7 +975,10 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 		if (skus != null) {
 			for (Sku sku : skus) {
 				serviceContext.setExpandoBridgeAttributes(
-					_getExpandoBridgeAttributes(sku));
+					CustomFieldsUtil.toMap(
+						CPInstance.class.getName(),
+						contextCompany.getCompanyId(), sku.getCustomFields(),
+						contextAcceptLanguage.getPreferredLocale()));
 
 				CPInstance cpInstance = SkuUtil.addOrUpdateCPInstance(
 					_cpInstanceService, sku, cpDefinition,
@@ -935,6 +1005,10 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 
 		if (images != null) {
 			for (Attachment attachment : images) {
+				if (attachment.getTags() != null) {
+					serviceContext.setAssetTagNames(attachment.getTags());
+				}
+
 				serviceContext.setExpandoBridgeAttributes(
 					_getExpandoBridgeAttributes(attachment));
 
@@ -942,6 +1016,7 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 					cpDefinition.getGroupId(), _cpAttachmentFileEntryService,
 					_cpDefinitionOptionRelService,
 					_cpDefinitionOptionValueRelService, _cpOptionService,
+					_dlFileEntryModelResourcePermission,
 					_uniqueFileNameProvider, attachment,
 					_classNameLocalService.getClassNameId(
 						cpDefinition.getModelClassName()),
@@ -956,6 +1031,10 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 
 		if (attachments != null) {
 			for (Attachment attachment : attachments) {
+				if (attachment.getTags() != null) {
+					serviceContext.setAssetTagNames(attachment.getTags());
+				}
+
 				serviceContext.setExpandoBridgeAttributes(
 					_getExpandoBridgeAttributes(attachment));
 
@@ -963,6 +1042,7 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 					cpDefinition.getGroupId(), _cpAttachmentFileEntryService,
 					_cpDefinitionOptionRelService,
 					_cpDefinitionOptionValueRelService, _cpOptionService,
+					_dlFileEntryModelResourcePermission,
 					_uniqueFileNameProvider, attachment,
 					_classNameLocalService.getClassNameId(
 						cpDefinition.getModelClassName()),
@@ -1366,6 +1446,9 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 	private CPAttachmentFileEntryService _cpAttachmentFileEntryService;
 
 	@Reference
+	private CPDAvailabilityEstimateService _cpdAvailabilityEstimateService;
+
+	@Reference
 	private CPDefinitionInventoryService _cpDefinitionInventoryService;
 
 	@Reference
@@ -1418,6 +1501,12 @@ public class ProductResourceImpl extends BaseProductResourceImpl {
 
 	@Reference
 	private CSDiagramSettingService _csDiagramSettingService;
+
+	@Reference(
+		target = "(model.class.name=com.liferay.document.library.kernel.model.DLFileEntry)"
+	)
+	private ModelResourcePermission<DLFileEntry>
+		_dlFileEntryModelResourcePermission;
 
 	@Reference
 	private DTOConverterRegistry _dtoConverterRegistry;

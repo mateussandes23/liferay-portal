@@ -24,15 +24,29 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		CustomerPortal.customerPortalTearDown();
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
 			JSONGroup.deleteGroupByName(groupName = ${testSiteName});
+		}
+	}
+
+	@description = "Story ID: LPS-148368| Test Summary: Verify that clicking in the button 'Watch Tutorial Videos', the user is redirect to the correct URL"
+	@priority = 2
+	test AssertThatGuideButtonIsPresent {
+		task ("Given that I go to the Customer Portal") {
+			ApplicationsMenu.gotoSite(key_site = ${testSiteName});
+
+			CustomerPortal.waitCP20PageToLoad(userFirstName = ${testUserFirstName});
+		}
+
+		task ("Then I click on Watch Onboarding Videos button in the banner") {
+			CP2HomePage.assertGuideVideosButton();
 		}
 	}
 
@@ -46,6 +60,8 @@ definition {
 		}
 
 		task ("When I click on the Cookie police link at the bottom of the page") {
+			ScrollWebElementIntoView(locator1 = "CP2HomePage#COOKIE_LINK");
+
 			CP2HomePage.clickAtCookiePoliceLink();
 		}
 
@@ -64,11 +80,13 @@ definition {
 		}
 
 		task ("When I change the site language") {
-			CP2HomePage.clickAtLanguageButton(language = "português-Brasil");
+			CP2HomePage.clickAtLanguageButton(language = "Português");
 		}
 
 		task ("Then I should be able to assert the selected language") {
-			CP2HomePage.assertLanguageChange(siteTitle = "Bem vindo");
+			CP2HomePage.assertLanguageChange(siteTitle = "Bem vindo,");
+
+			CP2HomePage.clickAtLanguageButton(language = "English");
 		}
 	}
 

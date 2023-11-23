@@ -1,17 +1,15 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import {useModal} from '@clayui/core';
+import {ClayCheckbox} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import {useCallback, useEffect, useState} from 'react';
+import useProvisioningLicenseKeys from '~/common/hooks/useProvisioningLicenseKeys';
+import {getRolesFiltered} from '~/common/utils/getProjectRoles';
+import {rolesHighPriorityContacts} from '~/routes/customer-portal/utils/getHighPriorityContacts';
 import i18n from '../../../../../../../common/I18n';
 import StatusTag from '../../../../../../../common/components/StatusTag';
 import Table from '../../../../../../../common/components/Table';
@@ -25,9 +23,13 @@ import OptionsColumn from './components/columns/OptionsColumn';
 import RolesColumn from './components/columns/RolesColumn/RolesColumn';
 import useAccountRolesByAccountExternalReferenceCode from './hooks/useAccountRolesByAccountExternalReferenceCode';
 import useMyUserAccountByAccountExternalReferenceCode from './hooks/useMyUserAccountByAccountExternalReferenceCode';
+import usePagination from './hooks/usePaginationTeamMembers';
 import useUserAccountsByAccountExternalReferenceCode from './hooks/useUserAccountsByAccountExternalReferenceCode';
 import {getColumns} from './utils/getColumns';
 import getFilteredRoleBriefsByName from './utils/getFilteredRoleBriefsByName';
+
+const MAXIMUM_REQUESTORS_DEFAULT = -1;
+const UNLIMITED_RESQUESTORS = 9999;
 
 const TeamMembersTable = ({
 	koroneikiAccount,
@@ -35,17 +37,27 @@ const TeamMembersTable = ({
 }) => {
 	const {
 		articleAccountSupportURL,
+		articleNotifiedWhenMyActivationKeyIsAboutToExpireURL,
 		gravatarAPI,
 		importDate,
 	} = useAppPropertiesContext();
+
+	const provisioningKeys = useProvisioningLicenseKeys();
 
 	const [{sessionId}] = useCustomerPortal();
 
 	const {observer, onOpenChange, open} = useModal();
 
-	const [currentIndexEditing, setCurrentIndexEditing] = useState();
-	const [currentIndexRemoving, setCurrentIndexRemoving] = useState();
+	const [currentUserEditing, setCurrentUserEditing] = useState();
+	const [currentUserRemoving, setCurrentUserRemoving] = useState();
 	const [selectedAccountRoleItem, setSelectedAccountRoleItem] = useState();
+	const [highPriorityContactsNames, setHighPriorityContactsNames] = useState(
+		[]
+	);
+	const [checkedBoxSubscription, setCheckedBoxSubscription] = useState(false);
+	const [isSingleSubscribedUser, setIsSingleSubscribedUser] = useState([]);
+	const [singleSubscribedKeys, setSingleSubscribedKeys] = useState('');
+	const [loadingModal, setLoadingModal] = useState(false);
 
 	const {
 		data: myUserAccountData,
@@ -73,16 +85,73 @@ const TeamMembersTable = ({
 		koroneikiAccountLoading
 	);
 
-	let availableSupportSeatsCount =
-		koroneikiAccount?.maxRequestors - supportSeatsCount;
-	availableSupportSeatsCount =
-		availableSupportSeatsCount < 0 ? 0 : availableSupportSeatsCount;
+	const [
+		availableSupportSeatsCount,
+		setAvailableSupportSeatsCount,
+	] = useState(1);
+
+	useEffect(() => {
+		let remainingAdmins =
+			koroneikiAccount?.maxRequestors - supportSeatsCount;
+		remainingAdmins = remainingAdmins < 0 ? 0 : remainingAdmins;
+
+		setAvailableSupportSeatsCount(
+			koroneikiAccount?.maxRequestors === MAXIMUM_REQUESTORS_DEFAULT
+				? UNLIMITED_RESQUESTORS
+				: remainingAdmins
+		);
+	}, [koroneikiAccount, supportSeatsCount]);
 
 	const userAccounts =
 		userAccountsData?.accountUserAccountsByExternalReferenceCode.items;
 
 	const totalUserAccounts =
 		userAccountsData?.accountUserAccountsByExternalReferenceCode.totalCount;
+
+	const {paginationConfig, teamMembersByStatusPaginated} = usePagination(
+		userAccounts
+	);
+
+	const getHighPriorityContactsByFilter = useCallback(
+		(filter) => {
+			return userAccountsData?.accountUserAccountsByExternalReferenceCode?.items
+				.filter((account) =>
+					account?.selectedAccountSummary?.roleBriefs?.some(
+						(role) => role?.name === filter
+					)
+				)
+				.map((account) => ({
+					email: account.emailAddress,
+				}));
+		},
+		[userAccountsData?.accountUserAccountsByExternalReferenceCode?.items]
+	);
+
+	useEffect(() => {
+		const fetchHighPriorityContacts = async () => {
+			try {
+				const highPriorityContactsResults = await Promise.all(
+					rolesHighPriorityContacts.map((role) =>
+						getHighPriorityContactsByFilter(role)
+					)
+				);
+
+				const flattenedHighPriorityContacts = highPriorityContactsResults
+					.flat()
+					.filter((contact) => contact);
+
+				const highPriorityEmails = flattenedHighPriorityContacts.map(
+					(contact) => contact.email
+				);
+
+				setHighPriorityContactsNames(highPriorityEmails);
+			} catch (error) {
+				console.error('Error:', error);
+			}
+		};
+
+		fetchHighPriorityContacts();
+	}, [getHighPriorityContactsByFilter, userAccountsData]);
 
 	const {
 		data: accountRolesData,
@@ -93,32 +162,60 @@ const TeamMembersTable = ({
 		!loggedUserAccount?.selectedAccountSummary.hasAdministratorRole
 	);
 
-	const availableAccountRoles =
-		accountRolesData?.accountAccountRolesByExternalReferenceCode.items;
+	const availableAccountRoles = getRolesFiltered(
+		accountRolesData?.accountAccountRolesByExternalReferenceCode.items,
+		koroneikiAccount
+	);
 
 	const loading =
 		myUserAccountLoading || userAccountsLoading || accountRolesLoading;
+
+	const handleProvisioningKeys = useCallback(
+		async (userAccount) => {
+			try {
+				setLoadingModal(true);
+
+				const {
+					items,
+				} = await provisioningKeys.getSingleUserSubscriptions(
+					koroneikiAccount?.accountKey,
+					userAccount?.emailAddress
+				);
+
+				const getLicensesKeyIds = items.map((licenseKey) => {
+					return licenseKey.id;
+				});
+
+				setIsSingleSubscribedUser(items);
+				setSingleSubscribedKeys(getLicensesKeyIds);
+			} catch (error) {
+				console.error('Error:', error);
+			}
+			setLoadingModal(false);
+		},
+		[koroneikiAccount?.accountKey, provisioningKeys]
+	);
 
 	useEffect(() => {
 		if (!updating) {
 			onOpenChange(false);
 
-			setCurrentIndexRemoving();
+			setCurrentUserRemoving();
 		}
 	}, [onOpenChange, updating]);
 
 	useEffect(() => {
 		if (!updating) {
-			setCurrentIndexEditing();
+			setCurrentUserEditing();
 			setSelectedAccountRoleItem();
 		}
 	}, [onOpenChange, updating]);
 
 	useEffect(() => {
-		if (currentIndexEditing) {
+		if (currentUserEditing?.id) {
 			setSelectedAccountRoleItem();
 		}
-	}, [currentIndexEditing]);
+	}, [currentUserEditing]);
 
 	const getCurrentRoleBriefs = useCallback(
 		(accountBrief) =>
@@ -126,26 +223,122 @@ const TeamMembersTable = ({
 		[]
 	);
 
+	const checkIsValidRole = (userAccount) => {
+		const isInvalidRole = (role) => {
+			const invalidRoles = ['Security', 'Data', 'Critical'];
+
+			return invalidRoles.some((keyword) => role.name.includes(keyword));
+		};
+
+		const roles = getCurrentRoleBriefs(userAccount.selectedAccountSummary);
+
+		for (const role of roles) {
+			if (!isInvalidRole(role)) {
+				return role?.name;
+			}
+		}
+
+		return 'User';
+	};
+
 	const handleEdit = () => {
 		const currentAccountRoles =
-			userAccounts[currentIndexEditing].selectedAccountSummary.roleBriefs;
+			currentUserEditing.selectedAccountSummary.roleBriefs;
 
 		update(
-			userAccounts[currentIndexEditing],
+			currentUserEditing,
 			currentAccountRoles,
 			selectedAccountRoleItem
 		);
 	};
 
+	const saveSubscriptionKey = (singleSubscribedKeys) => {
+		singleSubscribedKeys?.forEach(async (singleSubscribeKey) => {
+			try {
+				await provisioningKeys.putSubscriptionInKey(singleSubscribeKey);
+			} catch (error) {
+				console.error('Error:', error);
+			}
+		});
+	};
+
 	return (
 		<>
-			{open && currentIndexRemoving !== undefined && (
+			{open && currentUserRemoving !== undefined && !loadingModal && (
 				<RemoveUserModal
+					isSingleSubscribedUser={isSingleSubscribedUser}
+					modalTitle={i18n.translate('remove-user')}
 					observer={observer}
 					onClose={() => onOpenChange(false)}
-					onRemove={() => remove(userAccounts[currentIndexRemoving])}
+					onRemove={() => {
+						if (checkedBoxSubscription) {
+							saveSubscriptionKey(singleSubscribedKeys);
+							remove(currentUserRemoving);
+						}
+
+						remove(currentUserRemoving);
+					}}
 					removing={updating}
-				/>
+				>
+					<p className="my-0 text-neutral-10">
+						<p className="font-weight-bold">
+							{`${i18n.translate('team-member')}: ${
+								currentUserRemoving?.name
+							}`}
+						</p>
+
+						{!isSingleSubscribedUser.length ? (
+							<>
+								{i18n.translate(
+									'are-you-sure-you-want-to-remove-this-team-member-from-the-project'
+								)}
+							</>
+						) : (
+							<>
+								{i18n.translate(
+									'there-is-at-least-one-activation-key-for-which-this-team-member-is-the-only-one-subscribed-to-be-notified-before-the-activation-key-expires-are-you-sure-you-want-to-remove-this-team-member-and-their-notifications'
+								)}
+							</>
+						)}
+					</p>
+
+					{!!isSingleSubscribedUser.length && (
+						<div className="align-items-center d-flex pt-3">
+							<ClayCheckbox
+								checked={checkedBoxSubscription}
+								onChange={() =>
+									setCheckedBoxSubscription(
+										(checkedBoxSubscription) =>
+											!checkedBoxSubscription
+									)
+								}
+							/>
+
+							<p className="mb-0 pb-0 px-2">
+								{i18n.translate(
+									'i-want-to-receive-these-notifications'
+								)}
+							</p>
+
+							<a
+								href={
+									articleNotifiedWhenMyActivationKeyIsAboutToExpireURL
+								}
+								rel="noreferrer noopener"
+								target="_blank"
+							>
+								<u className="font-weight-semi-bold text-decoration-none">
+									{i18n.translate('learn-more')}
+								</u>
+
+								<ClayIcon
+									className="pl-1"
+									symbol="order-arrow-right"
+								/>
+							</a>
+						</div>
+					)}
+				</RemoveUserModal>
 			)}
 
 			<TeamMembersTableHeader
@@ -163,97 +356,127 @@ const TeamMembersTable = ({
 				sessionId={sessionId}
 			/>
 
-			<div className="cp-team-members-table-wrapper overflow-auto">
+			<div className="cp-team-members-table-wrapper">
 				{!totalUserAccounts && !(loading || searching) && (
 					<div className="d-flex justify-content-center pt-4">
 						{i18n.translate('no-team-members-were-found')}
 					</div>
 				)}
 
-				{(totalUserAccounts || loading || searching) && (
-					<Table
-						className="border-0"
-						columns={getColumns(
-							loggedUserAccount?.selectedAccountSummary
-								.hasAdministratorRole,
-							articleAccountSupportURL
-						)}
-						isLoading={loading || searching}
-						rows={userAccounts?.map((userAccount, index) => ({
-							email: (
-								<p className="m-0 text-truncate">
-									{userAccount.emailAddress}
-								</p>
-							),
-							name: (
-								<NameColumn
-									gravatarAPI={gravatarAPI}
-									userAccount={userAccount}
-								/>
-							),
-							options: (
-								<OptionsColumn
-									edit={index === currentIndexEditing}
-									onCancel={() => {
-										setCurrentIndexEditing();
-										setSelectedAccountRoleItem();
-									}}
-									onEdit={() => setCurrentIndexEditing(index)}
-									onRemove={() => {
-										setCurrentIndexRemoving(index);
-										onOpenChange(true);
-									}}
-									onSave={() => handleEdit()}
-									saveDisabled={
-										!selectedAccountRoleItem || updating
-									}
-								/>
-							),
-							role: (
-								<RolesColumn
-									accountRoles={availableAccountRoles}
-									availableSupportSeatsCount={
-										availableSupportSeatsCount
-									}
-									currentRoleBriefName={
-										getCurrentRoleBriefs(
-											userAccount.selectedAccountSummary
-										)?.[0]?.name || 'User'
-									}
-									edit={index === currentIndexEditing}
-									hasAccountSupportSeatRole={
-										userAccount.selectedAccountSummary
-											.hasSupportSeatRole
-									}
-									onClick={(selectedAccountRoleItem) =>
-										setSelectedAccountRoleItem(
-											selectedAccountRoleItem
-										)
-									}
-									supportSeatsCount={supportSeatsCount}
-								/>
-							),
-							status: (
-								<StatusTag
-									currentStatus={
-										userAccount.lastLoginDate ||
-										userAccount.dateCreated <= importDate
-											? STATUS_TAG_TYPES.active
-											: STATUS_TAG_TYPES.invited
-									}
-								/>
-							),
-							supportSeat: userAccount.selectedAccountSummary
-								.hasSupportSeatRole &&
-								!userAccount.isLiferayStaff && (
-									<ClayIcon
-										className="text-brand-primary-darken-2"
-										symbol="check-circle-full"
-									/>
-								),
-						}))}
-					/>
-				)}
+				{!!teamMembersByStatusPaginated &&
+					(totalUserAccounts || loading || searching) && (
+						<Table
+							className="border-0"
+							columns={getColumns(
+								loggedUserAccount?.selectedAccountSummary
+									.hasAdministratorRole,
+								articleAccountSupportURL
+							)}
+							hasPagination
+							isLoading={loading || searching}
+							paginationConfig={paginationConfig}
+							rows={teamMembersByStatusPaginated?.map(
+								(userAccount) => ({
+									email: (
+										<p className="m-0 text-truncate">
+											{userAccount.emailAddress}
+										</p>
+									),
+									name: (
+										<NameColumn
+											gravatarAPI={gravatarAPI}
+											userAccount={userAccount}
+										/>
+									),
+									options: (
+										<OptionsColumn
+											edit={
+												userAccount?.id ===
+												currentUserEditing?.id
+											}
+											highPriorityContactsNames={
+												highPriorityContactsNames
+											}
+											onCancel={() => {
+												setCurrentUserEditing();
+												setSelectedAccountRoleItem();
+											}}
+											onEdit={() =>
+												setCurrentUserEditing(
+													userAccount
+												)
+											}
+											onRemove={() => {
+												setCurrentUserRemoving(
+													userAccount
+												);
+												onOpenChange(true);
+												handleProvisioningKeys(
+													userAccount
+												);
+											}}
+											onSave={() => handleEdit()}
+											saveDisabled={
+												!selectedAccountRoleItem ||
+												updating
+											}
+											userAccount={userAccount}
+										/>
+									),
+									role: (
+										<RolesColumn
+											accountRoles={availableAccountRoles}
+											availableSupportSeatsCount={
+												availableSupportSeatsCount
+											}
+											currentRoleBriefName={checkIsValidRole(
+												userAccount
+											)}
+											edit={
+												userAccount?.id ===
+												currentUserEditing?.id
+											}
+											hasAccountSupportSeatRole={
+												userAccount
+													.selectedAccountSummary
+													.hasSupportSeatRole
+											}
+											onClick={(
+												selectedAccountRoleItem
+											) =>
+												setSelectedAccountRoleItem(
+													selectedAccountRoleItem
+												)
+											}
+											supportSeatsCount={
+												supportSeatsCount
+											}
+										/>
+									),
+									status: (
+										<StatusTag
+											currentStatus={
+												userAccount.lastLoginDate ||
+												userAccount.dateCreated <=
+													importDate
+													? STATUS_TAG_TYPES.active
+													: STATUS_TAG_TYPES.invited
+											}
+										/>
+									),
+									supportSeat: userAccount
+										.selectedAccountSummary
+										.hasSupportSeatRole &&
+										!userAccount.isLiferayStaff && (
+											<ClayIcon
+												className="text-brand-primary-darken-2"
+												symbol="check-circle-full"
+											/>
+										),
+								})
+							)}
+						/>
+					)}
 			</div>
 		</>
 	);

@@ -14,9 +14,9 @@ definition {
 	tearDown {
 		ObjectAdmin.deleteAllCustomObjectsViaAPI();
 
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 	}
@@ -47,6 +47,16 @@ definition {
 			labelName = "Custom Object",
 			objectName = "CustomObject",
 			pluralLabelName = "Custom Objects");
+
+		// Workaround for LPS-193897
+
+		ObjectAdmin.addObjectFieldViaAPI(
+			fieldBusinessType = "Text",
+			fieldLabelName = "Custom Field",
+			fieldName = "customObjectField",
+			fieldType = "String",
+			isRequired = "false",
+			objectName = "CustomObject");
 
 		ObjectAdmin.addObjectRelationshipViaAPI(
 			objectName_1 = "AccountEntry",
@@ -497,6 +507,16 @@ definition {
 			objectName = "CustomObject153528",
 			pluralLabelName = "Custom Objects 153528");
 
+		// Workaround for LPS-193897
+
+		ObjectAdmin.addObjectFieldViaAPI(
+			fieldBusinessType = "Text",
+			fieldLabelName = "Custom Field",
+			fieldName = "customObjectField",
+			fieldType = "String",
+			isRequired = "false",
+			objectName = "CustomObject153528");
+
 		ObjectAdmin.addObjectRelationshipViaAPI(
 			objectName_1 = "AccountEntry",
 			objectName_2 = "CustomObject153528",
@@ -557,8 +577,9 @@ definition {
 		for (var label : list "Name,Type") {
 			ObjectAdmin.goToFieldsDetails(label = ${label});
 
-			AssertElementPresent(
-				locator1 = "ObjectField#TYPE_FIELD",
+			AssertTextEquals(
+				key_labelName = "Type",
+				locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
 				value1 = "Text");
 
 			AssertChecked.assertCheckedNotVisible(locator1 = "ObjectField#MANDATORY_TOGGLE");
@@ -581,6 +602,16 @@ definition {
 			objectName = "CustomObject153527",
 			pluralLabelName = "Custom Objects 153527");
 
+		// Workaround for LPS-193897
+
+		ObjectAdmin.addObjectFieldViaAPI(
+			fieldBusinessType = "Text",
+			fieldLabelName = "Custom Field",
+			fieldName = "customObjectField",
+			fieldType = "String",
+			isRequired = "false",
+			objectName = "CustomObject153527");
+
 		ObjectAdmin.addObjectRelationshipViaAPI(
 			objectName_1 = "AccountEntry",
 			objectName_2 = "CustomObject153527",
@@ -589,14 +620,6 @@ definition {
 			relationshipType = "oneToMany");
 
 		ObjectAdmin.publishObjectViaAPI(objectName = "CustomObject153527");
-
-		ObjectAdmin.openObjectAdmin();
-
-		ObjectPortlet.selectSystemObject(label = "Account");
-
-		CreateObject.selectTitleField(fieldLabel = "Name");
-
-		CreateObject.saveObject();
 
 		ObjectAdmin.goToCustomObject(objectName = "CustomObject153527");
 
@@ -631,10 +654,6 @@ definition {
 			ObjectAdmin.openObjectAdmin();
 
 			ObjectPortlet.selectSystemObject(label = "Account");
-
-			CreateObject.selectTitleField(fieldLabel = "Name");
-
-			CreateObject.saveObject();
 
 			ObjectAdmin.gotoRelationshipsTab();
 
@@ -699,6 +718,16 @@ definition {
 			objectName = "CustomObject153526",
 			pluralLabelName = "Custom Objects 153526");
 
+		// Workaround for LPS-193897
+
+		ObjectAdmin.addObjectFieldViaAPI(
+			fieldBusinessType = "Text",
+			fieldLabelName = "Custom Field",
+			fieldName = "customObjectField",
+			fieldType = "String",
+			isRequired = "false",
+			objectName = "CustomObject153526");
+
 		ObjectAdmin.addObjectRelationshipViaAPI(
 			objectName_1 = "AccountEntry",
 			objectName_2 = "CustomObject153526",
@@ -744,8 +773,9 @@ definition {
 
 		ObjectPortlet.selectSystemObject(label = "Account");
 
-		AssertElementPresent(
-			locator1 = "CreateObject#TITLE_FIELD",
+		AssertTextEquals(
+			key_labelName = "Entry Title Field",
+			locator1 = "ObjectAdmin#CLAY_GENERIC_BUTTON",
 			value1 = "Type");
 	}
 
@@ -756,7 +786,7 @@ definition {
 
 		ObjectPortlet.selectSystemObject(label = "Account");
 
-		AssertNotChecked.assertNotCheckedNotVisible(locator1 = "ObjectPortlet#VIEW_WIDGET_BUTTON");
+		AssertNotChecked.assertNotCheckedNotVisible(locator1 = "ObjectPortlet#VIEW_WIDGET_IN_PAGE_BUILDER_TOGGLE");
 	}
 
 }

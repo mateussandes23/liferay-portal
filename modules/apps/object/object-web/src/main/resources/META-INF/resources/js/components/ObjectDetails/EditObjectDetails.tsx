@@ -1,48 +1,43 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
+import ClayPanel from '@clayui/panel';
 import {
 	API,
+	BetaButton,
 	getLocalizableLabel,
 	openToast,
 } from '@liferay/object-js-components-web';
 import React, {useEffect, useState} from 'react';
 
 import ObjectManagementToolbar from '../ObjectManagementToolbar';
+import {AccountRestrictionContainer} from './AccountRestrictionContainer';
 import {ConfigurationContainer} from './ConfigurationContainer';
 import {EntryDisplayContainer} from './EntryDisplayContainer';
+import {ExternalDataSourceContainer} from './ExternalDataSourceContainer';
 import {ObjectDataContainer} from './ObjectDataContainer';
 import {ScopeContainer} from './ScopeContainer';
 import Sheet from './Sheet';
+import {TranslationsContainer} from './TranslationsContainer';
 import {useObjectDetailsForm} from './useObjectDetailsForm';
 
 import './ObjectDetails.scss';
-import {AccountRestrictionContainer} from './AccountRestrictionContainer';
-import {TranslationsContainer} from './TranslationsContainer';
 
-export type KeyValuePair = {
-	key: string;
-	value: string;
+export type Scope = {
+	items: LabelValueObject[];
+	label: string;
 };
 interface EditObjectDetailsProps {
 	backURL: string;
-	companyKeyValuePair: KeyValuePair[];
+	companies: Scope[];
 	dbTableName: string;
 	externalReferenceCode: string;
 	hasPublishObjectPermission: boolean;
 	hasUpdateObjectDefinitionPermission: boolean;
 	isApproved: boolean;
+	isRootDescendantNode: boolean;
 	label: LocalizedValue<string>;
 	nonRelationshipObjectFieldsInfo: {
 		label: LocalizedValue<string>;
@@ -52,7 +47,8 @@ interface EditObjectDetailsProps {
 	pluralLabel: LocalizedValue<string>;
 	portletNamespace: string;
 	shortName: string;
-	siteKeyValuePair: KeyValuePair[];
+	sites: Scope[];
+	storageTypes: LabelValueObject[];
 }
 
 function setAccountRelationshipFieldMandatory(
@@ -79,19 +75,21 @@ function setAccountRelationshipFieldMandatory(
 
 export default function EditObjectDetails({
 	backURL,
-	companyKeyValuePair,
+	companies,
 	dbTableName,
 	externalReferenceCode,
 	hasPublishObjectPermission,
 	hasUpdateObjectDefinitionPermission,
 	isApproved,
+	isRootDescendantNode,
 	label,
 	nonRelationshipObjectFieldsInfo,
 	objectDefinitionId,
 	pluralLabel,
 	portletNamespace,
 	shortName,
-	siteKeyValuePair,
+	sites,
+	storageTypes,
 }: EditObjectDetailsProps) {
 	const [objectFields, setObjectFields] = useState<ObjectField[]>([]);
 
@@ -117,11 +115,6 @@ export default function EditObjectDetails({
 		const validationErrors = handleValidate();
 
 		if (!Object.keys(validationErrors).length) {
-			delete values.objectRelationships;
-			delete values.objectActions;
-			delete values.objectLayouts;
-			delete values.objectViews;
-
 			let objectDefinition = values;
 
 			if (values.accountEntryRestricted) {
@@ -147,7 +140,7 @@ export default function EditObjectDetails({
 			}
 
 			if (!draft) {
-				const publishResponse = await API.publishObjectDefinitionById(
+				const publishResponse = await API.postObjectDefinitionPublish(
 					values.id as number
 				);
 
@@ -190,7 +183,7 @@ export default function EditObjectDetails({
 
 	useEffect(() => {
 		const makeFetch = async () => {
-			const objectFieldsResponse = await API.getObjectFieldsByExternalReferenceCode(
+			const objectFieldsResponse = await API.getObjectDefinitionByExternalReferenceCodeObjectFields(
 				externalReferenceCode
 			);
 			const objectDefinitionResponse = await API.getObjectDefinitionByExternalReferenceCode(
@@ -216,6 +209,7 @@ export default function EditObjectDetails({
 						hasUpdateObjectDefinitionPermission
 					}
 					isApproved={isApproved}
+					isRootDescendantNode={isRootDescendantNode}
 					label={getLocalizableLabel(
 						values.defaultLanguageId as Liferay.Language.Locale,
 						values.label,
@@ -225,73 +219,160 @@ export default function EditObjectDetails({
 					onSubmit={onSubmit}
 					portletNamespace={portletNamespace}
 					screenNavigationCategoryKey="details"
-					setValues={setValues}
 					system={values.system as boolean}
 				/>
 			</div>
 
 			<div className="lfr-objects__object-definition-details">
 				<Sheet title={Liferay.Language.get('basic-information')}>
-					<ObjectDataContainer
-						dbTableName={dbTableName}
-						errors={errors}
-						handleChange={handleChange}
-						hasUpdateObjectDefinitionPermission={
-							hasUpdateObjectDefinitionPermission
-						}
-						isApproved={isApproved}
-						setValues={setValues}
-						values={values}
-					/>
+					<ClayPanel
+						displayTitle={Liferay.Language.get(
+							'object-definition-data'
+						)}
+						displayType="unstyled"
+					>
+						<ClayPanel.Body>
+							<ObjectDataContainer
+								dbTableName={dbTableName}
+								errors={errors}
+								handleChange={handleChange}
+								hasUpdateObjectDefinitionPermission={
+									hasUpdateObjectDefinitionPermission
+								}
+								isApproved={isApproved}
+								setValues={setValues}
+								values={values}
+							/>
+						</ClayPanel.Body>
+					</ClayPanel>
 
-					<EntryDisplayContainer
-						errors={errors}
-						nonRelationshipObjectFieldsInfo={
-							nonRelationshipObjectFieldsInfo
-						}
-						objectFields={objectFields}
-						setValues={setValues}
-						values={values}
-					/>
+					<ClayPanel
+						collapsable
+						defaultExpanded
+						displayTitle={Liferay.Language.get('entry-display')}
+						displayType="unstyled"
+					>
+						<ClayPanel.Body>
+							<EntryDisplayContainer
+								errors={errors}
+								nonRelationshipObjectFieldsInfo={
+									nonRelationshipObjectFieldsInfo
+								}
+								objectFields={objectFields}
+								setValues={setValues}
+								values={values}
+							/>
+						</ClayPanel.Body>
+					</ClayPanel>
 
-					<ScopeContainer
-						companyKeyValuePair={companyKeyValuePair}
-						errors={errors}
-						hasUpdateObjectDefinitionPermission={
-							hasUpdateObjectDefinitionPermission
-						}
-						isApproved={isApproved}
-						setValues={setValues}
-						siteKeyValuePair={siteKeyValuePair}
-						values={values}
-					/>
+					{Liferay.FeatureFlags['LPS-135430'] && (
+						<ClayPanel
+							collapsable
+							defaultExpanded
+							displayTitle={
+								<div className="lfr__object-web-edit-object-details-external-data-source-panel">
+									<span className="panel-title">
+										{Liferay.Language.get(
+											'external-data-source'
+										)}
+									</span>
 
-					{(Liferay.FeatureFlags['LPS-167253']
-						? values.modifiable
-						: !values.system) && (
-						<AccountRestrictionContainer
-							errors={errors}
-							isApproved={isApproved}
-							objectFields={objectFields}
-							setValues={setValues}
-							values={values}
-						/>
+									{values.storageType === 'salesforce' && (
+										<div className="lfr__object-web-edit-object-details-external-data-source-panel-container-beta">
+											<BetaButton />
+										</div>
+									)}
+								</div>
+							}
+							displayType="unstyled"
+						>
+							<ClayPanel.Body>
+								<div className="lfr__object-web-edit-object-details-external-data-source-container">
+									<ExternalDataSourceContainer
+										errors={errors}
+										storageTypes={storageTypes}
+										values={values}
+									/>
+								</div>
+							</ClayPanel.Body>
+						</ClayPanel>
 					)}
 
-					<ConfigurationContainer
-						hasUpdateObjectDefinitionPermission={
-							hasUpdateObjectDefinitionPermission
-						}
-						setValues={setValues}
-						values={values}
-					/>
+					<ClayPanel
+						collapsable
+						defaultExpanded
+						displayTitle={Liferay.Language.get('scope')}
+						displayType="unstyled"
+					>
+						<ClayPanel.Body>
+							<ScopeContainer
+								companies={companies}
+								errors={errors}
+								hasUpdateObjectDefinitionPermission={
+									hasUpdateObjectDefinitionPermission
+								}
+								isApproved={isApproved}
+								isRootDescendantNode={isRootDescendantNode}
+								setValues={setValues}
+								sites={sites}
+								values={values}
+							/>
+						</ClayPanel.Body>
+					</ClayPanel>
 
-					{Liferay.FeatureFlags['LPS-146755'] && (
-						<TranslationsContainer
-							setValues={setValues}
-							values={values}
-						/>
+					{values.modifiable && (
+						<ClayPanel
+							collapsable
+							defaultExpanded
+							displayTitle={Liferay.Language.get(
+								'account-restriction'
+							)}
+							displayType="unstyled"
+						>
+							<ClayPanel.Body>
+								<AccountRestrictionContainer
+									errors={errors}
+									isApproved={isApproved}
+									isRootDescendantNode={isRootDescendantNode}
+									objectFields={objectFields}
+									setValues={setValues}
+									values={values}
+								/>
+							</ClayPanel.Body>
+						</ClayPanel>
 					)}
+
+					<ClayPanel
+						collapsable
+						defaultExpanded
+						displayTitle={Liferay.Language.get('configuration')}
+						displayType="unstyled"
+					>
+						<ClayPanel.Body>
+							<ConfigurationContainer
+								hasUpdateObjectDefinitionPermission={
+									hasUpdateObjectDefinitionPermission
+								}
+								isRootDescendantNode={isRootDescendantNode}
+								setValues={setValues}
+								values={values}
+							/>
+						</ClayPanel.Body>
+					</ClayPanel>
+
+					<ClayPanel
+						collapsable
+						defaultExpanded
+						displayTitle={Liferay.Language.get('translations')}
+						displayType="unstyled"
+					>
+						<ClayPanel.Body>
+							<TranslationsContainer
+								setValues={setValues}
+								values={values}
+							/>
+						</ClayPanel.Body>
+					</ClayPanel>
 				</Sheet>
 			</div>
 		</>

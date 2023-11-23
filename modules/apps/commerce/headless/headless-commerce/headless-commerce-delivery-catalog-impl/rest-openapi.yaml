@@ -26,6 +26,19 @@ components:
                 minimum: 0
                 type: integer
             style: simple
+        productOptionId:
+            in: path
+            explode: false
+            name: productOptionId
+            required: true
+            schema:
+                description:
+                    Product Option Id
+                example: 30130
+                format: int64
+                minimum: 0
+                type: integer
+            style: simple
     schemas:
         Attachment:
             properties:
@@ -41,6 +54,9 @@ components:
                     example: 2017-08-21
                     format: date
                     type: string
+                galleryEnabled:
+                    readOnly: true
+                    type: boolean
                 id:
                     example: 30130
                     format: int64
@@ -66,6 +82,15 @@ components:
                     description:
                         URL of the location
                     type: string
+                tags:
+                    example:
+                        - tag1
+                        - tag2
+                        - tag3
+                    items:
+                        type: string
+                    readOnly: true
+                    type: array
                 title:
                     type: string
                 type:
@@ -84,8 +109,9 @@ components:
                     example: Available
                     type: string
                 stockQuantity:
-                    format: int32
-                    type: integer
+                    example: 10.1
+                    format: bigdecimal
+                    type: number
             type: object
         Category:
             properties:
@@ -323,6 +349,9 @@ components:
                     type: number
                 priceFormatted:
                     type: string
+                priceOnApplication:
+                    readOnly: true
+                    type: boolean
                 promoPrice:
                     format: double
                     type: number
@@ -444,9 +473,19 @@ components:
                         - 30
                         - 40
                     items:
-                        format: int32
-                        type: integer
+                        example: 10.1
+                        format: bigdecimal
+                        type: number
                     type: array
+                availabilityEstimateId:
+                    example: 31130
+                    format: int64
+                    minimum: 0
+                    readOnly: true
+                    type: integer
+                availabilityEstimateName:
+                    readOnly: true
+                    type: string
                 displayAvailability:
                     example: true
                     type: boolean
@@ -462,17 +501,21 @@ components:
                         The low stock action that will be performed when a product is out of stock
                     type: string
                 maxOrderQuantity:
-                    format: int32
-                    type: integer
+                    example: 10.1
+                    format: bigdecimal
+                    type: number
                 minOrderQuantity:
-                    format: int32
-                    type: integer
+                    example: 10.1
+                    format: bigdecimal
+                    type: number
                 minStockQuantity:
-                    format: int32
-                    type: integer
+                    example: 10.1
+                    format: bigdecimal
+                    type: number
                 multipleOrderQuantity:
-                    format: int32
-                    type: integer
+                    example: 10.1
+                    format: bigdecimal
+                    type: number
             type: object
         ProductOption:
             properties:
@@ -525,6 +568,9 @@ components:
                     minimum: 0
                     readOnly: true
                     type: integer
+                infoMessage:
+                    readOnly: true
+                    type: string
                 key:
                     example: black
                     type: string
@@ -534,10 +580,48 @@ components:
                     example: true
                     readOnly: true
                     type: boolean
+                price:
+                    readOnly: true
+                    type: string
+                priceType:
+                    example: static
+                    readOnly: true
+                    type: string
                 priority:
                     example: 1.2
                     format: double
                     type: number
+                productOptionId:
+                    example: 30130
+                    format: int64
+                    minimum: 0
+                    readOnly: true
+                    type: integer
+                quantity:
+                    readOnly: true
+                    type: string
+                relativePriceFormatted:
+                    readOnly: true
+                    type: string
+                selectable:
+                    example: true
+                    readOnly: true
+                    type: boolean
+                skuId:
+                    example: 30130
+                    format: int64
+                    readOnly: true
+                    type: integer
+                totalPrice:
+                    readOnly: true
+                    type: string
+                unitOfMeasureKey:
+                    readOnly: true
+                    type: string
+                visible:
+                    example: true
+                    readOnly: true
+                    type: boolean
             type: object
         ProductSpecification:
             properties:
@@ -599,6 +683,42 @@ components:
                     example: cross-sell
                     type: string
             type: object
+        ReplacementSku:
+            properties:
+                price:
+                    $ref: "#/components/schemas/Price"
+                    readOnly: true
+                productConfiguration:
+                    $ref: "#/components/schemas/ProductConfiguration"
+                    readOnly: true
+                sku:
+                    readOnly: true
+                    type: string
+                skuId:
+                    example: 33135
+                    format: int64
+                    minimum: 0
+                    readOnly: true
+                    type: integer
+                skuOptions:
+                    items:
+                        $ref: "#/components/schemas/SkuOption"
+                    readOnly: true
+                    type: array
+                skuUnitOfMeasures:
+                    items:
+                        $ref: "#/components/schemas/SkuUnitOfMeasure"
+                    type: array
+                urls:
+                    additionalProperties:
+                        type: string
+                    example:
+                        en_US: product-url-us
+                        hr_HR: product-url-hr
+                        hu_HU: product-url-hu
+                    readOnly: true
+                    type: object
+            type: object
         Sku:
             properties:
                 DDMOptions:
@@ -617,6 +737,9 @@ components:
                     type: array
                 availability:
                     $ref: "#/components/schemas/Availability"
+                backOrderAllowed:
+                    readOnly: true
+                    type: boolean
                 depth:
                     example: 1.1
                     format: double
@@ -660,22 +783,36 @@ components:
                     example: "12341234"
                     type: string
                 maxOrderQuantity:
-                    format: int32
-                    type: integer
+                    example: 10.1
+                    format: bigdecimal
+                    type: number
                 minOrderQuantity:
-                    format: int32
-                    type: integer
+                    example: 10.1
+                    format: bigdecimal
+                    type: number
                 neverExpire:
                     example: true
                     type: boolean
                 price:
                     $ref: "#/components/schemas/Price"
+                productConfiguration:
+                    $ref: "#/components/schemas/ProductConfiguration"
+                    readOnly: true
+                productId:
+                    example: 30130
+                    format: int64
+                    minimum: 0
+                    readOnly: true
+                    type: integer
                 published:
                     example: true
                     type: boolean
                 purchasable:
                     example: true
                     type: boolean
+                replacementSku:
+                    $ref: "#/components/schemas/ReplacementSku"
+                    readOnly: true
                 replacementSkuExternalReferenceCode:
                     example: SKU0111
                     type: string
@@ -689,6 +826,14 @@ components:
                 skuOptions:
                     items:
                         $ref: "#/components/schemas/SkuOption"
+                    type: array
+                skuUnitOfMeasures:
+                    items:
+                        $ref: "#/components/schemas/SkuUnitOfMeasure"
+                    type: array
+                tierPrices:
+                    items:
+                        $ref: "#/components/schemas/TierPrice"
                     type: array
                 weight:
                     example: 1.1
@@ -709,12 +854,26 @@ components:
                     minimum: 0
                     readOnly: true
                     type: integer
+                price:
+                    type: string
+                priceType:
+                    example: static
+                    type: string
+                quantity:
+                    type: string
+                skuId:
+                    example: 30130
+                    format: int64
+                    type: integer
                 skuOptionId:
                     example: 30130
                     format: int64
                     type: integer
                 skuOptionKey:
                     example: Sku Option Key
+                    type: string
+                skuOptionName:
+                    example: Sku Option Name
                     type: string
                 skuOptionValueId:
                     example: 30130
@@ -723,12 +882,70 @@ components:
                 skuOptionValueKey:
                     example: Sku Option Value Key
                     type: string
+                skuOptionValueNames:
+                    items:
+                        type: string
+                    type: array
                 value:
                     example: 31130
                     format: int64
                     minimum: 0
                     readOnly: true
                     type: integer
+            type: object
+        SkuUnitOfMeasure:
+            properties:
+                incrementalOrderQuantity:
+                    example: 1.5
+                    format: bigdecimal
+                    minimum: 0
+                    type: number
+                key:
+                    example: pl
+                    type: string
+                name:
+                    example: Pallet
+                    type: string
+                precision:
+                    example: 3
+                    type: integer
+                price:
+                    $ref: "#/components/schemas/Price"
+                primary:
+                    example: true
+                    type: boolean
+                priority:
+                    example: 1.1
+                    format: double
+                    minimum: 0
+                    type: number
+                rate:
+                    example: 202.1
+                    format: bigdecimal
+                    minimum: 0
+                    type: number
+                tierPrices:
+                    items:
+                        $ref: "#/components/schemas/TierPrice"
+                    type: array
+            type: object
+        TierPrice:
+            properties:
+                currency:
+                    type: string
+                price:
+                    format: double
+                    readOnly: true
+                    type: number
+                priceFormatted:
+                    readOnly: true
+                    type: string
+                quantity:
+                    example: 202.1
+                    format: bigdecimal
+                    minimum: 0
+                    readOnly: true
+                    type: number
             type: object
         WishList:
             properties:
@@ -766,7 +983,7 @@ components:
 info:
     description:
         "Headless Commerce Delivery Catalog API. A Java client JAR is available for use with the group ID 'com.liferay',
-        artifact ID 'com.liferay.headless.commerce.delivery.catalog.client', and version '4.0.33'."
+        artifact ID 'com.liferay.headless.commerce.delivery.catalog.client', and version '4.0.42'."
     license:
         name: Apache 2.0
         url: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -1724,6 +1941,137 @@ paths:
                         Unexpected error
             summary: Gets Product Options.
             tags: ["ProductOption"]
+    "/channels/{channelId}/products/{productId}/product-options/{productOptionId}/product-option-values":
+        get:
+            operationId: getChannelProductProductOptionProductOptionValuesPage
+            parameters:
+                - in: path
+                  explode: false
+                  name: channelId
+                  required: true
+                  schema:
+                      description:
+                          Channel Id
+                      example: 30130
+                      format: int64
+                      minimum: 0
+                      type: integer
+                  style: simple
+                - in: path
+                  explode: false
+                  name: productId
+                  required: true
+                  schema:
+                      description:
+                          Product Id
+                      example: 30130
+                      format: int64
+                      minimum: 0
+                      type: integer
+                  style: simple
+                - in: path
+                  explode: false
+                  name: productOptionId
+                  required: true
+                  schema:
+                      description:
+                          Product Option Id
+                      example: 30130
+                      format: int64
+                      minimum: 0
+                      type: integer
+                  style: simple
+                - in: query
+                  name: accountId
+                  required: false
+                  schema:
+                      description:
+                          Account Id
+                      example: 30130
+                      format: int64
+                      minimum: 0
+                      type: integer
+                - in: query
+                  explode: false
+                  name: productOptionValueId
+                  required: true
+                  schema:
+                      description:
+                          Product Option Value Id
+                      example: 30130
+                      format: int64
+                      minimum: 0
+                      type: integer
+                  style: simple
+                - in: query
+                  explode: false
+                  name: skuId
+                  required: true
+                  schema:
+                      description:
+                          Sku Id
+                      example: 30130
+                      format: int64
+                      minimum: 0
+                      type: integer
+                  style: simple
+                - in: query
+                  name: page
+                  required: false
+                  schema:
+                      type: integer
+                - in: query
+                  name: pageSize
+                  required: false
+                  schema:
+                      type: integer
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/ProductOptionValue"
+                                type: array
+                        application/xml:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/ProductOptionValue"
+                                type: array
+                    description:
+                        Successful operation
+                401:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                    description:
+                        Authentication information is missing or invalid
+                404:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                    description:
+                        The specified resource was not found
+                500:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                    description:
+                        Unexpected error
+            summary: Gets Product Option Values.
+            tags: ["ProductOptionValue"]
     "/channels/{channelId}/products/{productId}/product-specifications":
         get:
             operationId: getChannelProductProductSpecificationsPage
@@ -2041,7 +2389,9 @@ paths:
                   schema:
                       description:
                           Quantity
-                      type: integer
+                      example: 10.1
+                      format: bigdecimal
+                      type: number
             requestBody:
                 content:
                     application/json:
@@ -2146,7 +2496,16 @@ paths:
                   schema:
                       description:
                           Quantity
-                      type: integer
+                      example: 10.1
+                      format: bigdecimal
+                      type: number
+                - in: query
+                  name: skuUnitOfMeasureKey
+                  required: false
+                  schema:
+                      description:
+                          Sku Unit Of Measure Key
+                      type: string
             requestBody:
                 content:
                     application/json:
@@ -2174,6 +2533,98 @@ paths:
                 400:
                     description:
                         Invalid input
+                401:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                    description:
+                        Authentication information is missing or invalid
+                404:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                    description:
+                        The specified resource was not found
+                500:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+                    description:
+                        Unexpected error
+            tags: ["Sku"]
+    "/channels/{channelId}/products/{productId}/skus/{skuId}":
+        get:
+            description:
+                Retrieves a product from selected channel.
+            operationId: getChannelProductSku
+            parameters:
+                - in: path
+                  explode: false
+                  name: channelId
+                  required: true
+                  schema:
+                      description:
+                          Channel Id
+                      example: 30130
+                      format: int64
+                      minimum: 0
+                      type: integer
+                  style: simple
+                - in: path
+                  explode: false
+                  name: productId
+                  required: true
+                  schema:
+                      description:
+                          Product Id
+                      example: 30130
+                      format: int64
+                      minimum: 0
+                      type: integer
+                  style: simple
+                - in: path
+                  explode: false
+                  name: skuId
+                  required: true
+                  schema:
+                      description:
+                          Sku Id
+                      example: 30130
+                      format: int64
+                      minimum: 0
+                      type: integer
+                  style: simple
+                - in: query
+                  name: accountId
+                  required: false
+                  schema:
+                      description:
+                          Account Id
+                      example: 30130
+                      format: int64
+                      minimum: 0
+                      type: integer
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Sku"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/Sku"
                 401:
                     content:
                         application/json:

@@ -1,19 +1,11 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.site.admin.web.internal.initializer;
 
+import com.liferay.layout.constants.LayoutTypeSettingsConstants;
 import com.liferay.layout.importer.LayoutsImporter;
 import com.liferay.layout.page.template.model.LayoutPageTemplateStructure;
 import com.liferay.layout.page.template.service.LayoutPageTemplateStructureLocalService;
@@ -30,6 +22,7 @@ import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.util.UnicodeProperties;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.site.exception.InitializationException;
 import com.liferay.site.initializer.SiteInitializer;
@@ -76,6 +69,10 @@ public class BlankSiteInitializer implements SiteInitializer {
 		_addLayoutUtilityPageEntry(
 			404, groupId, "404 Error",
 			LayoutUtilityPageEntryConstants.TYPE_SC_NOT_FOUND);
+
+		_addLayoutUtilityPageEntry(
+			500, groupId, "500 Error",
+			LayoutUtilityPageEntryConstants.TYPE_SC_INTERNAL_SERVER_ERROR);
 	}
 
 	@Override
@@ -87,14 +84,18 @@ public class BlankSiteInitializer implements SiteInitializer {
 		int errorCode, long groupId, String name, String type) {
 
 		try {
+			String pageElementJSON =
+				_layoutUtilityPageEntryDefaultPageElementDefinitionProvider.
+					getDefaultPageElementJSON(type);
+
+			if (Validator.isNull(pageElementJSON)) {
+				return;
+			}
+
 			LayoutUtilityPageEntry layoutUtilityPageEntry =
 				_layoutUtilityPageEntryService.addLayoutUtilityPageEntry(
 					"LFR-" + errorCode + "-ERROR", groupId, 0, 0, true, name,
 					type, 0, ServiceContextThreadLocal.getServiceContext());
-
-			String pageElementJSON =
-				_layoutUtilityPageEntryDefaultPageElementDefinitionProvider.
-					getDefaultPageElementJSON(type);
 
 			Layout layout = _layoutLocalService.getLayout(
 				layoutUtilityPageEntry.getPlid());
@@ -119,7 +120,7 @@ public class BlankSiteInitializer implements SiteInitializer {
 		LayoutPageTemplateStructure layoutPageTemplateStructure =
 			_layoutPageTemplateStructureLocalService.
 				fetchLayoutPageTemplateStructure(
-					layout.getGroupId(), layout.getPlid(), true);
+					layout.getGroupId(), layout.getPlid());
 
 		LayoutStructure layoutStructure = LayoutStructure.of(
 			layoutPageTemplateStructure.getDefaultSegmentsExperienceData());
@@ -138,7 +139,8 @@ public class BlankSiteInitializer implements SiteInitializer {
 		UnicodeProperties typeSettingsUnicodeProperties =
 			draftLayout.getTypeSettingsProperties();
 
-		typeSettingsUnicodeProperties.put("published", Boolean.TRUE.toString());
+		typeSettingsUnicodeProperties.put(
+			LayoutTypeSettingsConstants.KEY_PUBLISHED, Boolean.TRUE.toString());
 
 		draftLayout.setTypeSettingsProperties(typeSettingsUnicodeProperties);
 
@@ -147,6 +149,10 @@ public class BlankSiteInitializer implements SiteInitializer {
 		_layoutLocalService.updateLayout(draftLayout);
 
 		Layout layout = _layoutLocalService.getLayout(layoutPlid);
+
+		layout.setStatus(WorkflowConstants.STATUS_APPROVED);
+
+		layout = _layoutLocalService.updateLayout(layout);
 
 		_layoutLocalService.updateLayout(
 			layout.getGroupId(), layout.isPrivateLayout(), layout.getLayoutId(),

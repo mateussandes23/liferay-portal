@@ -204,6 +204,11 @@
 	<td></td>
 </tr>
 <tr>
+	<td>SEARCH_COLUMN_AND_ROW</td>
+	<td>//div[contains(@class,'dnd-table')]//*[contains(string(),'${key_field}')]/../../..//div[contains(text(),'${key_color}')]</td>
+	<td></td>
+</tr>
+<tr>
 	<td>SORT_FIELD</td>
 	<td>//button[contains(@class, "btn-sorting") and contains(text(), "${key_field}")]</td>
 	<td></td>
@@ -251,6 +256,12 @@
 	<td>//ul[contains(@class,'list-unstyled')][@role='listbox']//li</td>
 	<td></td>
 </tr>
+<tr>
+	<td>ICON_IN_DATA_SET_FRAGMENT</td>
+	<td>xpath=(//div[(@class="dnd-tr")]/div[contains(@class,"dnd-td") and contains(string(), "${key_entryName}")]/..//*[contains(@class,'${key_icon}')])[${key_rowNumber}]</td>
+	<td></td>
+</tr>
+
 </tbody>
 </table>
 </body>

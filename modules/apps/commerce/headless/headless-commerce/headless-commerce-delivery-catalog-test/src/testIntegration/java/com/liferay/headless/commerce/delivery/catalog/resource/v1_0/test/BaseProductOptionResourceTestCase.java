@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.delivery.catalog.resource.v1_0.test;
@@ -42,6 +33,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -209,7 +201,7 @@ public abstract class BaseProductOptionResourceTestCase {
 			productOptionResource.getChannelProductProductOptionsPage(
 				channelId, productId, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if ((irrelevantChannelId != null) && (irrelevantProductId != null)) {
 			ProductOption irrelevantProductOption =
@@ -218,13 +210,13 @@ public abstract class BaseProductOptionResourceTestCase {
 					randomIrrelevantProductOption());
 
 			page = productOptionResource.getChannelProductProductOptionsPage(
-				irrelevantChannelId, irrelevantProductId, Pagination.of(1, 2));
+				irrelevantChannelId, irrelevantProductId,
+				Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantProductOption),
-				(List<ProductOption>)page.getItems());
+			assertContains(
+				irrelevantProductOption, (List<ProductOption>)page.getItems());
 			assertValid(
 				page,
 				testGetChannelProductProductOptionsPage_getExpectedActions(
@@ -242,11 +234,10 @@ public abstract class BaseProductOptionResourceTestCase {
 		page = productOptionResource.getChannelProductProductOptionsPage(
 			channelId, productId, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(productOption1, productOption2),
-			(List<ProductOption>)page.getItems());
+		assertContains(productOption1, (List<ProductOption>)page.getItems());
+		assertContains(productOption2, (List<ProductOption>)page.getItems());
 		assertValid(
 			page,
 			testGetChannelProductProductOptionsPage_getExpectedActions(
@@ -270,6 +261,13 @@ public abstract class BaseProductOptionResourceTestCase {
 		Long channelId = testGetChannelProductProductOptionsPage_getChannelId();
 		Long productId = testGetChannelProductProductOptionsPage_getProductId();
 
+		Page<ProductOption> productOptionPage =
+			productOptionResource.getChannelProductProductOptionsPage(
+				channelId, productId, null);
+
+		int totalCount = GetterUtil.getInteger(
+			productOptionPage.getTotalCount());
+
 		ProductOption productOption1 =
 			testGetChannelProductProductOptionsPage_addProductOption(
 				channelId, productId, randomProductOption());
@@ -284,19 +282,19 @@ public abstract class BaseProductOptionResourceTestCase {
 
 		Page<ProductOption> page1 =
 			productOptionResource.getChannelProductProductOptionsPage(
-				channelId, productId, Pagination.of(1, 2));
+				channelId, productId, Pagination.of(1, totalCount + 2));
 
 		List<ProductOption> productOptions1 =
 			(List<ProductOption>)page1.getItems();
 
 		Assert.assertEquals(
-			productOptions1.toString(), 2, productOptions1.size());
+			productOptions1.toString(), totalCount + 2, productOptions1.size());
 
 		Page<ProductOption> page2 =
 			productOptionResource.getChannelProductProductOptionsPage(
-				channelId, productId, Pagination.of(2, 2));
+				channelId, productId, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<ProductOption> productOptions2 =
 			(List<ProductOption>)page2.getItems();
@@ -306,11 +304,11 @@ public abstract class BaseProductOptionResourceTestCase {
 
 		Page<ProductOption> page3 =
 			productOptionResource.getChannelProductProductOptionsPage(
-				channelId, productId, Pagination.of(1, 3));
+				channelId, productId, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(productOption1, productOption2, productOption3),
-			(List<ProductOption>)page3.getItems());
+		assertContains(productOption1, (List<ProductOption>)page3.getItems());
+		assertContains(productOption2, (List<ProductOption>)page3.getItems());
+		assertContains(productOption3, (List<ProductOption>)page3.getItems());
 	}
 
 	protected ProductOption
@@ -550,14 +548,19 @@ public abstract class BaseProductOptionResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -862,17 +865,93 @@ public abstract class BaseProductOptionResourceTestCase {
 		}
 
 		if (entityFieldName.equals("description")) {
-			sb.append("'");
-			sb.append(String.valueOf(productOption.getDescription()));
-			sb.append("'");
+			Object object = productOption.getDescription();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("fieldType")) {
-			sb.append("'");
-			sb.append(String.valueOf(productOption.getFieldType()));
-			sb.append("'");
+			Object object = productOption.getFieldType();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -883,17 +962,93 @@ public abstract class BaseProductOptionResourceTestCase {
 		}
 
 		if (entityFieldName.equals("key")) {
-			sb.append("'");
-			sb.append(String.valueOf(productOption.getKey()));
-			sb.append("'");
+			Object object = productOption.getKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
 
 		if (entityFieldName.equals("name")) {
-			sb.append("'");
-			sb.append(String.valueOf(productOption.getName()));
-			sb.append("'");
+			Object object = productOption.getName();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

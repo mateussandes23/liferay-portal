@@ -1,6 +1,7 @@
 definition {
 
-	macro addEntryOnRelationshipTab {
+	@summary = "Default summary"
+	macro addEntryOnRelationshipTab(selectEntry = null, newEntry = null) {
 		LexiconEntry.gotoAdd();
 
 		if (isSet(newEntry)) {
@@ -27,6 +28,10 @@ definition {
 			ClickNoError(
 				key_titleFieldName = ${selectEntry},
 				locator1 = "CreateObject#SELECT_ENTRY_IN_RELATIONSHIP_TAB");
+
+			WaitForSPARefresh();
+
+			Refresh();
 		}
 
 		WaitForSPARefresh();

@@ -99,7 +99,7 @@ exports[`Event Analysis Edit should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#pencil"
+                        href="#pencil"
                       />
                     </svg>
                   </button>
@@ -166,6 +166,7 @@ exports[`Event Analysis Edit should render 1`] = `
                         assetClicked
                       </button>
                       <button
+                        aria-label="Close"
                         class="button-root remove-button btn btn-unstyled"
                         type="button"
                       >
@@ -174,7 +175,7 @@ exports[`Event Analysis Edit should render 1`] = `
                           role="presentation"
                         >
                           <use
-                            xlink:href="#times-circle"
+                            href="#times-circle"
                           />
                         </svg>
                       </button>
@@ -215,7 +216,7 @@ exports[`Event Analysis Edit should render 1`] = `
                             role="presentation"
                           >
                             <use
-                              xlink:href="#drag"
+                              href="#drag"
                             />
                           </svg>
                         </div>
@@ -231,7 +232,7 @@ exports[`Event Analysis Edit should render 1`] = `
                               role="presentation"
                             >
                               <use
-                                xlink:href="#text"
+                                href="#text"
                               />
                             </svg>
                           </div>
@@ -249,6 +250,7 @@ exports[`Event Analysis Edit should render 1`] = `
                           </div>
                         </button>
                         <button
+                          aria-label="Close"
                           class="button-root remove-button btn btn-unstyled"
                           type="button"
                         >
@@ -257,7 +259,7 @@ exports[`Event Analysis Edit should render 1`] = `
                             role="presentation"
                           >
                             <use
-                              xlink:href="#times-circle"
+                              href="#times-circle"
                             />
                           </svg>
                         </button>
@@ -282,7 +284,7 @@ exports[`Event Analysis Edit should render 1`] = `
                             role="presentation"
                           >
                             <use
-                              xlink:href="#drag"
+                              href="#drag"
                             />
                           </svg>
                         </div>
@@ -298,7 +300,7 @@ exports[`Event Analysis Edit should render 1`] = `
                               role="presentation"
                             >
                               <use
-                                xlink:href="#text"
+                                href="#text"
                               />
                             </svg>
                           </div>
@@ -316,6 +318,7 @@ exports[`Event Analysis Edit should render 1`] = `
                           </div>
                         </button>
                         <button
+                          aria-label="Close"
                           class="button-root remove-button btn btn-unstyled"
                           type="button"
                         >
@@ -324,7 +327,7 @@ exports[`Event Analysis Edit should render 1`] = `
                             role="presentation"
                           >
                             <use
-                              xlink:href="#times-circle"
+                              href="#times-circle"
                             />
                           </svg>
                         </button>
@@ -339,6 +342,7 @@ exports[`Event Analysis Edit should render 1`] = `
                     aria-controls="clay-dropdown-menu-4"
                     aria-expanded="false"
                     aria-haspopup="true"
+                    aria-label="Add"
                     class="dropdown-toggle button-root add-attribute btn btn-outline-borderless btn-sm btn-outline-secondary"
                     type="button"
                   >
@@ -347,7 +351,7 @@ exports[`Event Analysis Edit should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#plus"
+                        href="#plus"
                       />
                     </svg>
                   </button>
@@ -389,7 +393,7 @@ exports[`Event Analysis Edit should render 1`] = `
                               role="presentation"
                             >
                               <use
-                                xlink:href="#text"
+                                href="#text"
                               />
                             </svg>
                           </div>
@@ -407,6 +411,7 @@ exports[`Event Analysis Edit should render 1`] = `
                           </div>
                         </button>
                         <button
+                          aria-label="Close"
                           class="button-root remove-button btn btn-unstyled"
                           type="button"
                         >
@@ -415,7 +420,7 @@ exports[`Event Analysis Edit should render 1`] = `
                             role="presentation"
                           >
                             <use
-                              xlink:href="#times-circle"
+                              href="#times-circle"
                             />
                           </svg>
                         </button>
@@ -430,6 +435,7 @@ exports[`Event Analysis Edit should render 1`] = `
                     aria-controls="clay-dropdown-menu-6"
                     aria-expanded="false"
                     aria-haspopup="true"
+                    aria-label="Add"
                     class="dropdown-toggle button-root add-attribute btn btn-outline-borderless btn-sm btn-outline-secondary"
                     type="button"
                   >
@@ -438,7 +444,7 @@ exports[`Event Analysis Edit should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#plus"
+                        href="#plus"
                       />
                     </svg>
                   </button>
@@ -541,7 +547,7 @@ exports[`Event Analysis Edit should render 1`] = `
                     role="presentation"
                   >
                     <use
-                      xlink:href="#caret-bottom"
+                      href="#caret-bottom"
                     />
                   </svg>
                 </button>
@@ -549,23 +555,23 @@ exports[`Event Analysis Edit should render 1`] = `
             </div>
           </div>
           <div
-            class="error-page-root page-container"
+            class="error-display-root flex-grow-1 error-spacer no-results-root flex-grow-1"
           >
-            <h1>
-              404
-            </h1>
-            <h3>
-              Page Not Found
-            </h3>
-            <p>
-              The page you are looking for does not exist.
-            </p>
-            <a
-              class="button-root btn btn-secondary"
-              href="/"
+            <div
+              class="no-results-content"
             >
-              Go to Home
-            </a>
+              <h4
+                class="no-results-title"
+              >
+                An unexpected error occurred.
+              </h4>
+              <button
+                class="button-root btn btn-secondary"
+                type="button"
+              >
+                Reload
+              </button>
+            </div>
           </div>
         </div>
       </span>

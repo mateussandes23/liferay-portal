@@ -1,6 +1,7 @@
 @component-name = "portal-wcm"
 definition {
 
+	property ci.retries.disabled = "true";
 	property portal.release = "true";
 	property portal.upstream = "true";
 	property testray.main.component.name = "Fragments";
@@ -21,17 +22,6 @@ definition {
 				groupName = "Test Site Name",
 				layoutName = "Content Page Name",
 				type = "content");
-		}
-	}
-
-	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
-
-		if (${testPortalInstance} == "true") {
-			PortalInstances.tearDownCP();
-		}
-		else {
-			JSONGroup.deleteGroupByName(groupName = "Test Site Name");
 		}
 	}
 
@@ -163,19 +153,9 @@ definition {
 				key_content = "[normalize-space(text())='Web Content Content']",
 				locator1 = "WCD#WEB_CONTENT_CONTENT_ANY");
 
-			AssertTextEquals(
-				locator1 = "Portlet#MESSAGE_INFO",
-				value1 = "You do not have permission to access the requested resource.");
-
 			ContentPages.gotoPageEditor();
 
-			AssertElementNotPresent(
-				key_content = "[normalize-space(text())='Web Content Content']",
-				locator1 = "WCD#WEB_CONTENT_CONTENT_ANY");
-
-			AssertTextEquals(
-				locator1 = "Portlet#MESSAGE_INFO",
-				value1 = "You do not have permission to access the requested resource.");
+			AssertVisible(locator1 = "//div[contains(@class,'alert')][normalize-space()='This content cannot be displayed due to permission restrictions.']");
 		}
 	}
 
@@ -585,7 +565,8 @@ definition {
 	@description = "This is a test for LPS-101249 and LPS-100545. Can only select web content articles created with a specific structure when set itemSubtype."
 	@priority = 3
 	test ViewOnlyWebContentBasedOnCustomStructureAvailableWhenSetItemSubtype {
-		property test.name.skip.portal.instance = "ContentDisplay#ViewOnlyWebContentBasedOnCustomStructureAvailableWhenSetItemSubtype";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		task ("Add a WC based on Basic Web Content") {
 			JSONWebcontent.addWebContent(

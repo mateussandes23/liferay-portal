@@ -1,21 +1,11 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.commerce.checkout.web.internal.helper;
 
 import com.liferay.account.model.AccountEntry;
-import com.liferay.account.service.AccountEntryLocalService;
 import com.liferay.commerce.checkout.helper.CommerceCheckoutStepHttpHelper;
 import com.liferay.commerce.constants.CommerceCheckoutWebKeys;
 import com.liferay.commerce.constants.CommerceOrderActionKeys;
@@ -40,7 +30,6 @@ import com.liferay.commerce.product.constants.CommerceChannelAccountEntryRelCons
 import com.liferay.commerce.product.model.CommerceChannel;
 import com.liferay.commerce.product.model.CommerceChannelAccountEntryRel;
 import com.liferay.commerce.product.service.CommerceChannelAccountEntryRelLocalService;
-import com.liferay.commerce.product.service.CommerceChannelAccountEntryRelService;
 import com.liferay.commerce.product.service.CommerceChannelLocalService;
 import com.liferay.commerce.service.CommerceAddressService;
 import com.liferay.commerce.service.CommerceOrderLocalService;
@@ -50,7 +39,6 @@ import com.liferay.commerce.shipping.engine.fixed.model.CommerceShippingFixedOpt
 import com.liferay.commerce.shipping.engine.fixed.service.CommerceShippingFixedOptionLocalService;
 import com.liferay.commerce.term.model.CommerceTermEntry;
 import com.liferay.commerce.term.service.CommerceTermEntryLocalService;
-import com.liferay.commerce.util.CommerceBigDecimalUtil;
 import com.liferay.commerce.util.CommerceShippingEngineRegistry;
 import com.liferay.commerce.util.CommerceShippingHelper;
 import com.liferay.commerce.util.comparator.CommerceShippingMethodPriorityComparator;
@@ -63,10 +51,14 @@ import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.transaction.Propagation;
 import com.liferay.portal.kernel.transaction.TransactionConfig;
 import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
+import com.liferay.portal.kernel.util.BigDecimalUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.util.WebKeys;
+
+import java.math.BigDecimal;
 
 import java.util.List;
 
@@ -170,7 +162,7 @@ public class DefaultCommerceCheckoutStepHttpHelper
 			 (defaultBillingCommerceAddressId ==
 				 defaultShippingCommerceAddressId) &&
 			 (billingAddress == null) && (shippingAddress == null) &&
-			 _commerceShippingHelper.isShippable(commerceOrder)) ||
+			 commerceOrder.isShippable()) ||
 			((billingAddress != null) && (shippingAddress != null) &&
 			 (billingAddress.getCommerceAddressId() ==
 				 shippingAddress.getCommerceAddressId()))) {
@@ -217,9 +209,14 @@ public class DefaultCommerceCheckoutStepHttpHelper
 					_commerceTermEntryLocalService.getCommerceTermEntry(
 						commerceChannelAccountEntryRel.getClassPK());
 
-				_commerceOrderLocalService.updateTermsAndConditions(
-					commerceOrder.getCommerceOrderId(),
-					commerceTermEntry.getCommerceTermEntryId(), 0, languageId);
+				commerceOrder =
+					_commerceOrderLocalService.updateTermsAndConditions(
+						commerceOrder.getCommerceOrderId(),
+						commerceTermEntry.getCommerceTermEntryId(), 0,
+						languageId);
+
+				httpServletRequest.setAttribute(
+					CommerceCheckoutWebKeys.COMMERCE_ORDER, commerceOrder);
 
 				return false;
 			}
@@ -279,9 +276,12 @@ public class DefaultCommerceCheckoutStepHttpHelper
 			CommerceTermEntry commerceTermEntry =
 				deliveryCommerceTermEntries.get(0);
 
-			_commerceOrderLocalService.updateTermsAndConditions(
+			commerceOrder = _commerceOrderLocalService.updateTermsAndConditions(
 				commerceOrder.getCommerceOrderId(),
 				commerceTermEntry.getCommerceTermEntryId(), 0, languageId);
+
+			httpServletRequest.setAttribute(
+				CommerceCheckoutWebKeys.COMMERCE_ORDER, commerceOrder);
 
 			return false;
 		}
@@ -301,17 +301,23 @@ public class DefaultCommerceCheckoutStepHttpHelper
 		if ((commerceTermEntry != null) && commerceTermEntry.isActive() &&
 			deliveryCommerceTermEntries.contains(commerceTermEntry)) {
 
-			_commerceOrderLocalService.updateTermsAndConditions(
+			commerceOrder = _commerceOrderLocalService.updateTermsAndConditions(
 				commerceOrder.getCommerceOrderId(),
 				commerceTermEntry.getCommerceTermEntryId(), 0,
 				_language.getLanguageId(_portal.getLocale(httpServletRequest)));
+
+			httpServletRequest.setAttribute(
+				CommerceCheckoutWebKeys.COMMERCE_ORDER, commerceOrder);
 		}
 		else {
 			commerceTermEntry = deliveryCommerceTermEntries.get(0);
 
-			_commerceOrderLocalService.updateTermsAndConditions(
+			commerceOrder = _commerceOrderLocalService.updateTermsAndConditions(
 				commerceOrder.getCommerceOrderId(),
 				commerceTermEntry.getCommerceTermEntryId(), 0, languageId);
+
+			httpServletRequest.setAttribute(
+				CommerceCheckoutWebKeys.COMMERCE_ORDER, commerceOrder);
 		}
 
 		return true;
@@ -341,9 +347,7 @@ public class DefaultCommerceCheckoutStepHttpHelper
 		CommerceMoney orderPriceTotalCommerceMoney =
 			commerceOrderPrice.getTotal();
 
-		if (CommerceBigDecimalUtil.isZero(
-				orderPriceTotalCommerceMoney.getPrice())) {
-
+		if (BigDecimalUtil.isZero(orderPriceTotalCommerceMoney.getPrice())) {
 			return false;
 		}
 
@@ -383,7 +387,7 @@ public class DefaultCommerceCheckoutStepHttpHelper
 
 		if (accountEntry != null) {
 			CommerceChannelAccountEntryRel commerceChannelAccountEntryRel =
-				_commerceChannelAccountEntryRelService.
+				_commerceChannelAccountEntryRelLocalService.
 					fetchCommerceChannelAccountEntryRel(
 						accountEntry.getAccountEntryId(),
 						commerceContext.getCommerceChannelId(),
@@ -407,7 +411,8 @@ public class DefaultCommerceCheckoutStepHttpHelper
 						String key = curCommercePaymentMethod.getKey();
 
 						if (key.equals(
-								commercePaymentMethodGroupRel.getEngineKey())) {
+								commercePaymentMethodGroupRel.
+									getPaymentIntegrationKey())) {
 
 							commercePaymentMethod = curCommercePaymentMethod;
 
@@ -474,9 +479,13 @@ public class DefaultCommerceCheckoutStepHttpHelper
 					_commerceTermEntryLocalService.getCommerceTermEntry(
 						commerceChannelAccountEntryRel.getClassPK());
 
-				_commerceOrderLocalService.updateTermsAndConditions(
-					commerceOrder.getCommerceOrderId(), 0,
-					commerceTermEntry.getCommerceTermEntryId(), languageId);
+				commerceOrder =
+					_commerceOrderLocalService.updateTermsAndConditions(
+						commerceOrder.getCommerceOrderId(), 0,
+						commerceTermEntry.getCommerceTermEntryId(), languageId);
+
+				httpServletRequest.setAttribute(
+					CommerceCheckoutWebKeys.COMMERCE_ORDER, commerceOrder);
 
 				return false;
 			}
@@ -506,9 +515,12 @@ public class DefaultCommerceCheckoutStepHttpHelper
 			CommerceTermEntry commerceTermEntry =
 				paymentCommerceTermEntries.get(0);
 
-			_commerceOrderLocalService.updateTermsAndConditions(
+			commerceOrder = _commerceOrderLocalService.updateTermsAndConditions(
 				commerceOrder.getCommerceOrderId(), 0,
 				commerceTermEntry.getCommerceTermEntryId(), languageId);
+
+			httpServletRequest.setAttribute(
+				CommerceCheckoutWebKeys.COMMERCE_ORDER, commerceOrder);
 
 			return false;
 		}
@@ -528,32 +540,30 @@ public class DefaultCommerceCheckoutStepHttpHelper
 		if ((commerceTermEntry != null) && commerceTermEntry.isActive() &&
 			paymentCommerceTermEntries.contains(commerceTermEntry)) {
 
-			_commerceOrderLocalService.updateTermsAndConditions(
+			commerceOrder = _commerceOrderLocalService.updateTermsAndConditions(
 				commerceOrder.getCommerceOrderId(), 0,
 				commerceTermEntry.getCommerceTermEntryId(), languageId);
 		}
 		else {
 			commerceTermEntry = paymentCommerceTermEntries.get(0);
 
-			_commerceOrderLocalService.updateTermsAndConditions(
+			commerceOrder = _commerceOrderLocalService.updateTermsAndConditions(
 				commerceOrder.getCommerceOrderId(), 0,
 				commerceTermEntry.getCommerceTermEntryId(), languageId);
 		}
+
+		httpServletRequest.setAttribute(
+			CommerceCheckoutWebKeys.COMMERCE_ORDER, commerceOrder);
 
 		return true;
 	}
 
 	@Override
 	public boolean isActiveShippingMethodCommerceCheckoutStep(
-			HttpServletRequest httpServletRequest)
+			CommerceOrder commerceOrder, HttpServletRequest httpServletRequest)
 		throws PortalException {
 
-		CommerceOrder commerceOrder =
-			(CommerceOrder)httpServletRequest.getAttribute(
-				CommerceCheckoutWebKeys.COMMERCE_ORDER);
-
-		if (!commerceOrder.isOpen() ||
-			!_commerceShippingHelper.isShippable(commerceOrder) ||
+		if (!commerceOrder.isOpen() || !commerceOrder.isShippable() ||
 			_commerceShippingHelper.isFreeShipping(commerceOrder)) {
 
 			return false;
@@ -608,6 +618,9 @@ public class DefaultCommerceCheckoutStepHttpHelper
 			commerceOrder = _updateCommerceOrderCommerceShippingMethod(
 				commerceContext, commerceOrder, commerceShippingMethods,
 				httpServletRequest);
+
+			httpServletRequest.setAttribute(
+				CommerceCheckoutWebKeys.COMMERCE_ORDER, commerceOrder);
 		}
 
 		return _hasCommerceOrderPermission(
@@ -620,7 +633,7 @@ public class DefaultCommerceCheckoutStepHttpHelper
 			HttpServletRequest httpServletRequest, CommerceOrder commerceOrder)
 		throws PortalException {
 
-		if (CommerceBigDecimalUtil.isZero(commerceOrder.getTotal())) {
+		if (BigDecimalUtil.isZero(commerceOrder.getTotal())) {
 			return true;
 		}
 
@@ -678,7 +691,7 @@ public class DefaultCommerceCheckoutStepHttpHelper
 
 	private CommerceOrder _updateCommerceOrder(
 			CommerceContext commerceContext, CommerceOrder commerceOrder,
-			String commerceShippingMethodKey, String commerceShippingOptionKey,
+			String commerceShippingMethodKey, String shippingOptionKey,
 			HttpServletRequest httpServletRequest)
 		throws PortalException {
 
@@ -710,13 +723,129 @@ public class DefaultCommerceCheckoutStepHttpHelper
 								getCommerceShippingMethodId();
 					}
 
-					_commerceOrderLocalService.updateCommerceShippingMethod(
-						commerceOrder.getCommerceOrderId(),
-						commerceShippingMethodId, commerceShippingOptionKey,
-						commerceContext, _portal.getLocale(httpServletRequest));
+					if ((commerceOrder.getCommerceShippingMethodId() ==
+							commerceShippingMethodId) ||
+						StringUtil.equals(
+							commerceOrder.getShippingOptionName(),
+							shippingOptionKey)) {
 
-					return _commerceOrderLocalService.recalculatePrice(
-						commerceOrder.getCommerceOrderId(), commerceContext);
+						return commerceOrder;
+					}
+
+					BigDecimal shippingAmount =
+						commerceOrder.getShippingAmount();
+
+					if ((commerceOrder.getCommerceShippingMethodId() == 0) ||
+						Validator.isBlank(
+							commerceOrder.getShippingOptionName())) {
+
+						CommerceShippingEngine commerceShippingEngine =
+							_commerceShippingEngineRegistry.
+								getCommerceShippingEngine(
+									commerceShippingMethod.getEngineKey());
+
+						List<CommerceShippingOption> commerceShippingOptions =
+							commerceShippingEngine.
+								getEnabledCommerceShippingOptions(
+									commerceContext, commerceOrder,
+									_portal.getLocale(httpServletRequest));
+
+						for (CommerceShippingOption commerceShippingOption :
+								commerceShippingOptions) {
+
+							if (StringUtil.equals(
+									shippingOptionKey,
+									commerceShippingOption.getKey())) {
+
+								shippingAmount =
+									commerceShippingOption.getAmount();
+
+								break;
+							}
+						}
+					}
+
+					return _commerceOrderLocalService.updateCommerceOrder(
+						commerceOrder.getUserId(),
+						commerceOrder.getExternalReferenceCode(),
+						commerceOrder.getCommerceOrderId(),
+						commerceOrder.getBillingAddressId(),
+						commerceOrder.getCommerceAccountId(),
+						commerceOrder.getCommerceCurrencyId(),
+						commerceOrder.getCommerceOrderTypeId(),
+						commerceShippingMethodId,
+						commerceOrder.getDeliveryCommerceTermEntryId(),
+						commerceOrder.getPaymentCommerceTermEntryId(),
+						commerceOrder.getShippingAddressId(),
+						commerceOrder.getAdvanceStatus(),
+						commerceOrder.getCommercePaymentMethodKey(),
+						commerceOrder.getCouponCode(),
+						commerceOrder.getDeliveryCommerceTermEntryDescription(),
+						commerceOrder.getDeliveryCommerceTermEntryName(),
+						commerceOrder.getLastPriceUpdateDate(),
+						commerceOrder.isManuallyAdjusted(),
+						commerceOrder.getOrderDate(),
+						commerceOrder.getOrderStatus(),
+						commerceOrder.getPaymentCommerceTermEntryDescription(),
+						commerceOrder.getPaymentCommerceTermEntryName(),
+						commerceOrder.getPaymentStatus(),
+						commerceOrder.getPrintedNote(),
+						commerceOrder.getPurchaseOrderNumber(),
+						commerceOrder.getRequestedDeliveryDate(),
+						commerceOrder.isShippable(), shippingAmount,
+						commerceOrder.getShippingDiscountAmount(),
+						commerceOrder.getShippingDiscountPercentageLevel1(),
+						commerceOrder.getShippingDiscountPercentageLevel2(),
+						commerceOrder.getShippingDiscountPercentageLevel3(),
+						commerceOrder.getShippingDiscountPercentageLevel4(),
+						commerceOrder.
+							getShippingDiscountPercentageLevel1WithTaxAmount(),
+						commerceOrder.
+							getShippingDiscountPercentageLevel2WithTaxAmount(),
+						commerceOrder.
+							getShippingDiscountPercentageLevel3WithTaxAmount(),
+						commerceOrder.
+							getShippingDiscountPercentageLevel4WithTaxAmount(),
+						commerceOrder.getShippingDiscountWithTaxAmount(),
+						shippingOptionKey,
+						commerceOrder.getShippingWithTaxAmount(),
+						commerceOrder.getSubtotal(),
+						commerceOrder.getSubtotalDiscountAmount(),
+						commerceOrder.getSubtotalDiscountPercentageLevel1(),
+						commerceOrder.getSubtotalDiscountPercentageLevel2(),
+						commerceOrder.getSubtotalDiscountPercentageLevel3(),
+						commerceOrder.getSubtotalDiscountPercentageLevel4(),
+						commerceOrder.
+							getSubtotalDiscountPercentageLevel1WithTaxAmount(),
+						commerceOrder.
+							getSubtotalDiscountPercentageLevel2WithTaxAmount(),
+						commerceOrder.
+							getSubtotalDiscountPercentageLevel3WithTaxAmount(),
+						commerceOrder.
+							getSubtotalDiscountPercentageLevel4WithTaxAmount(),
+						commerceOrder.getSubtotalDiscountWithTaxAmount(),
+						commerceOrder.getSubtotalWithTaxAmount(),
+						commerceOrder.getTaxAmount(), commerceOrder.getTotal(),
+						commerceOrder.getTotalDiscountAmount(),
+						commerceOrder.getTotalDiscountPercentageLevel1(),
+						commerceOrder.getTotalDiscountPercentageLevel2(),
+						commerceOrder.getTotalDiscountPercentageLevel3(),
+						commerceOrder.getTotalDiscountPercentageLevel4(),
+						commerceOrder.
+							getTotalDiscountPercentageLevel1WithTaxAmount(),
+						commerceOrder.
+							getTotalDiscountPercentageLevel2WithTaxAmount(),
+						commerceOrder.
+							getTotalDiscountPercentageLevel3WithTaxAmount(),
+						commerceOrder.
+							getTotalDiscountPercentageLevel4WithTaxAmount(),
+						commerceOrder.getTotalDiscountWithTaxAmount(),
+						commerceOrder.getTotalWithTaxAmount(),
+						commerceOrder.getTransactionId(),
+						commerceOrder.getStatus(),
+						commerceOrder.getStatusByUserId(),
+						commerceOrder.getStatusByUserName(),
+						commerceOrder.getStatusDate(), true, commerceContext);
 				});
 
 			httpServletRequest.setAttribute(
@@ -850,18 +979,11 @@ public class DefaultCommerceCheckoutStepHttpHelper
 			Propagation.REQUIRED, new Class<?>[] {Exception.class});
 
 	@Reference
-	private AccountEntryLocalService _accountEntryLocalService;
-
-	@Reference
 	private CommerceAddressService _commerceAddressService;
 
 	@Reference
 	private CommerceChannelAccountEntryRelLocalService
 		_commerceChannelAccountEntryRelLocalService;
-
-	@Reference
-	private CommerceChannelAccountEntryRelService
-		_commerceChannelAccountEntryRelService;
 
 	@Reference
 	private CommerceChannelLocalService _commerceChannelLocalService;

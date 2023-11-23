@@ -12,14 +12,22 @@
 
 	.adt-apps-search-results .card-image-title-container .image-container {
 		height: 3rem;
+	}
+
+	.adt-apps-search-results .cards-container .app-search-results-card .card-image-title-container .image-container .app-search-image {
+		height: 3rem;
 		min-width: 3rem;
+		object-fit: cover;
+	}
+
+	.adt-apps-search-results .labels .category-label-remainder:hover .category-names {
+		display: block;
 	}
 
 	@media screen and (max-width: 599px) {
-
 		.adt-apps-search-results .cards-container {
-			grid-template-columns: 288px;
 			grid-row-gap: 1rem;
+			grid-template-columns: 288px;
 			justify-content: center;
 		}
 
@@ -35,90 +43,120 @@
 	}
 </style>
 
-<#if serviceLocator??>
-	<#assign assetCategoryLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetCategoryLocalService") />
+<#assign categoryName = "App" />
+
+<#if searchContainer?has_content>
+	<div class="color-neutral-3 d-md-block d-none pb-4">
+		<strong class="color-black">
+			${searchContainer.getTotal()}
+		</strong>
+		${categoryName}s Available
+	</div>
 </#if>
 
-<#assign
-	searchContainer = cpSearchResultsDisplayContext.getSearchContainer()
+<#if themeDisplay?has_content>
+	<#assign scopeGroupId = themeDisplay.getScopeGroupId() />
+</#if>
 
-	COMMERCE_PRODUCT_CLASS_NAME = "com.liferay.commerce.product.model.CPDefinition"
-	MARKETPLACE_PRICE_VOCABULARY_ID = 449511429
-/>
+<#assign channel = restClient.get("/headless-commerce-delivery-catalog/v1.0/channels?accountId=-1&filter=name eq 'Marketplace Channel' and siteGroupId eq '${scopeGroupId}'") />
+
+<#if channel?has_content>
+	<#assign channelId = channel.items[0].id />
+</#if>
 
 <div class="adt-apps-search-results">
-	<div class="app-count color-neutral-3 d-md-block d-none pb-4">
-		<#if entries?has_content>
-			${languageUtil.format(locale, "x-applications-available", "<strong class='color-black'>${searchContainer.getTotal()}</strong>")}
-		</#if>
-	</div>
-
 	<div class="cards-container pb-6">
 		<#if entries?has_content>
-			<#list entries as curCPCatalogEntry>
+			<#list entries as entry>
+				<#if entry?has_content>
+					<#assign
+						portalURL = portalUtil.getLayoutURL(themeDisplay)
+						productId = entry.getClassPK() + 1
+						product = restClient.get("/headless-commerce-delivery-catalog/v1.0/channels/"+ channelId +"/products/"+ productId +"?accountId=-1&nestedFields=productSpecifications,categories")
+						productSpecifications = product.productSpecifications![]
+					/>
 
-				<#if serviceLocator?? && assetCategoryLocalService??>
-					<#assign categories = assetCategoryLocalService.getCategories(COMMERCE_PRODUCT_CLASS_NAME, curCPCatalogEntry.getCPDefinitionId()) />
-				</#if>
+					<#if product.name?has_content>
+						<#assign productName = product.name />
+					<#else>
+						<#assign productName = "" />
+					</#if>
 
-				<#assign
-					cpDefinitionId = curCPCatalogEntry.getCPDefinitionId()
-					developerName = expandoValueLocalService.getData(companyId, COMMERCE_PRODUCT_CLASS_NAME, "CUSTOM_FIELDS", "Developer Name", curCPCatalogEntry.getCPDefinitionId(), "")!""
-					productName = curCPCatalogEntry.getName()
-					productDescription = (stringUtil.shorten(htmlUtil.stripHtml(curCPCatalogEntry.getDescription()), 150,"..."))
-					friendlyURL = cpContentHelper.getFriendlyURL(curCPCatalogEntry, themeDisplay)
-					productImageURL = "https://www.liferay.com/documents/448812852/0/icon.png/5da637ed-9593-5531-a6f0-bcd1c5ad20d8/icon.png?t=1656341514206"
-					images = cpContentHelper.getImages(cpDefinitionId, themeDisplay)
-				/>
+					<#if product.description?has_content>
+						<#assign productDescription = stringUtil.shorten(htmlUtil.stripHtml(product.description!""), 150, "...") />
+					<#else>
+						<#assign productDescription = "" />
+					</#if>
 
-				<#list images as image>
-						<#assign title = image.getTitle()!"" />
-						<#if title?contains("App Icon")>
-							<#assign productImageURL = image.getURL() />
+					<#if product.urls?has_content>
+						<#assign productURL = portalURL?replace("home", "p") + "/" + product.urls.en_US />
+					<#else>
+						<#assign productURL = "" />
+					</#if>
+
+					<#if product.urlImage?has_content>
+						<#assign productThumbnail = product.urlImage?split("/o") />
+						<#if productThumbnail?has_content && productThumbnail?size gte 2>
+							<#assign productThumbnail1 = "/o/${productThumbnail[1]}"!"" />
+						<#else>
+							<#assign productThumbnail1 = "/o/commerce-media/default/?groupId=${scopeGroupId}" />
 						</#if>
-				</#list>
+					<#else>
+						<#assign productThumbnail1 = "/o/commerce-media/default/?groupId=${scopeGroupId}" />
+					</#if>
 
-				<a class="app-search-results-card bg-white border-radius-medium color-black flex flex-column mb-0 p-3 text-decoration-none" href=${friendlyURL}>
-					<div class="card-image-title-container flex pb-3">
-						<#if productImageURL?has_content>
-							<div class="border-radius-medium image-container">
+					<a class="app-search-results-card bg-white border-radius-medium d-flex flex-column mb-0 p-3 text-dark text-decoration-none" href=${productURL}>
+						<div class="align-items-center card-image-title-container d-flex pb-3">
+							<div class="image-container rounded">
 								<img
-									alt=${productName}
-									class="h-100 image mw-100"
-									src="${productImageURL}"
+									alt="${productName}"
+									class="app-search-image"
+									src="${productThumbnail1}"
 								/>
 							</div>
-						</#if>
 
-						<div class="pl-2 title-description-text">
-							<div class="font-size-heading-f5 title">
-								${productName}
-							</div>
+							<div class="pl-2">
+								<div class="font-weight-semi-bold h2 mt-1">
+									${productName}
+								</div>
+								<#if productSpecifications?has_content>
+									<#assign productDeveloperName = productSpecifications?filter(item -> item.specificationKey == "developer-name") />
 
-							<div class="color-neutral-3 developer-name font-size-paragraph-small font-weight-normal">
-								${developerName}
-							</div>
-						</div>
-					</div>
-
-					<div class="color-black description-price-container flex flex-column font-size-paragraph-small h-100 justify-content-between">
-						<div class="description-price-text">
-							<div class="description font-weight-normal mb-2">
-								${productDescription}
-							</div>
-
-							<div class="font-weight-semi-bold price">
-								<#if categories??>
-									<#list categories as category>
-										<#if category.getVocabularyId() == MARKETPLACE_PRICE_VOCABULARY_ID>
-											${category.getName()}
+									<#list productDeveloperName as developerNameItem>
+										<#if developerNameItem.value?has_content>
+											<#assign developerName = developerNameItem.value />
+										<#else>
+											<#assign developerName = "" />
 										</#if>
+										<div class="color-neutral-3 font-size-paragraph-small mt-1">
+											${developerName}
+										</div>
 									</#list>
 								</#if>
 							</div>
 						</div>
-					</div>
-				</a>
+
+						<div class="d-flex flex-column font-size-paragraph-small h-100 justify-content-between">
+							<div class="font-weight-normal mb-2">
+								${productDescription}
+							</div>
+							<#if productSpecifications?has_content>
+								<#assign productPriceModels = productSpecifications?filter(item -> item.specificationKey == "price-model") />
+
+								<#list productPriceModels as productPriceModel>
+									<#if productPriceModel.value?has_content>
+										<#assign priceModel = productPriceModel.value />
+									<#else>
+										<#assign priceModel = "" />
+									</#if>
+									<div class="font-weight-semi-bold mt-1">
+										${priceModel}
+									</div>
+								</#list>
+							</#if>
+						</div>
+					</a>
+				</#if>
 			</#list>
 		</#if>
 	</div>

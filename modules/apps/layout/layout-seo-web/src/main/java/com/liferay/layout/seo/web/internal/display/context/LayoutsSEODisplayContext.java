@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.layout.seo.web.internal.display.context;
@@ -24,7 +15,7 @@ import com.liferay.dynamic.data.mapping.exception.StorageException;
 import com.liferay.dynamic.data.mapping.model.DDMStructure;
 import com.liferay.dynamic.data.mapping.service.DDMStructureServiceUtil;
 import com.liferay.dynamic.data.mapping.storage.DDMFormValues;
-import com.liferay.dynamic.data.mapping.storage.StorageEngine;
+import com.liferay.dynamic.data.mapping.storage.DDMStorageEngineManager;
 import com.liferay.info.exception.NoSuchFormVariationException;
 import com.liferay.info.form.InfoForm;
 import com.liferay.info.item.InfoItemClassDetails;
@@ -44,6 +35,7 @@ import com.liferay.layout.seo.model.LayoutSEOEntry;
 import com.liferay.layout.seo.model.LayoutSEOSite;
 import com.liferay.layout.seo.service.LayoutSEOEntryLocalServiceUtil;
 import com.liferay.layout.seo.service.LayoutSEOSiteLocalService;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -75,7 +67,6 @@ import com.liferay.site.display.context.GroupDisplayContextHelper;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.portlet.MimeResponse;
 import javax.portlet.PortletRequest;
@@ -89,6 +80,7 @@ import javax.servlet.http.HttpServletRequest;
 public class LayoutsSEODisplayContext {
 
 	public LayoutsSEODisplayContext(
+		DDMStorageEngineManager ddmStorageEngineManager,
 		DLAppService dlAppService, DLURLHelper dlurlHelper,
 		InfoItemServiceRegistry infoItemServiceRegistry,
 		ItemSelector itemSelector, LayoutLocalService layoutLocalService,
@@ -97,9 +89,9 @@ public class LayoutsSEODisplayContext {
 		LayoutSEOLinkManager layoutSEOLinkManager,
 		LayoutSEOSiteLocalService layoutSEOSiteLocalService,
 		LiferayPortletRequest liferayPortletRequest,
-		LiferayPortletResponse liferayPortletResponse,
-		StorageEngine storageEngine) {
+		LiferayPortletResponse liferayPortletResponse) {
 
+		_ddmStorageEngineManager = ddmStorageEngineManager;
 		_dlAppService = dlAppService;
 		_dlurlHelper = dlurlHelper;
 		_infoItemServiceRegistry = infoItemServiceRegistry;
@@ -112,7 +104,6 @@ public class LayoutsSEODisplayContext {
 		_layoutSEOSiteLocalService = layoutSEOSiteLocalService;
 		_liferayPortletRequest = liferayPortletRequest;
 		_liferayPortletResponse = liferayPortletResponse;
-		_storageEngine = storageEngine;
 
 		HttpServletRequest httpServletRequest =
 			PortalUtil.getHttpServletRequest(liferayPortletRequest);
@@ -135,8 +126,13 @@ public class LayoutsSEODisplayContext {
 			return null;
 		}
 
-		return _storageEngine.getDDMFormValues(
-			selLayoutSEOEntry.getDDMStorageId());
+		try {
+			return _ddmStorageEngineManager.getDDMFormValues(
+				selLayoutSEOEntry.getDDMStorageId());
+		}
+		catch (PortalException portalException) {
+			throw new StorageException(portalException);
+		}
 	}
 
 	public long getDDMStructurePrimaryKey() throws PortalException {
@@ -442,6 +438,19 @@ public class LayoutsSEODisplayContext {
 		).build();
 	}
 
+	public boolean isDefaultAssetDisplayPage() {
+		Layout layout = getSelLayout();
+
+		if ((layout == null) || !layout.isTypeAssetDisplay()) {
+			return false;
+		}
+
+		LayoutPageTemplateEntry layoutPageTemplateEntry =
+			_getLayoutPageTemplateEntry();
+
+		return layoutPageTemplateEntry.isDefaultTemplate();
+	}
+
 	public boolean isPrivateLayout() {
 		if (_privateLayout != null) {
 			return _privateLayout;
@@ -486,25 +495,26 @@ public class LayoutsSEODisplayContext {
 			"defaultLanguageId", _selLayout.getDefaultLanguageId()
 		).put(
 			"fields",
-			infoForm.getAllInfoFields(
-			).stream(
-			).filter(
-				infoField -> !StringUtil.startsWith(
-					infoField.getName(),
-					PortletDisplayTemplate.DISPLAY_STYLE_PREFIX)
-			).map(
-				infoField -> JSONUtil.put(
-					"key", infoField.getName()
-				).put(
-					"label", infoField.getLabel(_themeDisplay.getLocale())
-				).put(
-					"type",
-					infoField.getInfoFieldType(
-					).getName()
-				)
-			).collect(
-				Collectors.toList()
-			)
+			TransformUtil.transform(
+				infoForm.getAllInfoFields(),
+				infoField -> {
+					if (StringUtil.startsWith(
+							infoField.getName(),
+							PortletDisplayTemplate.DISPLAY_STYLE_PREFIX)) {
+
+						return null;
+					}
+
+					return JSONUtil.put(
+						"key", infoField.getName()
+					).put(
+						"label", infoField.getLabel(_themeDisplay.getLocale())
+					).put(
+						"type",
+						infoField.getInfoFieldType(
+						).getName()
+					);
+				})
 		).put(
 			"selectedSource",
 			JSONUtil.put(
@@ -539,7 +549,7 @@ public class LayoutsSEODisplayContext {
 				InfoItemFormProvider.class, _getClassName());
 
 		return infoItemFormProvider.getInfoForm(
-			String.valueOf(_getClassTypeId()));
+			String.valueOf(_getClassTypeId()), _themeDisplay.getScopeGroupId());
 	}
 
 	private LayoutPageTemplateEntry _getLayoutPageTemplateEntry() {
@@ -623,6 +633,7 @@ public class LayoutsSEODisplayContext {
 	private static final Log _log = LogFactoryUtil.getLog(
 		LayoutsSEODisplayContext.class);
 
+	private final DDMStorageEngineManager _ddmStorageEngineManager;
 	private DDMStructure _ddmStructure;
 	private final DLAppService _dlAppService;
 	private final DLURLHelper _dlurlHelper;
@@ -643,7 +654,6 @@ public class LayoutsSEODisplayContext {
 	private Boolean _privateLayout;
 	private Layout _selLayout;
 	private Long _selPlid;
-	private final StorageEngine _storageEngine;
 	private final ThemeDisplay _themeDisplay;
 
 }

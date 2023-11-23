@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.search.web.internal.facet.display.context.builder;
@@ -42,7 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import javax.portlet.RenderRequest;
@@ -66,6 +56,8 @@ public class AssetCategoriesSearchFacetDisplayContextBuilder
 			assetCategoriesSearchFacetDisplayContext =
 				_createAssetCategoriesSearchFacetDisplayContext();
 
+		_setBucketDisplayContexts(assetCategoriesSearchFacetDisplayContext);
+
 		assetCategoriesSearchFacetDisplayContext.setCloud(_isCloud());
 		assetCategoriesSearchFacetDisplayContext.setNothingSelected(
 			isNothingSelected());
@@ -79,8 +71,6 @@ public class AssetCategoriesSearchFacetDisplayContextBuilder
 			getParameterValueStrings());
 		assetCategoriesSearchFacetDisplayContext.setRenderNothing(
 			isRenderNothing());
-
-		setTermDisplayContexts(assetCategoriesSearchFacetDisplayContext);
 
 		return assetCategoriesSearchFacetDisplayContext;
 	}
@@ -155,7 +145,7 @@ public class AssetCategoriesSearchFacetDisplayContextBuilder
 
 	public void setParameterValues(String... parameterValues) {
 		_selectedCategoryIds = TransformUtil.transformToList(
-			Objects.requireNonNull(parameterValues),
+			parameterValues,
 			parameterValue -> {
 				long categoryId = GetterUtil.getLong(parameterValue);
 
@@ -237,7 +227,112 @@ public class AssetCategoriesSearchFacetDisplayContextBuilder
 		return false;
 	}
 
-	protected void setTermDisplayContexts(
+	private List<Tuple> _collectBuckets(Facet facet) {
+		if (facet == null) {
+			return Collections.emptyList();
+		}
+
+		FacetCollector facetCollector = facet.getFacetCollector();
+
+		List<TermCollector> termCollectors = facetCollector.getTermCollectors();
+
+		List<Tuple> buckets = new ArrayList<>(termCollectors.size());
+
+		for (TermCollector termCollector : termCollectors) {
+			long assetCategoryId = 0;
+
+			String fieldName = facet.getFieldName();
+
+			if ((fieldName != null) &&
+				fieldName.equals("assetVocabularyCategoryIds")) {
+
+				String[] parts = StringUtil.split(
+					termCollector.getTerm(), StringPool.DASH);
+
+				assetCategoryId = GetterUtil.getLong(parts[1]);
+			}
+			else {
+				assetCategoryId = GetterUtil.getLong(termCollector.getTerm());
+			}
+
+			if (assetCategoryId > 0) {
+				AssetCategory assetCategory = _fetchAssetCategory(
+					assetCategoryId);
+
+				if (assetCategory != null) {
+					buckets.add(
+						new Tuple(assetCategory, termCollector.getFrequency()));
+				}
+			}
+		}
+
+		return buckets;
+	}
+
+	private AssetCategoriesSearchFacetDisplayContext
+		_createAssetCategoriesSearchFacetDisplayContext() {
+
+		try {
+			return new AssetCategoriesSearchFacetDisplayContext(
+				_portal.getHttpServletRequest(_renderRequest));
+		}
+		catch (ConfigurationException configurationException) {
+			throw new RuntimeException(configurationException);
+		}
+	}
+
+	private AssetCategory _fetchAssetCategory(long assetCategoryId) {
+		AssetCategory assetCategory =
+			_assetCategoryLocalService.fetchAssetCategory(assetCategoryId);
+
+		if ((assetCategory != null) &&
+			_assetCategoryPermissionChecker.hasPermission(assetCategory)) {
+
+			return assetCategory;
+		}
+
+		return null;
+	}
+
+	private BucketDisplayContext _getEmptyBucketDisplayContext(
+		long assetCategoryId) {
+
+		AssetCategory assetCategory = _fetchAssetCategory(assetCategoryId);
+
+		if (assetCategory == null) {
+			return null;
+		}
+
+		return buildBucketDisplayContext(assetCategory, 0, true, 1);
+	}
+
+	private boolean _isCloud() {
+		if (_frequenciesVisible && _displayStyle.equals("cloud")) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private void _removeExcludedGroup() {
+		_buckets = ListUtil.filter(
+			_buckets,
+			tuple -> {
+				if (_excludedGroupId == 0) {
+					return true;
+				}
+
+				AssetCategory assetCategory = (AssetCategory)tuple.getObject(0);
+
+				if (assetCategory.getGroupId() == _excludedGroupId) {
+					return false;
+				}
+
+				return true;
+			});
+	}
+
+	private void _setBucketDisplayContexts(
 		AssetCategoriesSearchFacetDisplayContext
 			assetCategoriesSearchFacetDisplayContext) {
 
@@ -354,116 +449,10 @@ public class AssetCategoriesSearchFacetDisplayContextBuilder
 
 		assetCategoriesSearchFacetDisplayContext.setBucketDisplayContexts(
 			bucketDisplayContexts);
-
 		assetCategoriesSearchFacetDisplayContext.setBucketDisplayContextsMap(
 			bucketDisplayContextsMap);
 		assetCategoriesSearchFacetDisplayContext.setVocabularyNames(
 			_sortVocabularyNames(vocabularyNames));
-	}
-
-	private List<Tuple> _collectBuckets(Facet facet) {
-		if (facet == null) {
-			return Collections.emptyList();
-		}
-
-		FacetCollector facetCollector = facet.getFacetCollector();
-
-		List<TermCollector> termCollectors = facetCollector.getTermCollectors();
-
-		List<Tuple> buckets = new ArrayList<>(termCollectors.size());
-
-		for (TermCollector termCollector : termCollectors) {
-			long assetCategoryId = 0;
-
-			String fieldName = facet.getFieldName();
-
-			if ((fieldName != null) &&
-				fieldName.equals("assetVocabularyCategoryIds")) {
-
-				String[] parts = StringUtil.split(
-					termCollector.getTerm(), StringPool.DASH);
-
-				assetCategoryId = GetterUtil.getLong(parts[1]);
-			}
-			else {
-				assetCategoryId = GetterUtil.getLong(termCollector.getTerm());
-			}
-
-			if (assetCategoryId > 0) {
-				AssetCategory assetCategory = _fetchAssetCategory(
-					assetCategoryId);
-
-				if (assetCategory != null) {
-					buckets.add(
-						new Tuple(assetCategory, termCollector.getFrequency()));
-				}
-			}
-		}
-
-		return buckets;
-	}
-
-	private AssetCategoriesSearchFacetDisplayContext
-		_createAssetCategoriesSearchFacetDisplayContext() {
-
-		try {
-			return new AssetCategoriesSearchFacetDisplayContext(
-				_portal.getHttpServletRequest(_renderRequest));
-		}
-		catch (ConfigurationException configurationException) {
-			throw new RuntimeException(configurationException);
-		}
-	}
-
-	private AssetCategory _fetchAssetCategory(long assetCategoryId) {
-		AssetCategory assetCategory =
-			_assetCategoryLocalService.fetchAssetCategory(assetCategoryId);
-
-		if ((assetCategory != null) &&
-			_assetCategoryPermissionChecker.hasPermission(assetCategory)) {
-
-			return assetCategory;
-		}
-
-		return null;
-	}
-
-	private BucketDisplayContext _getEmptyBucketDisplayContext(
-		long assetCategoryId) {
-
-		AssetCategory assetCategory = _fetchAssetCategory(assetCategoryId);
-
-		if (assetCategory == null) {
-			return null;
-		}
-
-		return buildBucketDisplayContext(assetCategory, 0, true, 1);
-	}
-
-	private boolean _isCloud() {
-		if (_frequenciesVisible && _displayStyle.equals("cloud")) {
-			return true;
-		}
-
-		return false;
-	}
-
-	private void _removeExcludedGroup() {
-		_buckets = ListUtil.filter(
-			_buckets,
-			tuple -> {
-				if (_excludedGroupId == 0) {
-					return true;
-				}
-
-				AssetCategory assetCategory = (AssetCategory)tuple.getObject(0);
-
-				if (assetCategory.getGroupId() == _excludedGroupId) {
-					return false;
-				}
-
-				return true;
-			});
 	}
 
 	private List<String> _sortVocabularyNames(Set<String> vocabularyNamesSet) {

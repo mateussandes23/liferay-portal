@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.internal.security.permission.resource.util;
@@ -20,13 +11,20 @@ import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.model.ObjectAction;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.service.ObjectActionLocalService;
+import com.liferay.object.service.persistence.ObjectDefinitionPersistence;
+import com.liferay.object.tree.Node;
+import com.liferay.object.tree.Tree;
+import com.liferay.object.tree.TreeFactory;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
 import com.liferay.portal.kernel.service.PortletLocalService;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.SAXReaderUtil;
+
+import java.util.Iterator;
 
 /**
  * @author Carolina Barbosa
@@ -36,34 +34,31 @@ public class ObjectDefinitionResourcePermissionUtil {
 	public static void populateResourceActions(
 			ObjectActionLocalService objectActionLocalService,
 			ObjectDefinition objectDefinition,
+			ObjectDefinitionPersistence objectDefinitionPersistence,
 			PortletLocalService portletLocalService,
-			ResourceActions resourceActions)
+			ResourceActions resourceActions, TreeFactory treeFactory)
 		throws Exception {
+
+		if (objectDefinition.isRootDescendantNode()) {
+			return;
+		}
 
 		ClassLoader classLoader =
 			ObjectDefinitionResourcePermissionUtil.class.getClassLoader();
 
-		String objectActionPermissionKeys = StringPool.BLANK;
-
-		for (ObjectAction objectAction :
-				objectActionLocalService.getObjectActions(
-					objectDefinition.getObjectDefinitionId(),
-					ObjectActionTriggerConstants.KEY_STANDALONE)) {
-
-			objectActionPermissionKeys = StringBundler.concat(
-				objectActionPermissionKeys, "<action-key>",
-				objectAction.getName(), "</action-key>");
-		}
+		String objectActionPermissionKeys = _getObjectActionPermissionKeys(
+			objectActionLocalService, objectDefinition.getObjectDefinitionId());
 
 		String resourceActionsFileName =
 			"resource-actions/resource-actions.xml.tpl";
 
-		if (StringUtil.equals(
+		if (!StringUtil.equals(
 				objectDefinition.getStorageType(),
-				ObjectDefinitionConstants.STORAGE_TYPE_SALESFORCE)) {
+				ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT)) {
 
 			resourceActionsFileName =
-				"resource-actions/resource-actions-salesforce.xml.tpl";
+				"resource-actions/resource-actions-nondefault-storage-type." +
+					"xml.tpl";
 		}
 
 		Document document = SAXReaderUtil.read(
@@ -72,7 +67,9 @@ public class ObjectDefinitionResourcePermissionUtil {
 				new String[] {
 					"[$MODEL_NAME$]", "[$PERMISSIONS_GUEST_UNSUPPORTED$]",
 					"[$PERMISSIONS_SUPPORTS$]", "[$PORTLET_NAME$]",
-					"[$RESOURCE_NAME$]"
+					"[$RESOURCE_NAME$]",
+					"[%ROOT_DESCENDANT_NODE_OBJECT_DEFINITIONS_MODEL_" +
+						"RESOURCES%]"
 				},
 				new String[] {
 					objectDefinition.getClassName(),
@@ -81,15 +78,40 @@ public class ObjectDefinitionResourcePermissionUtil {
 					_getPermissionsSupports(objectDefinition) +
 						objectActionPermissionKeys,
 					objectDefinition.getPortletId(),
-					objectDefinition.getResourceName()
+					objectDefinition.getResourceName(),
+					_getRootDescendantNodeObjectDefinitionsModelResources(
+						objectActionLocalService, objectDefinitionPersistence,
+						objectDefinition, treeFactory)
 				}));
 
 		resourceActions.populateModelResources(document);
-		resourceActions.populatePortletResource(
-			portletLocalService.getPortletById(
-				objectDefinition.getCompanyId(),
-				objectDefinition.getPortletId()),
-			classLoader, document);
+
+		Portlet portlet = portletLocalService.getPortletById(
+			objectDefinition.getCompanyId(), objectDefinition.getPortletId());
+
+		if (portlet != null) {
+			resourceActions.populatePortletResource(
+				portlet, classLoader, document);
+		}
+	}
+
+	private static String _getObjectActionPermissionKeys(
+		ObjectActionLocalService objectActionLocalService,
+		long objectDefinitionId) {
+
+		String objectActionPermissionKeys = StringPool.BLANK;
+
+		for (ObjectAction objectAction :
+				objectActionLocalService.getObjectActions(
+					objectDefinitionId,
+					ObjectActionTriggerConstants.KEY_STANDALONE)) {
+
+			objectActionPermissionKeys = StringBundler.concat(
+				objectActionPermissionKeys, "<action-key>",
+				objectAction.getName(), "</action-key>");
+		}
+
+		return objectActionPermissionKeys;
 	}
 
 	private static String _getPermissionsGuestUnsupported(
@@ -123,5 +145,53 @@ public class ObjectDefinitionResourcePermissionUtil {
 
 		return permissionsSupports;
 	}
+
+	private static String _getRootDescendantNodeObjectDefinitionsModelResources(
+			ObjectActionLocalService objectActionLocalService,
+			ObjectDefinitionPersistence objectDefinitionPersistence,
+			ObjectDefinition rootNodeObjectDefinition, TreeFactory treeFactory)
+		throws Exception {
+
+		int weight = _INITIAL_WEIGHT;
+
+		Tree tree = treeFactory.createObjectDefinitionTree(
+			rootNodeObjectDefinition.getObjectDefinitionId());
+
+		Iterator<Node> iterator = tree.iterator();
+
+		String modelResources = StringPool.BLANK;
+
+		while (iterator.hasNext()) {
+			Node node = iterator.next();
+
+			if (node.isRoot()) {
+				continue;
+			}
+
+			String objectActionPermissionKeys = _getObjectActionPermissionKeys(
+				objectActionLocalService, node.getPrimaryKey());
+
+			ObjectDefinition rootDescendantNodeObjectDefinition =
+				objectDefinitionPersistence.findByPrimaryKey(
+					node.getPrimaryKey());
+
+			modelResources = StringBundler.concat(
+				modelResources, "<model-resource><model-name>",
+				rootDescendantNodeObjectDefinition.getClassName(),
+				"</model-name><portlet-ref><portlet-name>",
+				rootNodeObjectDefinition.getPortletId(),
+				"</portlet-name></portlet-ref><weight>", weight++,
+				"</weight><permissions><supports>", objectActionPermissionKeys,
+				"</supports><site-member-defaults>",
+				"</site-member-defaults><guest-defaults>",
+				"</guest-defaults><guest-unsupported>",
+				objectActionPermissionKeys,
+				"</guest-unsupported></permissions></model-resource>");
+		}
+
+		return modelResources;
+	}
+
+	private static final int _INITIAL_WEIGHT = 3;
 
 }

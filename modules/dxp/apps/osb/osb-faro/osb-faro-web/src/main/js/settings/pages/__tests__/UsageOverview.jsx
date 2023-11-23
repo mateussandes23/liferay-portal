@@ -61,8 +61,6 @@ describe('UsageOverview', () => {
 			data.mockProject(23, {
 				faroSubscription: fromJS(
 					data.mockSubscription({
-						pageViewsCount: 0,
-						pageViewsLimit: 7000000,
 						pageViewsStatus: SubscriptionStatuses.Approaching
 					})
 				)
@@ -76,12 +74,94 @@ describe('UsageOverview', () => {
 		expect(container.querySelector('.alert-warning')).toBeInTheDocument();
 	});
 
-	it('should render with an overage warning if a metric has exceeded the plan limit', () => {
+	it('should render the total number of INDIVIDUALS since last anniversary and the percentage used in the plan', () => {
+		const mockProject = new Project(
+			data.mockProject(23, {
+				faroSubscription: fromJS(
+					data.mockSubscription({
+						individualsCountSinceLastAnniversary: 1000,
+						individualsStatus: SubscriptionStatuses.Ok
+					})
+				)
+			})
+		);
+
+		const {getByText} = render(
+			<WrappedComponent {...defaultProps} project={mockProject} />
+		);
+
+		expect(getByText('1,000')).toBeInTheDocument();
+
+		expect(getByText('1% since July 8, 2018')).toBeInTheDocument();
+	});
+
+	it('should display the limit of INDIVIDUALS and PAGE VIEWS. Also, it should render a warning if INDIVIDUALS is over the limit. Also, it should render the current plan name.', () => {
 		const mockProject = new Project(
 			data.mockProject(23, {
 				faroSubscription: fromJS(
 					data.mockSubscription({
 						individualsStatus: SubscriptionStatuses.Over
+					})
+				)
+			})
+		);
+
+		const {container, getByText} = render(
+			<WrappedComponent {...defaultProps} project={mockProject} />
+		);
+
+		expect(getByText('105,000')).toBeInTheDocument();
+
+		expect(getByText('105,000')).toHaveClass('metric-limit');
+
+		expect(
+			getByText('Enterprise Plan 95,000 + 5,000 Add-On (2x)')
+		).toBeInTheDocument();
+
+		expect(getByText('7,000,000')).toBeInTheDocument();
+
+		expect(getByText('7,000,000')).toHaveClass('metric-limit');
+
+		expect(
+			getByText('Enterprise Plan 2,000,000 + 5,000,000 Add-On (1x)')
+		).toBeInTheDocument();
+
+		expect(container.querySelector('.alert-danger')).toBeInTheDocument();
+
+		expect(getByText('Enterprise')).toBeInTheDocument();
+
+		expect(getByText('Enterprise')).toHaveClass('plan-name');
+
+		expect(getByText('Current Plan')).toBeInTheDocument();
+	});
+
+	it('should render the total of PAGE VIEWS since the last anniversary and the percentage used in the plan', () => {
+		const mockProject = new Project(
+			data.mockProject(23, {
+				faroSubscription: fromJS(
+					data.mockSubscription({
+						individualsStatus: SubscriptionStatuses.Ok,
+						pageViewsCountSinceLastAnniversary: 111123
+					})
+				)
+			})
+		);
+
+		const {getByText} = render(
+			<WrappedComponent {...defaultProps} project={mockProject} />
+		);
+
+		expect(getByText('111,123')).toBeInTheDocument();
+
+		expect(getByText('1.6% since July 8, 2018')).toBeInTheDocument();
+	});
+
+	it('should render with an overage warning if the PAGE VIEWS metric has exceeded the plan limit', () => {
+		const mockProject = new Project(
+			data.mockProject(23, {
+				faroSubscription: fromJS(
+					data.mockSubscription({
+						pageViewsStatus: SubscriptionStatuses.Over
 					})
 				)
 			})

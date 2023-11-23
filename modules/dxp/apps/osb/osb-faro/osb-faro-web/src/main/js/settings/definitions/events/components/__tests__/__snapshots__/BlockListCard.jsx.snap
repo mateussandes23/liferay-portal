@@ -51,7 +51,7 @@ exports[`BlockListCard should render 1`] = `
                   role="presentation"
                 >
                   <use
-                    xlink:href="#order-arrow-ascending"
+                    href="#order-arrow-ascending"
                   />
                 </svg>
               </a>
@@ -76,6 +76,7 @@ exports[`BlockListCard should render 1`] = `
                   class="input-group-inset-item input-group-inset-item-after"
                 >
                   <button
+                    aria-label="Search"
                     class="button-root btn btn-unstyled"
                     type="button"
                   >
@@ -84,7 +85,7 @@ exports[`BlockListCard should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#search"
+                        href="#search"
                       />
                     </svg>
                   </button>
@@ -124,7 +125,7 @@ exports[`BlockListCard should render 1`] = `
                     role="presentation"
                   >
                     <use
-                      xlink:href="#order-arrow-up"
+                      href="#order-arrow-up"
                     />
                   </svg>
                 </span>
@@ -231,7 +232,7 @@ exports[`BlockListCard should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#undo"
+                        href="#undo"
                       />
                     </svg>
                   </button>
@@ -247,7 +248,7 @@ exports[`BlockListCard should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#ac-hidden"
+                        href="#ac-hidden"
                       />
                     </svg>
                   </button>
@@ -321,7 +322,7 @@ exports[`BlockListCard should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#undo"
+                        href="#undo"
                       />
                     </svg>
                   </button>
@@ -337,7 +338,7 @@ exports[`BlockListCard should render 1`] = `
                       role="presentation"
                     >
                       <use
-                        xlink:href="#ac-hidden"
+                        href="#ac-hidden"
                       />
                     </svg>
                   </button>
@@ -370,7 +371,7 @@ exports[`BlockListCard should render 1`] = `
               role="presentation"
             >
               <use
-                xlink:href="#caret-bottom"
+                href="#caret-bottom"
               />
             </svg>
           </button>
@@ -387,16 +388,16 @@ exports[`BlockListCard should render 1`] = `
             class="page-item disabled"
           >
             <a
-              class="button-root page-link btn btn-unstyled"
+              class="button-root btn btn-unstyled page-link"
               disabled=""
               href="/?page=0"
             >
               <svg
-                class="lexicon-icon lexicon-icon-angle-left icon-root"
+                class="lexicon-icon lexicon-icon-angle-left-small icon-root"
                 role="presentation"
               >
                 <use
-                  xlink:href="#angle-left"
+                  href="#angle-left-small"
                 />
               </svg>
             </a>
@@ -405,7 +406,7 @@ exports[`BlockListCard should render 1`] = `
             class="page-item active"
           >
             <a
-              class="button-root page-link btn btn-unstyled"
+              class="button-root btn btn-unstyled page-link"
               href="/?page=1"
             >
               1
@@ -415,16 +416,16 @@ exports[`BlockListCard should render 1`] = `
             class="page-item disabled"
           >
             <a
-              class="button-root page-link btn btn-unstyled"
+              class="button-root btn btn-unstyled page-link"
               disabled=""
               href="/?page=2"
             >
               <svg
-                class="lexicon-icon lexicon-icon-angle-right icon-root"
+                class="lexicon-icon lexicon-icon-angle-right-small icon-root"
                 role="presentation"
               >
                 <use
-                  xlink:href="#angle-right"
+                  href="#angle-right-small"
                 />
               </svg>
             </a>

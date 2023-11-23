@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.text.localizer.taglib.internal.address;
@@ -17,13 +8,12 @@ package com.liferay.text.localizer.taglib.internal.address;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Address;
-import com.liferay.portal.kernel.util.Html;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.text.localizer.address.AddressTextLocalizer;
 import com.liferay.text.localizer.taglib.internal.address.util.AddressUtil;
 
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 
 /**
  * @author Yasuyuki Takeo
@@ -38,7 +28,7 @@ public class JPAddressTextLocalizer implements AddressTextLocalizer {
 		String countryName = AddressUtil.getCountryName(address);
 
 		if (countryName != null) {
-			sb.append(html.escape(countryName));
+			sb.append(HtmlUtil.escape(countryName));
 			sb.append(StringPool.NEW_LINE);
 		}
 
@@ -63,7 +53,7 @@ public class JPAddressTextLocalizer implements AddressTextLocalizer {
 				sb.append(StringPool.SPACE);
 			}
 
-			sb.append(html.escape(regionName));
+			sb.append(HtmlUtil.escape(regionName));
 		}
 
 		if (hasCity) {
@@ -99,8 +89,5 @@ public class JPAddressTextLocalizer implements AddressTextLocalizer {
 
 		return s.trim();
 	}
-
-	@Reference
-	protected Html html;
 
 }

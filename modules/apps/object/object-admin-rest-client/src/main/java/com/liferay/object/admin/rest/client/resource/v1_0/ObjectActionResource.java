@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.object.admin.rest.client.resource.v1_0;
@@ -20,6 +11,8 @@ import com.liferay.object.admin.rest.client.pagination.Page;
 import com.liferay.object.admin.rest.client.pagination.Pagination;
 import com.liferay.object.admin.rest.client.problem.Problem;
 import com.liferay.object.admin.rest.client.serdes.v1_0.ObjectActionSerDes;
+
+import java.net.URL;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -86,13 +79,13 @@ public interface ObjectActionResource {
 	public Page<ObjectAction>
 			getObjectDefinitionByExternalReferenceCodeObjectActionsPage(
 				String externalReferenceCode, String search,
-				Pagination pagination)
+				Pagination pagination, String sortString)
 		throws Exception;
 
 	public HttpInvoker.HttpResponse
 			getObjectDefinitionByExternalReferenceCodeObjectActionsPageHttpResponse(
 				String externalReferenceCode, String search,
-				Pagination pagination)
+				Pagination pagination, String sortString)
 		throws Exception;
 
 	public ObjectAction postObjectDefinitionByExternalReferenceCodeObjectAction(
@@ -105,23 +98,25 @@ public interface ObjectActionResource {
 		throws Exception;
 
 	public Page<ObjectAction> getObjectDefinitionObjectActionsPage(
-			Long objectDefinitionId, String search, Pagination pagination)
+			Long objectDefinitionId, String search, Pagination pagination,
+			String sortString)
 		throws Exception;
 
 	public HttpInvoker.HttpResponse
 			getObjectDefinitionObjectActionsPageHttpResponse(
-				Long objectDefinitionId, String search, Pagination pagination)
+				Long objectDefinitionId, String search, Pagination pagination,
+				String sortString)
 		throws Exception;
 
 	public void postObjectDefinitionObjectActionsPageExportBatch(
-			Long objectDefinitionId, String search, String callbackURL,
-			String contentType, String fieldNames)
+			Long objectDefinitionId, String search, String sortString,
+			String callbackURL, String contentType, String fieldNames)
 		throws Exception;
 
 	public HttpInvoker.HttpResponse
 			postObjectDefinitionObjectActionsPageExportBatchHttpResponse(
-				Long objectDefinitionId, String search, String callbackURL,
-				String contentType, String fieldNames)
+				Long objectDefinitionId, String search, String sortString,
+				String callbackURL, String contentType, String fieldNames)
 		throws Exception;
 
 	public ObjectAction postObjectDefinitionObjectAction(
@@ -193,6 +188,10 @@ public interface ObjectActionResource {
 			_scheme = scheme;
 
 			return this;
+		}
+
+		public Builder endpoint(URL url) {
+			return endpoint(url.getHost(), url.getPort(), url.getProtocol());
 		}
 
 		public Builder header(String key, String value) {
@@ -860,12 +859,12 @@ public interface ObjectActionResource {
 		public Page<ObjectAction>
 				getObjectDefinitionByExternalReferenceCodeObjectActionsPage(
 					String externalReferenceCode, String search,
-					Pagination pagination)
+					Pagination pagination, String sortString)
 			throws Exception {
 
 			HttpInvoker.HttpResponse httpResponse =
 				getObjectDefinitionByExternalReferenceCodeObjectActionsPageHttpResponse(
-					externalReferenceCode, search, pagination);
+					externalReferenceCode, search, pagination, sortString);
 
 			String content = httpResponse.getContent();
 
@@ -929,7 +928,7 @@ public interface ObjectActionResource {
 		public HttpInvoker.HttpResponse
 				getObjectDefinitionByExternalReferenceCodeObjectActionsPageHttpResponse(
 					String externalReferenceCode, String search,
-					Pagination pagination)
+					Pagination pagination, String sortString)
 			throws Exception {
 
 			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
@@ -962,6 +961,10 @@ public interface ObjectActionResource {
 					"page", String.valueOf(pagination.getPage()));
 				httpInvoker.parameter(
 					"pageSize", String.valueOf(pagination.getPageSize()));
+			}
+
+			if (sortString != null) {
+				httpInvoker.parameter("sort", sortString);
 			}
 
 			httpInvoker.path(
@@ -1087,12 +1090,13 @@ public interface ObjectActionResource {
 		}
 
 		public Page<ObjectAction> getObjectDefinitionObjectActionsPage(
-				Long objectDefinitionId, String search, Pagination pagination)
+				Long objectDefinitionId, String search, Pagination pagination,
+				String sortString)
 			throws Exception {
 
 			HttpInvoker.HttpResponse httpResponse =
 				getObjectDefinitionObjectActionsPageHttpResponse(
-					objectDefinitionId, search, pagination);
+					objectDefinitionId, search, pagination, sortString);
 
 			String content = httpResponse.getContent();
 
@@ -1156,7 +1160,7 @@ public interface ObjectActionResource {
 		public HttpInvoker.HttpResponse
 				getObjectDefinitionObjectActionsPageHttpResponse(
 					Long objectDefinitionId, String search,
-					Pagination pagination)
+					Pagination pagination, String sortString)
 			throws Exception {
 
 			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
@@ -1191,6 +1195,10 @@ public interface ObjectActionResource {
 					"pageSize", String.valueOf(pagination.getPageSize()));
 			}
 
+			if (sortString != null) {
+				httpInvoker.parameter("sort", sortString);
+			}
+
 			httpInvoker.path(
 				_builder._scheme + "://" + _builder._host + ":" +
 					_builder._port + _builder._contextPath +
@@ -1205,14 +1213,14 @@ public interface ObjectActionResource {
 		}
 
 		public void postObjectDefinitionObjectActionsPageExportBatch(
-				Long objectDefinitionId, String search, String callbackURL,
-				String contentType, String fieldNames)
+				Long objectDefinitionId, String search, String sortString,
+				String callbackURL, String contentType, String fieldNames)
 			throws Exception {
 
 			HttpInvoker.HttpResponse httpResponse =
 				postObjectDefinitionObjectActionsPageExportBatchHttpResponse(
-					objectDefinitionId, search, callbackURL, contentType,
-					fieldNames);
+					objectDefinitionId, search, sortString, callbackURL,
+					contentType, fieldNames);
 
 			String content = httpResponse.getContent();
 
@@ -1264,11 +1272,13 @@ public interface ObjectActionResource {
 
 		public HttpInvoker.HttpResponse
 				postObjectDefinitionObjectActionsPageExportBatchHttpResponse(
-					Long objectDefinitionId, String search, String callbackURL,
-					String contentType, String fieldNames)
+					Long objectDefinitionId, String search, String sortString,
+					String callbackURL, String contentType, String fieldNames)
 			throws Exception {
 
 			HttpInvoker httpInvoker = HttpInvoker.newHttpInvoker();
+
+			httpInvoker.body("[]", "application/json");
 
 			if (_builder._locale != null) {
 				httpInvoker.header(
@@ -1291,6 +1301,10 @@ public interface ObjectActionResource {
 
 			if (search != null) {
 				httpInvoker.parameter("search", String.valueOf(search));
+			}
+
+			if (sortString != null) {
+				httpInvoker.parameter("sort", sortString);
 			}
 
 			if (callbackURL != null) {

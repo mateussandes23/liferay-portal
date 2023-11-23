@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.vulcan.internal.template.servlet;
@@ -20,6 +11,7 @@ import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,7 +22,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -54,7 +45,20 @@ import javax.servlet.http.Part;
  */
 public class RESTClientHttpRequest implements HttpServletRequest {
 
-	public RESTClientHttpRequest(HttpServletRequest httpServletRequest) {
+	public RESTClientHttpRequest(
+		Map<String, Object> contextObjects,
+		HttpServletRequest httpServletRequest) {
+
+		_attributes = HashMapBuilder.<String, Object>put(
+			WebKeys.USER,
+			() -> {
+				if (contextObjects.containsKey("user")) {
+					return contextObjects.get("user");
+				}
+
+				return null;
+			}
+		).build();
 		_headers = HashMapBuilder.put(
 			HttpHeaders.ACCEPT, ContentTypes.APPLICATION_JSON
 		).put(
@@ -426,7 +430,7 @@ public class RESTClientHttpRequest implements HttpServletRequest {
 		return _httpServletRequest.upgrade(handlerClass);
 	}
 
-	private final Map<String, Object> _attributes = new HashMap<>();
+	private final Map<String, Object> _attributes;
 	private final Map<String, String> _headers;
 	private final HttpServletRequest _httpServletRequest;
 

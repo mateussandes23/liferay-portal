@@ -1,22 +1,12 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import {
 	API,
 	Card,
 	CodeEditor,
-	CustomItem,
 	Input,
 	SidebarCategory,
 } from '@liferay/object-js-components-web';
@@ -24,15 +14,18 @@ import React, {useCallback, useEffect, useState} from 'react';
 
 import {ActionError} from '../..';
 import PredefinedValuesTable from '../../PredefinedValuesTable';
-import {fetchObjectDefinitionFields} from '../../fetchUtil';
+import {
+	ObjectOptionsListItem,
+	fetchObjectDefinitionFields,
+} from '../../fetchUtil';
 import {WarningStates} from '../ActionBuilder';
 import {ThenContainer} from './ThenContainer';
 interface ActionContainerProps {
 	currentObjectDefinitionFields: ObjectField[];
 	errors: ActionError;
-	newObjectActionExecutors: CustomItem<string>[];
+	newObjectActionExecutors: ObjectActionTriggerExecutorItem[];
 	objectActionCodeEditorElements: SidebarCategory[];
-	objectActionExecutors: CustomItem[];
+	objectActionExecutors: ObjectActionTriggerExecutorItem[];
 	objectDefinitionExternalReferenceCode: string;
 	objectDefinitionId: number;
 	objectDefinitionsRelationshipsURL: string;
@@ -85,6 +78,7 @@ export function ActionContainer({
 
 		return isObjectActionSystem
 			? businessType !== 'Aggregation' &&
+					businessType !== 'AutoIncrement' &&
 					businessType !== 'Formula' &&
 					businessType !== 'Relationship' &&
 					name !== 'creator' &&
@@ -93,30 +87,32 @@ export function ActionContainer({
 					name !== 'modifiedDate' &&
 					name !== 'status'
 			: businessType !== 'Aggregation' &&
+					businessType !== 'AutoIncrement' &&
 					businessType !== 'Formula' &&
 					businessType !== 'Relationship' &&
 					!system;
 	};
 
 	const updateParameters = useCallback(
-		async (value: string) => {
-			const [
-				externalReferenceCode,
-				definitionIdValue,
-				isObjectSystem,
-			] = value.split(',');
+		async (value: ObjectOptionsListItem) => {
+			const {
+				isSystemObjectDefinition,
+				objectDefinitionExternalReferenceCode,
+				objectDefinitionId,
+			} = value;
 
-			const definitionId = Number(definitionIdValue);
+			const definitionId = Number(objectDefinitionId);
 
-			const isSystem = isObjectSystem === 'true';
+			const isSystem = isSystemObjectDefinition === true;
 
 			const object = addObjectEntryDefinitions.find(
 				(definition) =>
-					definition.externalReferenceCode === externalReferenceCode
+					definition.externalReferenceCode ===
+					objectDefinitionExternalReferenceCode
 			);
 
 			const parameters: ObjectActionParameters = {
-				objectDefinitionExternalReferenceCode: externalReferenceCode,
+				objectDefinitionExternalReferenceCode,
 				objectDefinitionId: definitionId,
 				predefinedValues: [],
 				system: isSystem,
@@ -125,8 +121,8 @@ export function ActionContainer({
 			if (object?.related) {
 				parameters.relatedObjectEntries = false;
 			}
-			const items = await API.getObjectFieldsByExternalReferenceCode(
-				externalReferenceCode
+			const items = await API.getObjectDefinitionByExternalReferenceCodeObjectFields(
+				objectDefinitionExternalReferenceCode
 			);
 
 			const validFields: ObjectField[] = [];
@@ -139,9 +135,13 @@ export function ActionContainer({
 						field.required &&
 						values.objectActionExecutorKey === 'add-object-entry'
 					) {
+						const inputAsValue =
+							field.businessType === 'DateTime' ? true : false;
+
 						(parameters.predefinedValues as PredefinedValue[]).push(
 							{
-								inputAsValue: false,
+								businessType: field.businessType,
+								inputAsValue,
 								label: field.label,
 								name: field.name,
 								value: '',
@@ -186,9 +186,11 @@ export function ActionContainer({
 
 	useEffect(() => {
 		if (values.objectActionExecutorKey === 'update-object-entry') {
-			updateParameters(
-				`${objectDefinitionExternalReferenceCode},${objectDefinitionId},${systemObject}`
-			);
+			updateParameters({
+				isSystemObjectDefinition: systemObject,
+				objectDefinitionExternalReferenceCode,
+				objectDefinitionId,
+			});
 			fetchObjectDefinitionFields(
 				objectDefinitionId,
 				objectDefinitionExternalReferenceCode,
@@ -279,6 +281,7 @@ export function ActionContainer({
 			{values.objectActionExecutorKey === 'webhook' && (
 				<>
 					<Input
+						disabled={values.system}
 						error={errors.url}
 						label={Liferay.Language.get('url')}
 						name="url"
@@ -295,6 +298,7 @@ export function ActionContainer({
 					/>
 
 					<Input
+						disabled={values.system}
 						label={Liferay.Language.get('secret')}
 						name="secret"
 						onChange={({target: {value}}) => {
@@ -323,9 +327,11 @@ export function ActionContainer({
 							},
 						})
 					}
+					readOnly={values.system}
 					sidebarElements={objectActionCodeEditorElements.filter(
 						(element) => element.label === 'Fields'
 					)}
+					sidebarElementsDisabled={values.system}
 					value={values.parameters?.script ?? ''}
 				/>
 			)}

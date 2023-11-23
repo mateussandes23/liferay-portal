@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.headless.commerce.admin.account.resource.v1_0.test;
@@ -43,6 +34,7 @@ import com.liferay.portal.kernel.test.util.GroupTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityField;
@@ -422,7 +414,7 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 				getAccountByExternalReferenceCodeAccountChannelShippingOptionPage(
 					externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantExternalReferenceCode != null) {
 			AccountChannelShippingOption
@@ -434,12 +426,13 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 			page =
 				accountChannelShippingOptionResource.
 					getAccountByExternalReferenceCodeAccountChannelShippingOptionPage(
-						irrelevantExternalReferenceCode, Pagination.of(1, 2));
+						irrelevantExternalReferenceCode,
+						Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantAccountChannelShippingOption),
+			assertContains(
+				irrelevantAccountChannelShippingOption,
 				(List<AccountChannelShippingOption>)page.getItems());
 			assertValid(
 				page,
@@ -460,11 +453,13 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 				getAccountByExternalReferenceCodeAccountChannelShippingOptionPage(
 					externalReferenceCode, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				accountChannelShippingOption1, accountChannelShippingOption2),
+		assertContains(
+			accountChannelShippingOption1,
+			(List<AccountChannelShippingOption>)page.getItems());
+		assertContains(
+			accountChannelShippingOption2,
 			(List<AccountChannelShippingOption>)page.getItems());
 		assertValid(
 			page,
@@ -495,6 +490,14 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 		String externalReferenceCode =
 			testGetAccountByExternalReferenceCodeAccountChannelShippingOptionPage_getExternalReferenceCode();
 
+		Page<AccountChannelShippingOption> accountChannelShippingOptionPage =
+			accountChannelShippingOptionResource.
+				getAccountByExternalReferenceCodeAccountChannelShippingOptionPage(
+					externalReferenceCode, null);
+
+		int totalCount = GetterUtil.getInteger(
+			accountChannelShippingOptionPage.getTotalCount());
+
 		AccountChannelShippingOption accountChannelShippingOption1 =
 			testGetAccountByExternalReferenceCodeAccountChannelShippingOptionPage_addAccountChannelShippingOption(
 				externalReferenceCode, randomAccountChannelShippingOption());
@@ -510,21 +513,21 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 		Page<AccountChannelShippingOption> page1 =
 			accountChannelShippingOptionResource.
 				getAccountByExternalReferenceCodeAccountChannelShippingOptionPage(
-					externalReferenceCode, Pagination.of(1, 2));
+					externalReferenceCode, Pagination.of(1, totalCount + 2));
 
 		List<AccountChannelShippingOption> accountChannelShippingOptions1 =
 			(List<AccountChannelShippingOption>)page1.getItems();
 
 		Assert.assertEquals(
-			accountChannelShippingOptions1.toString(), 2,
+			accountChannelShippingOptions1.toString(), totalCount + 2,
 			accountChannelShippingOptions1.size());
 
 		Page<AccountChannelShippingOption> page2 =
 			accountChannelShippingOptionResource.
 				getAccountByExternalReferenceCodeAccountChannelShippingOptionPage(
-					externalReferenceCode, Pagination.of(2, 2));
+					externalReferenceCode, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<AccountChannelShippingOption> accountChannelShippingOptions2 =
 			(List<AccountChannelShippingOption>)page2.getItems();
@@ -536,12 +539,17 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 		Page<AccountChannelShippingOption> page3 =
 			accountChannelShippingOptionResource.
 				getAccountByExternalReferenceCodeAccountChannelShippingOptionPage(
-					externalReferenceCode, Pagination.of(1, 3));
+					externalReferenceCode,
+					Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				accountChannelShippingOption1, accountChannelShippingOption2,
-				accountChannelShippingOption3),
+		assertContains(
+			accountChannelShippingOption1,
+			(List<AccountChannelShippingOption>)page3.getItems());
+		assertContains(
+			accountChannelShippingOption2,
+			(List<AccountChannelShippingOption>)page3.getItems());
+		assertContains(
+			accountChannelShippingOption3,
 			(List<AccountChannelShippingOption>)page3.getItems());
 	}
 
@@ -609,7 +617,7 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 				getAccountIdAccountChannelShippingOptionPage(
 					id, Pagination.of(1, 10));
 
-		Assert.assertEquals(0, page.getTotalCount());
+		long totalCount = page.getTotalCount();
 
 		if (irrelevantId != null) {
 			AccountChannelShippingOption
@@ -621,12 +629,12 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 			page =
 				accountChannelShippingOptionResource.
 					getAccountIdAccountChannelShippingOptionPage(
-						irrelevantId, Pagination.of(1, 2));
+						irrelevantId, Pagination.of(1, (int)totalCount + 1));
 
-			Assert.assertEquals(1, page.getTotalCount());
+			Assert.assertEquals(totalCount + 1, page.getTotalCount());
 
-			assertEquals(
-				Arrays.asList(irrelevantAccountChannelShippingOption),
+			assertContains(
+				irrelevantAccountChannelShippingOption,
 				(List<AccountChannelShippingOption>)page.getItems());
 			assertValid(
 				page,
@@ -647,11 +655,13 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 				getAccountIdAccountChannelShippingOptionPage(
 					id, Pagination.of(1, 10));
 
-		Assert.assertEquals(2, page.getTotalCount());
+		Assert.assertEquals(totalCount + 2, page.getTotalCount());
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				accountChannelShippingOption1, accountChannelShippingOption2),
+		assertContains(
+			accountChannelShippingOption1,
+			(List<AccountChannelShippingOption>)page.getItems());
+		assertContains(
+			accountChannelShippingOption2,
 			(List<AccountChannelShippingOption>)page.getItems());
 		assertValid(
 			page,
@@ -681,6 +691,13 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 
 		Long id = testGetAccountIdAccountChannelShippingOptionPage_getId();
 
+		Page<AccountChannelShippingOption> accountChannelShippingOptionPage =
+			accountChannelShippingOptionResource.
+				getAccountIdAccountChannelShippingOptionPage(id, null);
+
+		int totalCount = GetterUtil.getInteger(
+			accountChannelShippingOptionPage.getTotalCount());
+
 		AccountChannelShippingOption accountChannelShippingOption1 =
 			testGetAccountIdAccountChannelShippingOptionPage_addAccountChannelShippingOption(
 				id, randomAccountChannelShippingOption());
@@ -696,21 +713,21 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 		Page<AccountChannelShippingOption> page1 =
 			accountChannelShippingOptionResource.
 				getAccountIdAccountChannelShippingOptionPage(
-					id, Pagination.of(1, 2));
+					id, Pagination.of(1, totalCount + 2));
 
 		List<AccountChannelShippingOption> accountChannelShippingOptions1 =
 			(List<AccountChannelShippingOption>)page1.getItems();
 
 		Assert.assertEquals(
-			accountChannelShippingOptions1.toString(), 2,
+			accountChannelShippingOptions1.toString(), totalCount + 2,
 			accountChannelShippingOptions1.size());
 
 		Page<AccountChannelShippingOption> page2 =
 			accountChannelShippingOptionResource.
 				getAccountIdAccountChannelShippingOptionPage(
-					id, Pagination.of(2, 2));
+					id, Pagination.of(2, totalCount + 2));
 
-		Assert.assertEquals(3, page2.getTotalCount());
+		Assert.assertEquals(totalCount + 3, page2.getTotalCount());
 
 		List<AccountChannelShippingOption> accountChannelShippingOptions2 =
 			(List<AccountChannelShippingOption>)page2.getItems();
@@ -722,12 +739,16 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 		Page<AccountChannelShippingOption> page3 =
 			accountChannelShippingOptionResource.
 				getAccountIdAccountChannelShippingOptionPage(
-					id, Pagination.of(1, 3));
+					id, Pagination.of(1, (int)totalCount + 3));
 
-		assertEqualsIgnoringOrder(
-			Arrays.asList(
-				accountChannelShippingOption1, accountChannelShippingOption2,
-				accountChannelShippingOption3),
+		assertContains(
+			accountChannelShippingOption1,
+			(List<AccountChannelShippingOption>)page3.getItems());
+		assertContains(
+			accountChannelShippingOption2,
+			(List<AccountChannelShippingOption>)page3.getItems());
+		assertContains(
+			accountChannelShippingOption3,
 			(List<AccountChannelShippingOption>)page3.getItems());
 	}
 
@@ -1021,14 +1042,19 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 
 		Assert.assertTrue(valid);
 
-		Map<String, Map<String, String>> actions = page.getActions();
+		assertValid(page.getActions(), expectedActions);
+	}
 
-		for (String key : expectedActions.keySet()) {
-			Map action = actions.get(key);
+	protected void assertValid(
+		Map<String, Map<String, String>> actions1,
+		Map<String, Map<String, String>> actions2) {
+
+		for (String key : actions2.keySet()) {
+			Map action = actions1.get(key);
 
 			Assert.assertNotNull(key + " does not contain an action", action);
 
-			Map expectedAction = expectedActions.get(key);
+			Map<String, String> expectedAction = actions2.get(key);
 
 			Assert.assertEquals(
 				expectedAction.get("method"), action.get("method"));
@@ -1336,12 +1362,48 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 		sb.append(" ");
 
 		if (entityFieldName.equals("accountExternalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					accountChannelShippingOption.
-						getAccountExternalReferenceCode()));
-			sb.append("'");
+			Object object =
+				accountChannelShippingOption.getAccountExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1357,12 +1419,48 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 		}
 
 		if (entityFieldName.equals("channelExternalReferenceCode")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					accountChannelShippingOption.
-						getChannelExternalReferenceCode()));
-			sb.append("'");
+			Object object =
+				accountChannelShippingOption.getChannelExternalReferenceCode();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1383,11 +1481,47 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 		}
 
 		if (entityFieldName.equals("shippingMethodKey")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					accountChannelShippingOption.getShippingMethodKey()));
-			sb.append("'");
+			Object object = accountChannelShippingOption.getShippingMethodKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}
@@ -1398,11 +1532,47 @@ public abstract class BaseAccountChannelShippingOptionResourceTestCase {
 		}
 
 		if (entityFieldName.equals("shippingOptionKey")) {
-			sb.append("'");
-			sb.append(
-				String.valueOf(
-					accountChannelShippingOption.getShippingOptionKey()));
-			sb.append("'");
+			Object object = accountChannelShippingOption.getShippingOptionKey();
+
+			String value = String.valueOf(object);
+
+			if (operator.equals("contains")) {
+				sb = new StringBundler();
+
+				sb.append("contains(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 2)) {
+					sb.append(value.substring(1, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else if (operator.equals("startswith")) {
+				sb = new StringBundler();
+
+				sb.append("startswith(");
+				sb.append(entityFieldName);
+				sb.append(",'");
+
+				if ((object != null) && (value.length() > 1)) {
+					sb.append(value.substring(0, value.length() - 1));
+				}
+				else {
+					sb.append(value);
+				}
+
+				sb.append("')");
+			}
+			else {
+				sb.append("'");
+				sb.append(value);
+				sb.append("'");
+			}
 
 			return sb.toString();
 		}

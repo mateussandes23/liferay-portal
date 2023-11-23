@@ -71,7 +71,7 @@ exports[`View Channel should render 1`] = `
                   role="presentation"
                 >
                   <use
-                    xlink:href="#pencil"
+                    href="#pencil"
                   />
                 </svg>
               </button>
@@ -92,6 +92,7 @@ exports[`View Channel should render 1`] = `
             Email Reports: 
             Disabled
             <button
+              aria-label="Configure Email Reports"
               class="button-root btn btn-outline-borderless btn-sm btn-outline-unstyled"
               disabled=""
               type="button"
@@ -107,7 +108,7 @@ exports[`View Channel should render 1`] = `
                   role="presentation"
                 >
                   <use
-                    xlink:href="#cog"
+                    href="#cog"
                   />
                 </svg>
               </span>
@@ -118,12 +119,14 @@ exports[`View Channel should render 1`] = `
           >
             <button
               class="button-root mr-3 btn btn-secondary"
+              data-testid="clear-data"
               type="button"
             >
               Clear Data
             </button>
             <button
               class="button-root btn btn-secondary"
+              data-testid="delete"
               type="button"
             >
               Delete
@@ -140,14 +143,7 @@ exports[`View Channel should render 1`] = `
           <div
             class="title d-flex align-items-center"
           >
-            Sites Synced: 
-            <div
-              class="spinner-root"
-            >
-              <span
-                class="loading-animation loading-animation-light loading-animation-dotted loading-animation-sm"
-              />
-            </div>
+            There are  sites and  channels synced to this property.
           </div>
           <div>
             Manage sites synced to this property by going to 
@@ -227,7 +223,7 @@ exports[`View Channel should render 1`] = `
                   role="presentation"
                 >
                   <use
-                    xlink:href="#ac-no-sites"
+                    href="#ac-no-sites"
                   />
                 </svg>
               </div>

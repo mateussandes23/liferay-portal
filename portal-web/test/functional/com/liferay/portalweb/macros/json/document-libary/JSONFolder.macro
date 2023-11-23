@@ -1,7 +1,7 @@
 definition {
 
-	@summary = "This calls the JSON WS API to add a DL Folder"
-	macro addFolder {
+	@summary = "Default summary"
+	macro addFolder(parentFolderName = null, groupName = null, dmFolderName = null) {
 		var portalURL = JSONCompany.getPortalURL();
 
 		if (!(isSet(site))) {
@@ -56,8 +56,8 @@ definition {
 		var messageId = JSONCurlUtil.post(${curl});
 	}
 
-	@summary = "This calls the JSON WS API to delete a folder"
-	macro deleteFolder {
+	@summary = "Default summary"
+	macro deleteFolder(groupName = null, folderName = null) {
 		var portalURL = JSONCompany.getPortalURL();
 		var folderId = JSONDocumentAPI._getFolderIdByFolderName(
 			groupName = ${groupName},
@@ -71,8 +71,8 @@ definition {
 		''';
 	}
 
-	@summary = "This calls the JSON WS API to move a folder to trash"
-	macro moveFolderToTrash {
+	@summary = "Default summary"
+	macro moveFolderToTrash(groupName = null, folderName = null) {
 		var portalURL = JSONCompany.getPortalURL();
 		var folderId = JSONDocumentAPI._getFolderIdByFolderName(
 			groupName = ${groupName},

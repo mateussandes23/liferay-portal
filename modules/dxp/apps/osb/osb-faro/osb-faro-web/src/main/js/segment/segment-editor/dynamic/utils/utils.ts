@@ -13,7 +13,6 @@ import {Event} from 'event-analysis/utils/types';
 import {every, isBoolean, isString, isUndefined} from 'lodash';
 import {FieldContexts, FieldOwnerTypes} from 'shared/util/constants';
 import {fromJS, Map} from 'immutable';
-import {getUid} from 'metal';
 import {
 	INDIVIDUAL_PROPERTIES,
 	ORGANIZATION_PROPERTIES,
@@ -21,6 +20,7 @@ import {
 	WEB_BEHAVIORS
 } from '../utils/properties';
 import {Property} from 'shared/util/records';
+import {v4 as uuidv4} from 'uuid';
 
 const GROUP_ID_NAMESPACE = 'group_';
 const ROW_ID_NAMESPACE = 'row_';
@@ -46,12 +46,12 @@ export const createNewGroup = (items: Criteria[]): CriterionGroup => ({
 /**
  * Generates a unique group id.
  */
-export const generateGroupId = (): string => `${GROUP_ID_NAMESPACE}${getUid()}`;
+export const generateGroupId = (): string => `${GROUP_ID_NAMESPACE}${uuidv4()}`;
 
 /**
  * Generates a unique row id.
  */
-export const generateRowId = (): string => `${ROW_ID_NAMESPACE}${getUid()}`;
+export const generateRowId = (): string => `${ROW_ID_NAMESPACE}${uuidv4()}`;
 
 /**
  * Gets a list of group ids from a criteria object.
@@ -283,7 +283,7 @@ export const convertFieldMappingToAccountProperty = (
 		entityName: Liferay.Language.get('account'),
 		id,
 		label: displayName || name,
-		name: context ? `${context}/${name}/value` : name,
+		name: context ? `${context}/${id}/value` : id,
 		propertyKey: FieldOwnerTypes.Account,
 		type: CUSTOM_REGEX.test(type)
 			? type.toLowerCase()
@@ -322,7 +322,7 @@ export const convertFieldMappingToIndividualProperty = (
 		entityName: Liferay.Language.get('individual'),
 		id,
 		label: displayName || name,
-		name: context ? `${context}/${name}/value` : name,
+		name: context ? `${context}/${id}/value` : id,
 		propertyKey: FieldOwnerTypes.Individual,
 		type: type.toLowerCase()
 	});
@@ -359,7 +359,7 @@ export const convertFieldMappingToOrganizationProperty = (
 		entityName: Liferay.Language.get('organization'),
 		id,
 		label: displayName || name,
-		name: context ? `${context}/${name}/value` : name,
+		name: context ? `${context}/${id}/value` : id,
 		propertyKey: FieldOwnerTypes.Organization,
 		type: `organization-${type.toLowerCase()}` as PropertyTypes
 	});

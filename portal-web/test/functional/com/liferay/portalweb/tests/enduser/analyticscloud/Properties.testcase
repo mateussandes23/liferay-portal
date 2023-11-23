@@ -27,20 +27,18 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
-
-		// It is not possible to delete properties and data source after LRAC-13389. This functionality should return after LRAC-8040
-
-		//ACUtils.tearDownAC();
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
 		ACUtils.tearDownDXP();
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
 			JSONGroup.deleteGroupByName(groupName = "Site Name");
 		}
+
+		ACUtils.tearDownAC();
 	}
 
 	@description = "Feature ID: Legacy | Automation ID: LRAC-9037 | Test Summary: As an Business User, a Property with a duplicate name should have an incrementing identifier appended to it's name"
@@ -91,7 +89,7 @@ definition {
 	@priority = 3
 	test CanCreatePropertiesWhenNoDataSourceIsCreatedYet {
 
-		// It is not possible to delete properties and data source after LRAC-13389. This functionality should return after LRAC-8040
+		// It is not possible to delete data source after LRAC-13389. This functionality must be returned by a story that has not yet been created
 
 		task ("Remove all data sources present") {
 			ACUtils.launchAC();
@@ -182,7 +180,7 @@ definition {
 	@description = "Bug: LRAC-7916 | Automation ID: LRAC-11529 | Test Summary: It is possible to create multiple properties in different workspaces"
 	@priority = 4
 	test CanCreateSamePropertyNameInDifferentWorkspaces {
-		property test.name.skip.portal.instance = "Properties#CanCreateSamePropertyNameInDifferentWorkspaces";
+		property test.run.type = "single";
 
 		var acProperty = "AC Property Name";
 		var acWorkspace = "New AC Workspace";
@@ -273,8 +271,13 @@ definition {
 	}
 
 	@description = "Bug ID: LRAC-8093 | Automation ID: LRAC-11533 | Test Summary: Able to clear property data"
+	@ignore = "true"
 	@priority = 4
 	test ClearPropertyData {
+
+		// AC Refactor: data doesn't appear on time
+		// AC Refactor ticket: LRAC-13994
+
 		task ("Connect the DXP to Analytics Cloud") {
 			JSONUser.addUser(
 				userEmailAddress = "userea@liferay.com",
@@ -454,6 +457,11 @@ definition {
 	@description = "Feature ID: Legacy | Automation ID: LRAC-9104 | Test Summary: [AC] It is not allowed duplicated property name for a same data source or workspace"
 	@priority = 3
 	test NoDuplicatePropertiesName {
+		property portal.upstream = "quarantine";
+
+		// AC Quarantine Reason: Test fix sites created twice
+		// AC Quarantine Ticket: LRAC-13677
+
 		task ("View the checkbox of site entry is disabled") {
 			ACUtils.launchAC();
 
@@ -484,8 +492,12 @@ definition {
 	}
 
 	@description = "Feature ID: Legacy | Automation ID: LRAC-8145 | Test Summary: Owner can create a new property"
+	@ignore = "true"
 	@priority = 5
 	test OwnerCanCreateNewProperty {
+
+		// The default AC users do not appear in Users and Organizations. The bug will be resolved after LRAC-14468
+
 		ACUtils.launchAC();
 
 		ACNavigation.goToSettings();
@@ -553,7 +565,7 @@ definition {
 		}
 
 		task ("Go to property via URL") {
-			Open(locator1 = ${propertyURL});
+			Open(value1 = ${propertyURL});
 
 			ACProperties.assertNewCreatedProperty(propertyName = ${myProperty});
 		}

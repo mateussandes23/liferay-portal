@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
@@ -27,7 +18,7 @@ const DEFAULT_DELTA = 10;
 /**
  * A paginated list of virtual instances.
  */
-function InstanceSelector({selected, setSelected, virtualInstances}) {
+function InstanceSelector({onSelectedChange, selected, virtualInstances}) {
 	const [activePage, setActivePage] = useState(1);
 	const [currentVirtualInstances, setCurrentVirtualInstances] = useState(
 		virtualInstances
@@ -44,10 +35,10 @@ function InstanceSelector({selected, setSelected, virtualInstances}) {
 	);
 
 	const _handleRemoveSelect = (id) =>
-		setSelected(selected.filter((item) => id !== item));
+		onSelectedChange(selected.filter((item) => id !== item));
 
 	const _handleToggleSelect = (id) =>
-		setSelected(
+		onSelectedChange(
 			selected.includes(id)
 				? selected.filter((item) => id !== item)
 				: [...selected, id]
@@ -62,7 +53,7 @@ function InstanceSelector({selected, setSelected, virtualInstances}) {
 			(id) => !currentVirtualInstanceIds.includes(id)
 		);
 
-		setSelected(
+		onSelectedChange(
 			currentVirtualInstanceIds.every((id) => selected.includes(id))
 				? clearCurrentFromSelected
 				: [...clearCurrentFromSelected, ...currentVirtualInstanceIds]
@@ -175,7 +166,7 @@ function InstanceSelector({selected, setSelected, virtualInstances}) {
 							<ClayButton
 								className="component-link tbar-link"
 								displayType="unstyled"
-								onClick={() => setSelected([])}
+								onClick={() => onSelectedChange([])}
 							>
 								{Liferay.Language.get('deselect-all')}
 							</ClayButton>

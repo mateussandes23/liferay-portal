@@ -12,9 +12,9 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 		else {
@@ -46,7 +46,7 @@ definition {
 	}
 
 	@description = "This test ensures that users can import content to a KB folder rom the navigation pane."
-	@priority = 5
+	@priority = 4
 	test CanImportArticleViaNavigationPane {
 		JSONKnowledgeBase.addkBFolder(
 			groupName = "Guest",
@@ -155,7 +155,8 @@ definition {
 	@priority = 4
 	@refactorneeded
 	test ViewImportedKBArticleWithSourceURLMetadata {
-		property test.name.skip.portal.instance = "KBExportImport#ViewImportedKBArticleWithSourceURLMetadata";
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
 
 		JSONLayout.addPublicLayout(
 			groupName = "Guest",

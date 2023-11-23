@@ -1,13 +1,14 @@
 definition {
 
-	macro _addCommerceOrder {
+	@summary = "Default summary"
+	macro _addCommerceOrder(deliveryTermName = null, shippingAddressName = null, billingAddressName = null, orderItems = null, paymentTermName = null, accountEntryName = null) {
 		Variables.assertDefined(parameterList = "${accountEntryName},${orderStatus},${paymentStatus}");
 
 		var accountEntryId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountEntryName});
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (!(isSet(billingAddressName))) {
@@ -17,6 +18,20 @@ definition {
 			var billingAddressId = CommerceJSONAccountsAPI._getAccountAddressIdByAddressName(
 				accountEntryId = ${accountEntryId},
 				addressName = ${billingAddressName});
+		}
+
+		if (!(isSet(deliveryTermName))) {
+			var deliveryTermId = 0;
+		}
+		else {
+			var deliveryTermId = CommerceJSONTermsAndConditionsAPI._getCommerceTermsAndConditionsIdByName(termsAndConditionsName = ${deliveryTermName});
+		}
+
+		if (isSet(orderDate)) {
+			var orderDate = '''"orderDate": "${orderDate}",''';
+		}
+		else {
+			var orderDate = "";
 		}
 
 		var commerceChannelIds = CommerceJSONChannelsAPI._getCommerceChannelIds();
@@ -83,6 +98,10 @@ definition {
 			}
 		}
 
+		if (!(isSet(orderStatus))) {
+			var orderStatus = 2;
+		}
+
 		if (!(isSet(paymentMethod))) {
 			var paymentMethod = "";
 		}
@@ -94,8 +113,23 @@ definition {
 			var paymentStatus = 1;
 		}
 
-		if (!(isSet(orderStatus))) {
-			var orderStatus = 2;
+		if (!(isSet(paymentTermName))) {
+			var paymentTermId = 0;
+		}
+		else {
+			var paymentTermId = CommerceJSONTermsAndConditionsAPI._getCommerceTermsAndConditionsIdByName(termsAndConditionsName = ${paymentTermName});
+		}
+
+		if (!(isSet(printedNote))) {
+			var printedNote = "";
+		}
+
+		if (!(isSet(purchaseOrderNumber))) {
+			var purchaseOrderNumber = "";
+		}
+
+		if (!(isSet(requestedDeliveryDate))) {
+			var requestedDeliveryDate = "";
 		}
 
 		if (!(isSet(shippingAddressName))) {
@@ -145,10 +179,15 @@ definition {
 					"billingAddressId": ${billingAddressId},
 					"channelId": "${commerceChannelIds}",
 					"currencyCode": "USD",
-					"paymentStatus": "${paymentStatus}",
-					"paymentMethod": "${paymentMethod}",
+					"deliveryTermId": ${deliveryTermId},${orderDate}
 					"orderItems": [${orderItemsList}],
 					"orderStatus": ${orderStatus},
+					"paymentMethod": "${paymentMethod}",
+					"paymentStatus": "${paymentStatus}",
+					"paymentTermId": ${paymentTermId},
+					"printedNote": "${printedNote}",
+					"purchaseOrderNumber": "${purchaseOrderNumber}",
+					"requestedDeliveryDate": "${requestedDeliveryDate}",
 					"shippingAddressId": ${shippingAddressId},
 					"shippingMethod": "${shippingMethod}",
 					"shippingOption": "${shippingOption}"
@@ -162,11 +201,12 @@ definition {
 		return ${orderId};
 	}
 
-	macro _addCommerceOrderItem {
+	@summary = "Default summary"
+	macro _addCommerceOrderItem(productSKU = null) {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (!(isSet(quantity))) {
@@ -196,13 +236,14 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro _addCommerceOrderNote {
+	@summary = "Default summary"
+	macro _addCommerceOrderNote(content = null) {
 		Variables.assertDefined(parameterList = ${content});
 
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (!(isSet(orderId))) {
@@ -233,13 +274,14 @@ definition {
 		return ${responseBody};
 	}
 
-	macro _addOrderRule {
+	@summary = "Default summary"
+	macro _addOrderRule(orderRuleName = null) {
 		Variables.assertDefined(parameterList = "${orderRuleName},${orderRuleType},${applyTo}");
 
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		var applyTo = StringUtil.lowerCase(${applyTo});
@@ -284,13 +326,14 @@ definition {
 		JSONCurlUtil.post(${curl});
 	}
 
-	macro _addOrderType {
+	@summary = "Default summary"
+	macro _addOrderType(orderTypeName = null) {
 		Variables.assertDefined(parameterList = ${orderTypeName});
 
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (!(isSet(active))) {
@@ -348,11 +391,12 @@ definition {
 		JSONCurlUtil.post(${curl});
 	}
 
-	macro _deleteAllCommerceOrders {
+	@summary = "Default summary"
+	macro _deleteAllCommerceOrders() {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		var ordersCount = CommerceJSONOrdersAPI._getCommerceOrdersCount();
@@ -379,7 +423,8 @@ definition {
 		}
 	}
 
-	macro _deleteAllCommerceOrdersAndCheck {
+	@summary = "Default summary"
+	macro _deleteAllCommerceOrdersAndCheck() {
 		CommerceJSONOrdersAPI._deleteAllCommerceOrders();
 
 		var orderCount = CommerceJSONOrdersAPI._getCommerceOrdersCount();
@@ -389,11 +434,12 @@ definition {
 			expected = 0);
 	}
 
-	macro _getCommerceOrder {
+	@summary = "Default summary"
+	macro _getCommerceOrder() {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		var userLoginInfo = JSONUtil2.formatJSONUser();
@@ -411,11 +457,12 @@ definition {
 		return ${orderId};
 	}
 
-	macro _getCommerceOrderIds {
+	@summary = "Default summary"
+	macro _getCommerceOrderIds(orderCount = null) {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (isSet(orderCount)) {
@@ -444,11 +491,12 @@ definition {
 		return ${orderIds};
 	}
 
-	macro _getCommerceOrderItemCustomFieldValue {
+	@summary = "Default summary"
+	macro _getCommerceOrderItemCustomFieldValue(sku = null, customFieldName = null) {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		var orderId = CommerceJSONOrdersAPI._getCommerceOrder();
@@ -467,11 +515,64 @@ definition {
 		return ${orderItemCustomFieldValue};
 	}
 
-	macro _getCommerceOrdersCount {
+	@summary = "Default summary"
+	macro _getCommerceOrderItems(orderItemCount = null) {
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
+		}
+
+		if (isSet(orderItemCount)) {
+			var orderItemsCount = ${orderItemCount};
+		}
+		else {
+			var orderItemsCount = 100;
+		}
+
+		var userLoginInfo = JSONUtil2.formatJSONUser();
+
+		var curl = '''
+			${baseURL}/o/headless-commerce-admin-order/v1.0/orderItems?pageSize=${orderItemsCount} \
+				-u ${userLoginInfo} \
+				-H 'accept: application/json' \
+		''';
+
+		var responseBody = JSONCurlUtil.get(${curl});
+
+		return ${responseBody};
+	}
+
+	@summary = "Default summary"
+	macro _getCommerceOrderObjectActionIdByName(objectDefinitionName = null, objectActionName = null) {
+		Variables.assertDefined(parameterList = "${objectActionName},${objectDefinitionName}");
+
+		var baseURL = ${baseURL};
+
+		if (!(isSet(baseURL))) {
+			var baseURL = JSONCompany.getPortalURL();
+		}
+
+		var objectDefinitionId = ObjectDefinitionAPI.getObjectDefinitionIdByName(name = ${objectDefinitionName});
+		var userLoginInfo = JSONUtil2.formatJSONUser();
+
+		var curl = '''
+			${baseURL}/o/object-admin/v1.0/object-definitions/${objectDefinitionId}/object-actions \
+				-u ${userLoginInfo} \
+				-H 'accept: application/json' \
+		''';
+
+		var objectActionId = JSONCurlUtil.get(${curl}, "$.items[?(@['name'] == '${objectActionName}')].['id']");
+
+		return ${objectActionId};
+	}
+
+	@summary = "Default summary"
+	macro _getCommerceOrdersCount() {
+		var baseURL = ${baseURL};
+
+		if (!(isSet(baseURL))) {
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (!(isSet(email))) {
@@ -495,17 +596,21 @@ definition {
 		return ${ordersCount};
 	}
 
-	macro _getOrderById {
+	@summary = "Default summary"
+	macro _getOrderById(orderId = null, parameterValue = null) {
 		Variables.assertDefined(parameterList = ${orderId});
 
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (isSet(parameter)) {
 			var parameter = "?${parameter}=${parameterValue}";
+		}
+		else {
+			var parameter = "";
 		}
 
 		if (!(isSet(email))) {
@@ -527,13 +632,14 @@ definition {
 		return ${response};
 	}
 
-	macro _getOrderItemById {
+	@summary = "Default summary"
+	macro _getOrderItemById(orderId = null) {
 		Variables.assertDefined(parameterList = ${orderId});
 
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (!(isSet(email))) {
@@ -555,14 +661,45 @@ definition {
 		return ${response};
 	}
 
-	macro _patchCommerceOrderNote {
+	@summary = "This macro can be used to update the existing orders via API"
+	macro _patchCommerceOrder() {
+		var baseURL = ${baseURL};
+
+		if (!(isSet(baseURL))) {
+			var baseURL = JSONCompany.getPortalURL();
+		}
+
+		if (!(isSet(orderStatus))) {
+			var orderStatus = 2;
+		}
+
+		var commerceChannelIds = CommerceJSONChannelsAPI._getCommerceChannelIds();
+		var orderId = CommerceJSONOrdersAPI._getCommerceOrder();
+		var userLoginInfo = JSONUtil2.formatJSONUser();
+
+		var curl = '''
+			${baseURL}/o/headless-commerce-admin-order/v1.0/orders/${orderId} \
+				-u ${userLoginInfo} \
+				-H 'accept: application/json' \
+				-H 'Content-Type: application/json' \
+				-d '{
+					"channelId": ${commerceChannelIds},
+					"orderStatus": ${orderStatus}
+				}'
+		''';
+
+		JSONCurlUtil.patch(${curl});
+	}
+
+	@summary = "Default summary"
+	macro _patchCommerceOrderNote(orderNoteId = null) {
 		Variables.assertDefined(parameterList = ${orderNoteId});
 
 		var baseURL = ${baseURL};
 		var fieldsList = ListUtil.newList();
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (isSet(content)) {
@@ -602,13 +739,46 @@ definition {
 		return ${responseBody};
 	}
 
-	macro _updateCommerceOrderERC {
+	@summary = "Default summary"
+	macro _patchCommerceOrderObjectAction(objectDefinitionName = null, objectActionName = null) {
+		Variables.assertDefined(parameterList = "${objectActionName},${objectDefinitionName}");
+
+		var baseURL = ${baseURL};
+
+		if (!(isSet(baseURL))) {
+			var baseURL = JSONCompany.getPortalURL();
+		}
+
+		var objectActionId = CommerceJSONOrdersAPI._getCommerceOrderObjectActionIdByName(
+			objectActionName = ${objectActionName},
+			objectDefinitionName = ${objectDefinitionName});
+		var userLoginInfo = JSONUtil2.formatJSONUser();
+
+		if (!(isSet(active))) {
+			var active = "false";
+		}
+
+		var curl = '''
+			${baseURL}/o/object-admin/v1.0/object-actions/${objectActionId} \
+				-u ${userLoginInfo} \
+				-H accept: application/json \
+				-H Content-Type: application/json \
+				-d {
+					"active": ${active}
+				}
+		''';
+
+		com.liferay.poshi.runner.util.JSONCurlUtil.patch(${curl});
+	}
+
+	@summary = "Default summary"
+	macro _updateCommerceOrderERC(externalReferenceCode = null) {
 		Variables.assertDefined(parameterList = ${externalReferenceCode});
 
 		var baseURL = ${baseURL};
 
 		if (!(isSet(baseURL))) {
-			var baseURL = PropsUtil.get("portal.url");
+			var baseURL = JSONCompany.getPortalURL();
 		}
 
 		if (!(isSet(commerceOrderId))) {
@@ -627,7 +797,21 @@ definition {
 		com.liferay.poshi.runner.util.JSONCurlUtil.post(${curl});
 	}
 
-	macro getOrderField {
+	@summary = "Default summary"
+	macro getCommerceOrderItemFieldByJSONPath(jsonPath = null) {
+		Variables.assertDefined(parameterList = ${jsonPath});
+
+		if (!(isSet(responseBody))) {
+			var responseBody = CommerceJSONOrdersAPI._getCommerceOrderItems();
+		}
+
+		var fieldValue = JSONUtil.getWithJSONPath(${responseBody}, ${jsonPath});
+
+		return ${fieldValue};
+	}
+
+	@summary = "Default summary"
+	macro getOrderField(password = null, orderId = null, parameter = null, jsonPath = null, parameterValue = null, email = null) {
 		Variables.assertDefined(parameterList = "${jsonPath},${orderId}");
 
 		var response = CommerceJSONOrdersAPI._getOrderById(
@@ -642,20 +826,24 @@ definition {
 		return ${fieldValue};
 	}
 
-	macro getOrderItemField {
+	@summary = "Default summary"
+	macro getOrderItemField(password = null, orderId = null, jsonPath = null, email = null) {
 		Variables.assertDefined(parameterList = "${jsonPath},${orderId}");
 
-		var response = CommerceJSONOrdersAPI._getOrderItemById(
-			email = ${email},
-			orderId = ${orderId},
-			password = ${password});
+		if (!(isSet(response))) {
+			var response = CommerceJSONOrdersAPI._getOrderItemById(
+				email = ${email},
+				orderId = ${orderId},
+				password = ${password});
+		}
 
 		var fieldValue = JSONUtil.getWithJSONPath(${response}, ${jsonPath});
 
 		return ${fieldValue};
 	}
 
-	macro getOrderNotePostRequestField {
+	@summary = "Default summary"
+	macro getOrderNotePostRequestField(field = null, orderId = null, restricted = null, userEmail = null, content = null) {
 		Variables.assertDefined(parameterList = "${content},${field}");
 
 		var responseBody = CommerceJSONOrdersAPI._addCommerceOrderNote(

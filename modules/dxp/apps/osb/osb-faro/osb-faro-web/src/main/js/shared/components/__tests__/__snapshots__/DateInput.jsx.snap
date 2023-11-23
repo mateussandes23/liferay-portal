@@ -21,6 +21,7 @@ exports[`DateInput should render 1`] = `
         class="input-group-inset-item input-group-inset-item-after"
       >
         <button
+          aria-label="Choose a date"
           class="button-root btn btn-unstyled"
           type="button"
         >
@@ -29,7 +30,7 @@ exports[`DateInput should render 1`] = `
             role="presentation"
           >
             <use
-              xlink:href="#calendar"
+              href="#calendar"
             />
           </svg>
         </button>

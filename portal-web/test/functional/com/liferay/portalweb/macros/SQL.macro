@@ -1,7 +1,7 @@
 definition {
 
-	@summary = "Search for all databases with filter 'databaseFilter' that contain substring 'databaseSubstring' and assert they match 'expectedCount'"
-	macro assertDatabaseCount {
+	@summary = "Default summary"
+	macro assertDatabaseCount(databaseSubstring = null, databaseFilter = null, expectedCount = null) {
 		Variables.assertDefined(parameterList = "${databaseFilter},${databaseSubstring},${expectedCount}");
 
 		var mysqlStatement = "SHOW DATABASES LIKE '${databaseFilter}';";
@@ -15,7 +15,8 @@ definition {
 		}
 	}
 
-	macro assertTextInMySQLStatementResult {
+	@summary = "Default summary"
+	macro assertTextInMySQLStatementResult(text = null, mysqlStatement = null) {
 		var sqlResults = SQL.executeMySQLStatement(mysqlStatement = ${mysqlStatement});
 
 		if (!(contains(${sqlResults}, ${text}))) {
@@ -23,7 +24,8 @@ definition {
 		}
 	}
 
-	macro assertTextNotInMySQLStatementResult {
+	@summary = "Default summary"
+	macro assertTextNotInMySQLStatementResult(text = null, mysqlStatement = null) {
 		var sqlResults = SQL.executeMySQLStatement(mysqlStatement = ${mysqlStatement});
 
 		if (contains(${sqlResults}, ${text})) {
@@ -31,7 +33,8 @@ definition {
 		}
 	}
 
-	macro dropMySQLIndex {
+	@summary = "Default summary"
+	macro dropMySQLIndex(indexName = null, tableName = null) {
 		Variables.assertDefined(parameterList = "${indexName},${tableName}");
 
 		SQL.executeMySQLStatement(mysqlStatement = "drop index ${indexName} on ${tableName};");
@@ -43,7 +46,8 @@ definition {
 		}
 	}
 
-	macro executeMySQLStatement {
+	@summary = "Default summary"
+	macro executeMySQLStatement(mysqlStatement = null) {
 		Variables.assertDefined(parameterList = ${mysqlStatement});
 
 		var liferayHome = PropsUtil.get("liferay.home.dir.name");
@@ -52,16 +56,15 @@ definition {
 
 		FileUtil.write("${liferayHome}/${inputFile}", ${mysqlStatement});
 
-		AntCommand(
-			locator1 = "build-test.xml",
-			value1 = "execute-mysql -Dmysql.input.file=${liferayHome}/${inputFile} -Dmysql.output.file=${liferayHome}/${outputFile}");
+		AntCommands.runCommand("build-test.xml", "execute-mysql -Dmysql.input.file=${liferayHome}/${inputFile} -Dmysql.output.file=${liferayHome}/${outputFile}");
 
 		var output = FileUtil.read("${liferayHome}/${outputFile}");
 
 		return ${output};
 	}
 
-	macro hasMySQLIndex {
+	@summary = "Default summary"
+	macro hasMySQLIndex(indexName = null) {
 		Variables.assertDefined(parameterList = ${indexName});
 
 		var indexQuery = "SELECT COUNT(DISTINCT(index_name)) FROM information_schema.statistics WHERE index_schema = database() AND index_name = '${indexName}';";

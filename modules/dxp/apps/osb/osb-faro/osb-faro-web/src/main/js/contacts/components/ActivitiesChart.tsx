@@ -21,7 +21,6 @@ import {
 } from 'recharts';
 import {CHART_COLOR_NAMES} from 'shared/components/Chart';
 import {createDateKeysIMap} from 'shared/util/intervals';
-import {FORMAT} from 'shared/util/date';
 import {
 	formatXAxisDate,
 	getBarColor,
@@ -33,13 +32,6 @@ import {Interval, RangeSelectors} from 'shared/types';
 
 const {stark: CHART_BLUE} = CHART_COLOR_NAMES;
 
-export type ChartPayload = {
-	date: string;
-	intervalInitDate: number;
-	totalEvents: number;
-	totalSessions: number;
-};
-
 interface IChartProps<T> extends React.HTMLAttributes<HTMLElement> {
 	alwaysShowSelectedTooltip: boolean;
 	hasSelectedPoint?: boolean;
@@ -47,7 +39,7 @@ interface IChartProps<T> extends React.HTMLAttributes<HTMLElement> {
 	history: Array<T>;
 	interval?: Interval;
 	onAfterInit?: () => void;
-	onPointSelect: (data: {index: number; payload: ChartPayload}) => void;
+	onPointSelect: (index: number) => void;
 	rangeSelectors?: RangeSelectors;
 	selectedPoint: number;
 	tooltipRenderRows?: (
@@ -127,6 +119,8 @@ const ActivitiesChart: React.FC<
 				/>
 			);
 		}
+
+		return null;
 	};
 
 	const intervals = getIntervals(
@@ -162,19 +156,7 @@ const ActivitiesChart: React.FC<
 							);
 						}
 
-						onPointSelect({
-							index: pointData.activeTooltipIndex,
-							payload: {
-								...pointData.activePayload[0].payload,
-								date: moment
-									.utc(
-										new Date(
-											_tooltipRef.current.props.label
-										)
-									)
-									.format(FORMAT)
-							}
-						});
+						onPointSelect(pointData.activeTooltipIndex);
 					}
 				}}
 				onMouseLeave={() => setMouseOutside(true)}
@@ -203,6 +185,7 @@ const ActivitiesChart: React.FC<
 					tickLine={false}
 					tickMargin={12}
 					ticks={intervals}
+					type='number'
 				/>
 
 				<XAxis

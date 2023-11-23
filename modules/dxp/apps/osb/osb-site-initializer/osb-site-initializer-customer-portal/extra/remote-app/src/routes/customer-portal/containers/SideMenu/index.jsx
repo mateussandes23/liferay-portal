@@ -1,16 +1,11 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 import classNames from 'classnames';
 import {useEffect, useMemo, useRef, useState} from 'react';
+import {useAppPropertiesContext} from '~/common/contexts/AppPropertiesContext';
 import i18n from '../../../../common/I18n';
 import {Button} from '../../../../common/components';
 import getKebabCase from '../../../../common/utils/getKebabCase';
@@ -25,6 +20,7 @@ const SideMenu = () => {
 	const [{subscriptionGroups}] = useCustomerPortal();
 	const [isOpenedProductsMenu, setIsOpenedProductsMenu] = useState(false);
 	const [menuItemActiveStatus, setMenuItemActiveStatus] = useState([]);
+	const {featureFlags} = useAppPropertiesContext();
 
 	const productActivationMenuRef = useRef();
 
@@ -105,52 +101,59 @@ const SideMenu = () => {
 	}
 
 	return (
-		<div className="bg-neutral-1 cp-side-menu pl-4 pt-4">
+		<div className="bg-neutral-1 cp-side-menu ml-4 pl-4 pt-4">
 			<ul className="list-unstyled mr-2">
-				<MenuItem to="">
-					{i18n.translate(getKebabCase(MENU_TYPES.overview))}
-				</MenuItem>
+				<div className="d-flex">
+					<MenuItem iconKey="overview" to="">
+						{i18n.translate(getKebabCase(MENU_TYPES.overview))}
+					</MenuItem>
+				</div>
 
-				{Liferay.FeatureFlags['LPS-153478'] &&
+				{featureFlags.includes('LPS-153478') &&
 					hasLiferayExperienceCloud && (
-						<MenuItem
-							to={getKebabCase(
-								PRODUCT_TYPES.liferayExperienceCloud
-							)}
-						>
-							{MENU_TYPES.liferayExperienceCloud}
-						</MenuItem>
+						<div className="d-flex">
+							<MenuItem
+								iconKey="experienceCloud"
+								to={getKebabCase(
+									PRODUCT_TYPES.liferayExperienceCloud
+								)}
+							>
+								{MENU_TYPES.liferayExperienceCloud}
+							</MenuItem>
+						</div>
 					)}
 
 				<li>
-					<Button
-						appendIcon={
-							!!activationSubscriptionGroups.length &&
-							'angle-right-small'
-						}
-						appendIconClassName="ml-auto"
-						className={classNames(
-							'align-items-center btn-borderless d-flex px-2 py-2 rounded w-100',
-							{
-								'cp-product-activation-active': isOpenedProductsMenu,
-								'cp-products-list-active': hasSomeMenuItemActive,
-								'text-neutral-4':
-									activationSubscriptionGroups.length < 1,
-								'text-neutral-10': !!activationSubscriptionGroups.length,
+					<div className="d-flex">
+						<Button
+							appendIcon={
+								!!activationSubscriptionGroups.length &&
+								'angle-right-small'
 							}
-						)}
-						disabled={activationSubscriptionGroups.length < 1}
-						onClick={() =>
-							setIsOpenedProductsMenu(
-								(previousIsOpenedProductsMenu) =>
-									!previousIsOpenedProductsMenu
-							)
-						}
-					>
-						{i18n.translate(
-							getKebabCase(MENU_TYPES.productActivation)
-						)}
-					</Button>
+							appendIconClassName="ml-auto"
+							className={classNames(
+								'align-items-center btn-borderless d-flex px-2 py-2 rounded w-100',
+								{
+									'cp-product-activation-active': isOpenedProductsMenu,
+									'text-neutral-4':
+										activationSubscriptionGroups.length < 1,
+									'text-neutral-10': !!activationSubscriptionGroups.length,
+								}
+							)}
+							disabled={activationSubscriptionGroups.length < 1}
+							iconKey="productActivation"
+							onClick={() =>
+								setIsOpenedProductsMenu(
+									(previousIsOpenedProductsMenu) =>
+										!previousIsOpenedProductsMenu
+								)
+							}
+						>
+							{i18n.translate(
+								getKebabCase(MENU_TYPES.productActivation)
+							)}
+						</Button>
+					</div>
 
 					<ul
 						className={classNames(
@@ -165,9 +168,14 @@ const SideMenu = () => {
 					</ul>
 				</li>
 
-				<MenuItem to={getKebabCase(MENU_TYPES.teamMembers)}>
-					{i18n.translate(getKebabCase(MENU_TYPES.teamMembers))}
-				</MenuItem>
+				<div className="d-flex">
+					<MenuItem
+						iconKey="teamMembers"
+						to={getKebabCase(MENU_TYPES.teamMembers)}
+					>
+						{i18n.translate(getKebabCase(MENU_TYPES.teamMembers))}
+					</MenuItem>
+				</div>
 			</ul>
 		</div>
 	);

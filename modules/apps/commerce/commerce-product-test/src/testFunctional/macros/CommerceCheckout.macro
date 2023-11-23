@@ -1,6 +1,7 @@
 definition {
 
-	macro checkout {
+	@summary = "Default summary"
+	macro checkout(selectedShippingAddressName = null, newAddressAddress = null, newAddressCity = null, newAddressCountry = null, newAddressZipCode = null, deliveryTerm = null, shippingMethod = null, paymentMethod = null, guestEmail = null, paymentTerm = null, newAddressName = null) {
 		CommerceCheckout.setAddress(
 			guestEmail = ${guestEmail},
 			newAddressAddress = ${newAddressAddress},
@@ -18,6 +19,14 @@ definition {
 
 		Click(locator1 = "Button#CONTINUE");
 
+		if (isSet(deliveryTerm) && (IsElementPresent(key_radioOption = "", locator1 = "CommerceEntry#RADIO_BUTTON"))) {
+			Click(
+				key_radioOption = ${deliveryTerm},
+				locator1 = "CommerceEntry#RADIO_BUTTON");
+
+			Click(locator1 = "Button#CONTINUE");
+		}
+
 		if (isSet(paymentMethod) && (IsElementPresent(key_radioOption = "", locator1 = "CommerceEntry#RADIO_BUTTON"))) {
 			Click(
 				key_radioOption = ${paymentMethod},
@@ -26,10 +35,19 @@ definition {
 			Click(locator1 = "Button#CONTINUE");
 		}
 
+		if (isSet(paymentTerm) && (IsElementPresent(key_radioOption = "", locator1 = "CommerceEntry#RADIO_BUTTON"))) {
+			Click(
+				key_radioOption = ${paymentTerm},
+				locator1 = "CommerceEntry#RADIO_BUTTON");
+
+			Click(locator1 = "Button#CONTINUE");
+		}
+
 		Click(locator1 = "Button#CONTINUE");
 	}
 
-	macro getDeliveryCost {
+	@summary = "Default summary"
+	macro getDeliveryCost(deliveryDiscountFixedAmount = null, shippingMethod = null, deliveryDiscountPercentage = null, customDeliveryValue = null) {
 		var deliveryExpeditedCost = 25;
 		var deliveryStandardCost = 15;
 
@@ -43,7 +61,10 @@ definition {
 			var deliveryCost = ${customDeliveryValue};
 		}
 
-		if (isSet(deliveryDiscountPercentage)) {
+		if (isSet(deliveryDiscountFixedAmount)) {
+			var deliveryCost = ${deliveryCost} - ${deliveryDiscountFixedAmount};
+		}
+		else if (isSet(deliveryDiscountPercentage)) {
 			var deliverydiscountAmount = MathUtil.percent(${deliveryDiscountPercentage}, ${deliveryCost});
 
 			var deliveryCost = ${deliveryCost} - ${deliverydiscountAmount};
@@ -52,7 +73,8 @@ definition {
 		return ${deliveryCost};
 	}
 
-	macro gotoCheckout {
+	@summary = "Default summary"
+	macro gotoCheckout() {
 		CommerceNavigator.gotoMiniCart();
 
 		Button.click(button = "View Details");
@@ -62,7 +84,8 @@ definition {
 		WaitForPageLoad();
 	}
 
-	macro gotoCheckoutViaMiniCart {
+	@summary = "Default summary"
+	macro gotoCheckoutViaMiniCart() {
 		ScrollBy(value1 = "0, 1000");
 
 		CommerceNavigator.gotoMiniCart();
@@ -72,7 +95,8 @@ definition {
 		WaitForPageLoad();
 	}
 
-	macro initializersCheckout {
+	@summary = "Default summary"
+	macro initializersCheckout(defaultPaymentMethod = null, manageDeliveryTerms = null, deliveryDiscountValue = null, totalPrice = null, accountName = null, productUnitPrice = null, productName = null, shippingOption = null, notEligibleShippingMethods = null, eligiblePaymentMethods = null, productDiscountedTotalPrice = null, newAddressZipCode = null, eligibleShippingMethods = null, selectedBillingAddressName = null, viewBillingAddressPermission = null, manageShippingOptionsPermission = null, deliveryTerm = null, managePaymentTerms = null, shippingMethod = null, guestEmail = null, selectedShippingAddressName = null, productQuantity = null, deliveryDiscountFixedAmount = null, notEligiblePaymentMethods = null, taxValue = null, deliveryValue = null, deliveryDiscountPercentage = null, customDeliveryValue = null, productDiscountValue = null, paymentMethod = null, defaultShippingMethod = null, paymentTerm = null) {
 		CommerceCheckout.setAddress(
 			guestEmail = ${guestEmail},
 			newAddressAddress = ${newAddressAddress},
@@ -122,6 +146,7 @@ definition {
 			if (isSet(shippingMethod)) {
 				var deliveryCost = CommerceCheckout.getDeliveryCost(
 					customDeliveryValue = ${customDeliveryValue},
+					deliveryDiscountFixedAmount = ${deliveryDiscountFixedAmount},
 					deliveryDiscountPercentage = ${deliveryDiscountPercentage},
 					shippingMethod = ${shippingMethod});
 
@@ -168,6 +193,7 @@ definition {
 
 			var deliveryCost = CommerceCheckout.getDeliveryCost(
 				customDeliveryValue = ${customDeliveryValue},
+				deliveryDiscountFixedAmount = ${deliveryDiscountFixedAmount},
 				deliveryDiscountPercentage = ${deliveryDiscountPercentage},
 				shippingMethod = ${shippingMethod});
 
@@ -175,6 +201,14 @@ definition {
 		}
 		else {
 			var total = ${subtotal};
+		}
+
+		if (isSet(taxValue)) {
+			var total = ${total} + ${taxValue};
+		}
+
+		if (isSet(totalPrice)) {
+			var total = ${totalPrice};
 		}
 
 		if (isSet(setBillingAddress)) {
@@ -297,11 +331,13 @@ definition {
 			paymentTerm = ${paymentTerm},
 			productDiscountedTotalPrice = ${productDiscountedTotalPrice},
 			productDiscountValue = ${productDiscountValue},
+			productImage = ${productImage},
 			productName = ${productName},
 			productPrice = ${productUnitPrice},
 			productQuantity = ${productQuantity},
 			shippingOption = ${shippingOption},
 			subtotalValue = ${subtotal},
+			taxValue = ${taxValue},
 			totalValue = ${total},
 			viewBillingAddressPermission = ${viewBillingAddressPermission});
 
@@ -310,7 +346,8 @@ definition {
 		}
 	}
 
-	macro setAddress {
+	@summary = "Default summary"
+	macro setAddress(newAddressAddress = null, newAddressCountry = null, newAddressZipCode = null, newAddressCity = null, selectedAddressName = null, guestEmail = null, newAddressName = null) {
 		WaitForElementPresent(locator1 = "CommerceAccelerators#CHECKOUT_PORTLET_BODY");
 
 		if (isSet(newAddressName)) {
@@ -353,7 +390,8 @@ definition {
 		}
 	}
 
-	macro setDeliveryDate {
+	@summary = "Default summary"
+	macro setDeliveryDate(displayDateMonth = null, displayDateYear = null, displayDateDay = null) {
 		var displayDate = "${displayDateMonth}/${displayDateDay}/${displayDateYear}";
 
 		Type(
@@ -364,7 +402,8 @@ definition {
 		Click(locator1 = "Button#CONTINUE");
 	}
 
-	macro setStandardShippingOption {
+	@summary = "Default summary"
+	macro setStandardShippingOption() {
 		Click(
 			key_radioOption = "Standard",
 			locator1 = "CommerceEntry#RADIO_BUTTON");
@@ -372,7 +411,8 @@ definition {
 		Click(locator1 = "Button#CONTINUE");
 	}
 
-	macro viewCheckoutOrderSummary {
+	@summary = "Default summary"
+	macro viewCheckoutOrderSummary(addressAddress = null, deliveryDiscountValue = null, billingAddressName = null, subtotalValue = null, productName = null, shippingOption = null, productDiscountedTotalPrice = null, billingAddressAddress = null, addressCity = null, addressCountry = null, totalValue = null, viewBillingAddressPermission = null, billingAddressCity = null, productOptions = null, deliveryTerm = null, productQuantity = null, taxValue = null, deliveryValue = null, productDiscountValue = null, paymentMethod = null, addressName = null, billingAddressCountry = null, paymentTerm = null, productPrice = null) {
 		if (!(isSet(currency))) {
 			var currency = "$";
 		}
@@ -477,6 +517,15 @@ definition {
 				value1 = ${productName});
 		}
 
+		if (isSet(productOptions)) {
+			for (var productOption : list ${productOptions}) {
+				AssertTextEquals.assertPartialText(
+					key_productName = ${productOption},
+					locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_PRODUCT_TABLE_PRODUCT",
+					value1 = ${productOption});
+			}
+		}
+
 		if (isSet(productQuantity)) {
 			AssertTextEquals(
 				key_productQuantity = ${productQuantity},
@@ -544,10 +593,10 @@ definition {
 		}
 
 		if (isSet(taxValue)) {
-			AssertTextEquals(
+			AssertTextEquals.assertPartialText(
 				key_taxValue = ${taxValue},
 				locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_TAX",
-				value1 = ${taxValue});
+				value1 = "$ ${taxValue}");
 		}
 
 		if (isSet(totalValue)) {
@@ -555,6 +604,12 @@ definition {
 				key_totalValue = ${totalValue},
 				locator1 = "CommerceAccelerators#CHECKOUT_SUMMARY_TOTAL",
 				value1 = ${totalValue});
+		}
+
+		if (isSet(productImage)) {
+			AssertElementPresent(
+				key_productName = ${productImage},
+				locator1 = "CommerceFrontStore#PRODUCT_IMAGE_CHECKOUT_WITH_ALT_ATTRIBUTE");
 		}
 	}
 

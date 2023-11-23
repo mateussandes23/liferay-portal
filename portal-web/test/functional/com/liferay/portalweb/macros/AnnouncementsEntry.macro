@@ -1,6 +1,7 @@
 definition {
 
-	macro addEntryWithFutureDate {
+	@summary = "Default summary"
+	macro addEntryWithFutureDate(distributionScope = null, entryURL = null, minutesAdjustmentValue = null, entryTitle = null, entryContent = null) {
 		AssertClick(
 			locator1 = "Button#ADD_ANNOUNCEMENT",
 			value1 = "Add Announcement");
@@ -33,57 +34,31 @@ definition {
 
 		Uncheck(locator1 = "Checkbox#DISPLAY_IMMEDIATELY");
 
-		task ("Convert 0 and 1 selenium attributes to AM and PM") {
-			var displayDateAmpm = selenium.getAttribute("//input[contains(@id,'displayDateAmPm')]@value");
+		var displayDateDay = DateUtil.getCurrentDate();
+		var displayDateMonth = DateUtil.getCurrentMonth();
+		var displayDateYear = DateUtil.getCurrentYear();
 
-			var displayDateAmpm = StringUtil.replace(${displayDateAmpm}, 0, "AM");
-
-			var displayDateAmpm = StringUtil.replace(${displayDateAmpm}, 1, "PM");
-		}
-
-		task ("Add 2 minutes for the future time. If it exceeds 60 then add one hour then reset the minutes.") {
-			var displayDateMinute = selenium.getAttribute("//input[contains(@id,'displayDateMinute')]@value");
-
-			var displayDateMinuteFuture = ${displayDateMinute} + 2;
-
-			if (${displayDateMinuteFuture} == 60) {
-				var displayDateMinuteFuture = 00;
-			}
-			else if (${displayDateMinuteFuture} == 61) {
-				var displayDateMinuteFuture = 01;
-			}
-
-			var displayDateHour = selenium.getAttribute("//input[contains(@id,'displayDateHour')]@value");
-
-			if ("${displayDateMinuteFuture" == "00" | "01") {
-				var displayDateHour = ${displayDateHour} + 1;
-			}
-		}
-
-		task ("Make sure minutes and hours with single digits have a 0 in front of them.") {
-			var displayDateMinuteFutureLength = StringUtil.length(${displayDateMinuteFuture});
-
-			if (${displayDateMinuteFutureLength} == 1) {
-				var displayDateMinuteFuture = "0${displayDateMinuteFuture}";
-			}
-
-			var displayDateHourLength = StringUtil.length(${displayDateHour});
-
-			if (${displayDateHourLength} == 1) {
-				var displayDateHour = "0${displayDateHour}";
-			}
-		}
-
-		var displayDate = "${displayDateHour}:${displayDateMinuteFuture} ${displayDateAmpm}";
+		var displayDate = "${displayDateMonth}/${displayDateDay}/${displayDateYear}";
 
 		Type(
-			locator1 = "TextInput#DISPLAY_DATE_TIME",
+			locator1 = "TextInput#DISPLAY_DATE",
 			value1 = ${displayDate});
+
+		var displayTime = DateUtil.getDateOffsetByMinutes(${minutesAdjustmentValue}, "hh:mm a");
+
+		echo("display Time: ${displayTime}");
+
+		var displayTime = StringUtil.removeSpaces(${displayTime});
+
+		Type.sendKeys(
+			locator1 = "TextInput#DISPLAY_DATE_TIME",
+			value1 = ${displayTime});
 
 		Button.clickSave();
 	}
 
-	macro addPG {
+	@summary = "Default summary"
+	macro addPG(distributionScope = null, entryURL = null, priority = null, entryTitle = null, entryContent = null, expirationDate = null) {
 		AssertClick(
 			locator1 = "Button#ADD_ANNOUNCEMENT",
 			value1 = "Add Announcement");
@@ -130,7 +105,8 @@ definition {
 		}
 	}
 
-	macro deletePG {
+	@summary = "Default summary"
+	macro deletePG(entryTitle = null) {
 		AssertTextEquals(
 			key_entryTitle = ${entryTitle},
 			locator1 = "Announcements#CARD_VIEW_ENTRY_TITLE",
@@ -143,7 +119,8 @@ definition {
 		AssertConfirm(value1 = "Are you sure you want to delete this? It will be deleted immediately.");
 	}
 
-	macro editPG {
+	@summary = "Default summary"
+	macro editPG(entryContentEdit = null, distributionScope = null, entryTitleEdit = null, entryTitle = null, entryContent = null, entryURLEdit = null) {
 		var key_distributionScope = ${distributionScope};
 		var key_entryTitle = ${entryTitle};
 
@@ -191,7 +168,8 @@ definition {
 		Button.clickSave();
 	}
 
-	macro markAsReadPG {
+	@summary = "Default summary"
+	macro markAsReadPG(tabName = null, siteURLKey = null, entryContent = null, layoutName = null) {
 		var key_entryContent = ${entryContent};
 
 		AnnouncementsNavigator.openToEntriesTab(
@@ -208,7 +186,8 @@ definition {
 		AssertElementNotPresent(locator1 = "Announcements#CARD_VIEW_ENTRY_CONTENT");
 	}
 
-	macro tearDownCP {
+	@summary = "Default summary"
+	macro tearDownCP() {
 		AnnouncementsNavigator.opentoAdmin(
 			groupName = "Guest",
 			siteURLKey = "guest");
@@ -226,7 +205,8 @@ definition {
 			value1 = "No entries were found.");
 	}
 
-	macro viewList {
+	@summary = "Default summary"
+	macro viewList(distributionScope = null, entryTitle = null) {
 		var key_entryTitle = ${entryTitle};
 
 		AssertTextEquals(
@@ -238,13 +218,15 @@ definition {
 			value1 = ${distributionScope});
 	}
 
-	macro viewNoAdmin {
+	@summary = "Default summary"
+	macro viewNoAdmin() {
 		AssertTextEquals(
 			locator1 = "Message#NO_ENTRIES",
 			value1 = "No entries were found.");
 	}
 
-	macro viewNoPG {
+	@summary = "Default summary"
+	macro viewNoPG(entryTitle = null) {
 		var key_entryTitle = ${entryTitle};
 
 		AssertTextNotPresent(
@@ -252,7 +234,8 @@ definition {
 			value1 = ${entryTitle});
 	}
 
-	macro viewPG {
+	@summary = "Default summary"
+	macro viewPG(distributionScope = null, priority = null, entryTitle = null, entryContent = null) {
 		var key_distributionScope = ${distributionScope};
 		var key_entryTitle = ${entryTitle};
 
@@ -277,7 +260,8 @@ definition {
 			value1 = ${entryContent});
 	}
 
-	macro viewReadPG {
+	@summary = "Default summary"
+	macro viewReadPG(distributionScope = null, announcementType = null, entryTitle = null, entryContent = null) {
 		Click(
 			locator1 = "Announcements#NAVIGATION_ENTRIES_READ",
 			value1 = "Read");

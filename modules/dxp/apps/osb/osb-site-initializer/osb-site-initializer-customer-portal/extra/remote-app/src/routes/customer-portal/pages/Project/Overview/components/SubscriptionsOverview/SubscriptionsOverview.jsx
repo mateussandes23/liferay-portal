@@ -1,15 +1,9 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {useOutletContext} from 'react-router-dom';
 import i18n from '../../../../../../../common/I18n';
 import Skeleton from '../../../../../../../common/components/Skeleton';
@@ -19,7 +13,9 @@ import useAccountSubscriptionGroups from './hooks/useAccountSubscriptionGroups';
 import useAccountSubscriptions from './hooks/useAccountSubscriptions';
 
 const SubscriptionsOverview = ({koroneikiAccount, loading}) => {
-	const {setHasQuickLinksPanel, setHasSideMenu} = useOutletContext();
+	const [selectedItemIndex, setSelectedItemIndex] = useState(0);
+
+	const {setHasSideMenu} = useOutletContext();
 	const [
 		{lastAccountSubcriptionGroup, setLastAccountSubscriptionGroup},
 		{
@@ -43,19 +39,18 @@ const SubscriptionsOverview = ({koroneikiAccount, loading}) => {
 		accountSubscriptionsData?.c.accountSubscriptions.items;
 
 	useEffect(() => {
-		setHasQuickLinksPanel(true);
 		setHasSideMenu(true);
-	}, [setHasSideMenu, setHasQuickLinksPanel]);
+	}, [setHasSideMenu]);
 
-	const handleDropdownOnClick = (selectedStatus) => {
-		if (selectedStatus) {
-			setLastSubscriptionStatus(selectedStatus.join("', '"));
+	const handleDropdownOnClick = (selectedStatus) =>
+		setLastSubscriptionStatus(
+			selectedStatus ? selectedStatus.join("', '") : undefined
+		);
 
-			return;
-		}
+	const subscriptionsGroupSelected =
+		accountSubscriptionGroups?.items[selectedItemIndex]?.name;
 
-		setLastSubscriptionStatus();
-	};
+	const portalOrDXPSubscriptions = ['Portal', 'DXP'];
 
 	return (
 		<div>
@@ -78,14 +73,15 @@ const SubscriptionsOverview = ({koroneikiAccount, loading}) => {
 						disabled={accountSubscriptionsLoading}
 						loading={accountSubscriptionGroupsLoading}
 						onClickDropdownItem={handleDropdownOnClick}
-						onSelectNavItem={(accountSubscriptionGroup) => {
-							setLastAccountSubscriptionGroup(
-								accountSubscriptionGroup
-							);
-						}}
+						onSelectNavItem={setLastAccountSubscriptionGroup}
+						selectedItemIndex={selectedItemIndex}
+						setSelectedItemIndex={setSelectedItemIndex}
 					/>
 
 					<AccountSubscriptionsList
+						IsPortalOrDXP={portalOrDXPSubscriptions.includes(
+							subscriptionsGroupSelected
+						)}
 						accountKey={koroneikiAccount?.accountKey}
 						accountSubscriptionGroup={lastAccountSubcriptionGroup}
 						accountSubscriptions={accountSubscriptions}

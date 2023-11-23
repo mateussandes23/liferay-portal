@@ -13,15 +13,20 @@ definition {
 	var testSiteName = "Testray 2";
 
 	setUp {
-		task ("Login and create a Testray Site") {
+		task ("Set up instance and sign in") {
 			TestCase.setUpPortalInstance();
 
 			User.firstLoginPG();
-
-			Testray.addTestraySite(siteName = ${testSiteName});
 		}
 
-		task ("Given that a Testray Project are created") {
+		task ("Create a new Testray Site") {
+			HeadlessSite.addSite(
+				siteName = ${testSiteName},
+				templateName = "Testray",
+				templateType = "Site Initializer");
+		}
+
+		task ("Create project via API") {
 			JSONTestray.addProject(
 				projectDescription = "Project Description 1",
 				projectName = ${projectName});
@@ -29,13 +34,15 @@ definition {
 	}
 
 	tearDown {
-		var testPortalInstance = PropsUtil.get("test.portal.instance");
+		var testLiferayVirtualInstance = PropsUtil.get("test.liferay.virtual.instance");
 
-		JSONTestrayAPI.deleteProject(projectName = ${projectName});
+		task ("Delete project via API, Testray Site and Client Extensions") {
+			JSONTestrayAPI.deleteProject(projectName = ${projectName});
 
-		Testray.testrayApisTearDown();
+			Testray.testrayApisTearDown();
+		}
 
-		if (${testPortalInstance} == "true") {
+		if (${testLiferayVirtualInstance} == "true") {
 			PortalInstances.tearDownCP();
 		}
 	}
@@ -43,22 +50,20 @@ definition {
 	@description = "Story ID: LPS-159529 | Test Summary: Verify if as an Administrator I am able to add a Team"
 	@priority = 5
 	test AdminCanAddTeam {
-		task ("When the team are created") {
+		task ("When I create a team") {
 			ApplicationsMenu.gotoSite(site = ${testSiteName});
 
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 
-			TestrayContextMenu.clickContextMenuProjects(name = ${projectName});
-
-			TestrayContextMenu.selectItemFromProjectsContextMenu(item = "Manage Teams");
+			TestrayManage.selectTableRowOption(
+				rowOption = "Manage Teams",
+				tableEntry = ${projectName});
 
 			TestrayManage.createTeam(teamName = ${teamName});
 		}
 
-		task ("Then I should be able to assert that the Team was created") {
-			Testray.assertItemName(text = ${teamName});
+		task ("Then I should be able to see that the team has been created") {
+			Testray.viewTableEntryList(listEntry = ${teamName});
 		}
 	}
 
@@ -74,23 +79,19 @@ definition {
 		task ("And I go to the manage teams") {
 			ApplicationsMenu.gotoSite(site = ${testSiteName});
 
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 
-			TestrayContextMenu.clickContextMenuProjects(name = ${projectName});
-
-			TestrayContextMenu.selectItemFromProjectsContextMenu(item = "Manage Teams");
+			TestrayManage.selectTableRowOption(
+				rowOption = "Manage Teams",
+				tableEntry = ${projectName});
 		}
 
 		task ("When I delete the newly created Team") {
-			TestrayManage.deleteProductVersion(
-				itemManage = "Delete",
-				versionName = ${teamName});
+			Testray.deleteItem(itemName = ${teamName});
 		}
 
 		task ("Then I should be able to assert that the Team has been deleted") {
-			Testray.assertItemNotPresent(text = ${teamName});
+			Testray.viewTableEntryListNotPresent(listEntry = ${teamName});
 		}
 	}
 
@@ -106,23 +107,21 @@ definition {
 		task ("And I go to the manage teams") {
 			ApplicationsMenu.gotoSite(site = ${testSiteName});
 
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 
-			TestrayContextMenu.clickContextMenuProjects(name = ${projectName});
-
-			TestrayContextMenu.selectItemFromProjectsContextMenu(item = "Manage Teams");
+			TestrayManage.selectTableRowOption(
+				rowOption = "Manage Teams",
+				tableEntry = ${projectName});
 		}
 
 		task ("When I edit the Team") {
 			TestrayManage.editTeam(
-				currentTeamName = ${teamName},
-				newTeamName = "Team Edited");
+				newName = "Team Edited",
+				tableEntry = ${teamName});
 		}
 
 		task ("Then I should be able to assert that the Team has been edited") {
-			Testray.assertItemName(text = "Team Edited");
+			Testray.viewTableEntryList(listEntry = "Team Edited");
 		}
 	}
 
@@ -138,13 +137,11 @@ definition {
 		task ("And I go to the manage teams") {
 			ApplicationsMenu.gotoSite(site = ${testSiteName});
 
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 
-			TestrayContextMenu.clickContextMenuProjects(name = ${projectName});
-
-			TestrayContextMenu.selectItemFromProjectsContextMenu(item = "Manage Teams");
+			TestrayManage.selectTableRowOption(
+				rowOption = "Manage Teams",
+				tableEntry = ${projectName});
 		}
 
 		task ("When I try to create an existing Team") {
@@ -168,27 +165,22 @@ definition {
 		task ("And go to the manage teams") {
 			ApplicationsMenu.gotoSite(site = ${testSiteName});
 
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 
-			TestrayContextMenu.clickContextMenuProjects(name = ${projectName});
-
-			TestrayContextMenu.selectItemFromProjectsContextMenu(item = "Manage Teams");
+			TestrayManage.selectTableRowOption(
+				rowOption = "Manage Teams",
+				tableEntry = ${projectName});
 		}
 
 		task ("When the user search team non existent") {
-			TestrayFilter.clickFilter();
-
-			PortletEntry.inputName(name = "Team 3");
-
-			Button.click(button = "Apply");
+			TestrayFilter.filterResults(
+				fieldType = "input",
+				inputFieldLabel = "Team Name",
+				inputValue = "Team 3");
 		}
 
 		task ("Then not see the team 3 in the table") {
-			AssertElementNotPresent(
-				key_projectName = "Team 3",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryListNotPresent(listEntry = "Team 3");
 		}
 	}
 
@@ -208,43 +200,30 @@ definition {
 		task ("And go to the manage teams") {
 			ApplicationsMenu.gotoSite(site = ${testSiteName});
 
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 
-			TestrayContextMenu.clickContextMenuProjects(name = ${projectName});
-
-			TestrayContextMenu.selectItemFromProjectsContextMenu(item = "Manage Teams");
+			TestrayManage.selectTableRowOption(
+				rowOption = "Manage Teams",
+				tableEntry = ${projectName});
 		}
 
 		task ("And confirm that there are two teams in the table") {
-			AssertElementPresent(
-				key_projectName = ${teamName},
-				locator1 = "Testray#ITEM_NAME");
-
-			AssertElementPresent(
-				key_projectName = "Team 2",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = "${teamName},Team 2");
 		}
 
 		task ("When the user filter team 1") {
-			TestrayFilter.clickFilter();
-
-			PortletEntry.inputName(name = ${teamName});
-
-			Button.click(button = "Apply");
+			TestrayFilter.filterResults(
+				fieldType = "input",
+				inputFieldLabel = "Team Name",
+				inputValue = ${teamName});
 		}
 
 		task ("Then the user see only team 1 in the table") {
-			AssertElementPresent(
-				key_projectName = ${teamName},
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryList(listEntry = ${teamName});
 		}
 
 		task ("And do not see the team 2 in the table") {
-			AssertElementNotPresent(
-				key_projectName = "Team 2",
-				locator1 = "Testray#ITEM_NAME");
+			Testray.viewTableEntryListNotPresent(listEntry = "Team 2");
 		}
 	}
 
@@ -254,13 +233,11 @@ definition {
 		task ("Given I go to the manage teams") {
 			ApplicationsMenu.gotoSite(site = ${testSiteName});
 
-			Testray.changePagination(
-				numberItems = 20,
-				valuePagination = 150);
+			Testray.changePagination(quantity = 150);
 
-			TestrayContextMenu.clickContextMenuProjects(name = ${projectName});
-
-			TestrayContextMenu.selectItemFromProjectsContextMenu(item = "Manage Teams");
+			TestrayManage.selectTableRowOption(
+				rowOption = "Manage Teams",
+				tableEntry = ${projectName});
 		}
 
 		task ("When I try to create a Team without filling in the name") {

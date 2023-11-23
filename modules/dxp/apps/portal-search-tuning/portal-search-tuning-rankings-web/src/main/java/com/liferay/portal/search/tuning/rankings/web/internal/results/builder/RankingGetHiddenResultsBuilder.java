@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * The contents of this file are subject to the terms of the Liferay Enterprise
- * Subscription License ("License"). You may not use this file except in
- * compliance with the License. You can obtain a copy of the License by
- * contacting Liferay, Inc. See the License for the specific language governing
- * permissions and limitations under the License, including but not limited to
- * distribution rights of the Software.
- *
- *
- *
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.portal.search.tuning.rankings.web.internal.results.builder;
@@ -23,20 +14,18 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.permission.ResourceActions;
-import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.FastDateFormatFactory;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.search.document.Document;
 import com.liferay.portal.search.engine.adapter.SearchEngineAdapter;
 import com.liferay.portal.search.engine.adapter.document.GetDocumentRequest;
 import com.liferay.portal.search.engine.adapter.document.GetDocumentResponse;
-import com.liferay.portal.search.query.IdsQuery;
 import com.liferay.portal.search.query.Queries;
-import com.liferay.portal.search.query.Query;
 import com.liferay.portal.search.tuning.rankings.web.internal.index.Ranking;
 import com.liferay.portal.search.tuning.rankings.web.internal.index.RankingIndexReader;
 import com.liferay.portal.search.tuning.rankings.web.internal.index.name.RankingIndexName;
 import com.liferay.portal.search.tuning.rankings.web.internal.util.RankingResultUtil;
+import com.liferay.portal.search.tuning.rankings.web.internal.util.RankingUtil;
 
 import java.util.List;
 
@@ -70,7 +59,7 @@ public class RankingGetHiddenResultsBuilder {
 
 	public JSONObject build() {
 		Ranking ranking = _rankingIndexReader.fetch(
-			_rankingIndexName, _rankingId);
+			_rankingId, _rankingIndexName);
 
 		if (ranking == null) {
 			return JSONUtil.put(
@@ -80,7 +69,8 @@ public class RankingGetHiddenResultsBuilder {
 			);
 		}
 
-		List<String> ids = ranking.getHiddenDocumentIds();
+		List<String> ids = RankingUtil.translateDocumentIds(
+			ranking.getHiddenDocumentIds());
 
 		List<String> paginatedIds = _paginateIds(ids);
 
@@ -118,14 +108,6 @@ public class RankingGetHiddenResultsBuilder {
 			this::translate, _log);
 	}
 
-	protected Query getIdsQuery(List<String> ids) {
-		IdsQuery idsQuery = _queries.ids();
-
-		idsQuery.addIds(ArrayUtil.toStringArray(ids));
-
-		return idsQuery;
-	}
-
 	protected JSONObject translate(Document document) {
 		RankingJSONBuilder rankingJSONBuilder = new RankingJSONBuilder(
 			_dlAppLocalService, _fastDateFormatFactory, _resourceActions,
@@ -142,7 +124,7 @@ public class RankingGetHiddenResultsBuilder {
 		).build();
 	}
 
-	protected static final String LIFERAY_DOCUMENT_TYPE = "LiferayDocumentType";
+	protected static final String LIFERAY_DOCUMENT_TYPE = "_doc";
 
 	private Document _getDocument(String indexName, String id, String type) {
 		GetDocumentRequest getDocumentRequest = new GetDocumentRequest(

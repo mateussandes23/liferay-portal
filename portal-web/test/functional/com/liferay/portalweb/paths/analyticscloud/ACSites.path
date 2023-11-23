@@ -110,7 +110,7 @@
 </tr>
 <tr>
 	<td>COHORT_ANALYSIS_SELECT_VISITOR_TYPE</td>
-	<td>//select[contains(@class,'visitors-type-select')]</td>
+	<td>//button[contains(@class,'visitors-type-select')]</td>
 	<td></td>
 </tr>
 <tr>
@@ -141,6 +141,11 @@
 <tr>
 	<td>DISPLAYED_ASSETS_CARD</td>
 	<td>//*[contains(@class,'table-hover')]//span[text()='${key_nameList}']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>PAGE_METRIC_VALUE</td>
+	<td>//a[text()='${key_pageName}']/ancestor::td[contains(@class, 'table-cell')]/following::td[${key_index}][text()='${key_metricValue}']</td>
 	<td></td>
 </tr>
 <tr>

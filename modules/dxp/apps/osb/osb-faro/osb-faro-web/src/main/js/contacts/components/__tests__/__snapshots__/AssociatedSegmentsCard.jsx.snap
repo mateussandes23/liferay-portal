@@ -34,6 +34,7 @@ exports[`AssociatedSegmentsCard should render 1`] = `
             class="input-group-inset-item input-group-inset-item-after"
           >
             <button
+              aria-label="Search"
               class="button-root btn btn-unstyled"
               type="button"
             >
@@ -42,7 +43,7 @@ exports[`AssociatedSegmentsCard should render 1`] = `
                 role="presentation"
               >
                 <use
-                  xlink:href="#search"
+                  href="#search"
                 />
               </svg>
             </button>
@@ -62,14 +63,14 @@ exports[`AssociatedSegmentsCard should render 1`] = `
               class="autofit-col"
             >
               <div
-                class="sticker sticker-root sticker-static sticker-rounded sticker-light"
+                class="sticker sticker-root sticker-static sticker-rounded sticker-primary"
               >
                 <svg
                   class="lexicon-icon lexicon-icon-individual-dynamic-segment icon-root"
                   role="presentation"
                 >
                   <use
-                    xlink:href="#individual-dynamic-segment"
+                    href="#individual-dynamic-segment"
                   />
                 </svg>
               </div>
@@ -103,14 +104,14 @@ exports[`AssociatedSegmentsCard should render 1`] = `
               class="autofit-col"
             >
               <div
-                class="sticker sticker-root sticker-static sticker-rounded sticker-light"
+                class="sticker sticker-root sticker-static sticker-rounded sticker-primary"
               >
                 <svg
                   class="lexicon-icon lexicon-icon-individual-dynamic-segment icon-root"
                   role="presentation"
                 >
                   <use
-                    xlink:href="#individual-dynamic-segment"
+                    href="#individual-dynamic-segment"
                   />
                 </svg>
               </div>
@@ -144,16 +145,16 @@ exports[`AssociatedSegmentsCard should render 1`] = `
       class="card-footer"
     >
       <a
-        class="button-root c-link link-secondary text-decoration-underline"
+        class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
         href="/foo"
       >
         View All Segments
         <svg
-          class="lexicon-icon lexicon-icon-angle-right icon-root ml-2"
+          class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
           role="presentation"
         >
           <use
-            xlink:href="#angle-right"
+            href="#angle-right-small"
           />
         </svg>
       </a>
@@ -196,6 +197,7 @@ exports[`AssociatedSegmentsCard should render with an no results display 1`] = `
             class="input-group-inset-item input-group-inset-item-after"
           >
             <button
+              aria-label="Search"
               class="button-root btn btn-unstyled"
               type="button"
             >
@@ -204,7 +206,7 @@ exports[`AssociatedSegmentsCard should render with an no results display 1`] = `
                 role="presentation"
               >
                 <use
-                  xlink:href="#search"
+                  href="#search"
                 />
               </svg>
             </button>
@@ -229,16 +231,16 @@ exports[`AssociatedSegmentsCard should render with an no results display 1`] = `
       class="card-footer"
     >
       <a
-        class="button-root c-link link-secondary text-decoration-underline"
+        class="button-root btn btn-outline-borderless btn-sm btn-outline-secondary"
         href="/foo"
       >
         View All Segments
         <svg
-          class="lexicon-icon lexicon-icon-angle-right icon-root ml-2"
+          class="lexicon-icon lexicon-icon-angle-right-small icon-root ml-2"
           role="presentation"
         >
           <use
-            xlink:href="#angle-right"
+            href="#angle-right-small"
           />
         </svg>
       </a>

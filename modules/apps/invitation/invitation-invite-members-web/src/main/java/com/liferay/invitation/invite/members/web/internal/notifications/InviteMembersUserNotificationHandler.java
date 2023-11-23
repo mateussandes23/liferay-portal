@@ -1,15 +1,6 @@
 /**
- * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
 package com.liferay.invitation.invite.members.web.internal.notifications;
@@ -35,7 +26,7 @@ import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.UserNotificationEventLocalService;
-import com.liferay.portal.kernel.util.Html;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -186,7 +177,8 @@ public class InviteMembersUserNotificationHandler
 		}
 
 		sb.append(
-			_html.escape(group.getDescriptiveName(serviceContext.getLocale())));
+			HtmlUtil.escape(
+				group.getDescriptiveName(serviceContext.getLocale())));
 		sb.append("</a>");
 
 		return sb.toString();
@@ -238,7 +230,7 @@ public class InviteMembersUserNotificationHandler
 				serviceContext.getThemeDisplay());
 
 			return StringBundler.concat(
-				"<a href=\"", userDisplayURL, "\">", _html.escape(userName),
+				"<a href=\"", userDisplayURL, "\">", HtmlUtil.escape(userName),
 				"</a>");
 		}
 		catch (Exception exception) {
@@ -255,9 +247,6 @@ public class InviteMembersUserNotificationHandler
 
 	@Reference
 	private GroupLocalService _groupLocalService;
-
-	@Reference
-	private Html _html;
 
 	@Reference
 	private JSONFactory _jsonFactory;

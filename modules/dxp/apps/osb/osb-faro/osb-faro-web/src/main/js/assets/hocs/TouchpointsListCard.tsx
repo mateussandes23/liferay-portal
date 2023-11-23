@@ -1,9 +1,10 @@
 import AssetsTouchpointQuery from 'shared/queries/AssetsTouchpointQuery';
-import BaseCard from 'cerebro-shared/components/base-card';
+import BaseCard from 'shared/components/base-card';
 import React from 'react';
 import TouchpointsListCard from 'assets/components/TouchpointsListCard';
 import URLConstants from 'shared/util/url-constants';
 import {compose} from 'redux';
+import {Containers} from 'shared/components/download-report/DownloadPDFReport';
 import {graphql} from '@apollo/react-hoc';
 import {
 	mapPropsToOptions,
@@ -17,7 +18,7 @@ const TouchpointListWithData = compose(
 		options: mapPropsToOptions,
 		props: mapResultToProps
 	}),
-	withLoading({alignCenter: true, page: false}),
+	withLoading(),
 	withError({page: false}),
 	withEmpty({
 		emptyDescription: (
@@ -55,6 +56,7 @@ const TouchpointListWithBaseCard: React.FC<ITouchpointsListCardProps> = ({
 }) => (
 	<BaseCard
 		className='analytics-touchpoints-list-card'
+		id={Containers.AssetAppearsOnCard}
 		label={label}
 		legacyDropdownRangeKey={legacyDropdownRangeKey}
 		minHeight={536}
