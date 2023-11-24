@@ -3214,6 +3214,10 @@ definition {
 	@description = "LPS-139803 - Verify it is possible to search for the Object Entry Title on the Relationship field"
 	@priority = 4
 	test CanSearchObjectEntryTitleOnRelationshipField {
+		property test.liferay.virtual.instance = "false";
+		property test.run.type = "single";
+		property portal.acceptance = "mateusSuite";
+		
 		ObjectAdmin.addObjectViaAPI(
 			labelName = "Custom Object 79",
 			objectName = "CustomObject79",
