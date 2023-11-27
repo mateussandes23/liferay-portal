@@ -556,6 +556,7 @@ definition {
 		property database.types = "mariadb,mysql,postgresql,sqlserver";
 		property portal.version = "7.4.13.u33";
 		property portal.acceptance = "mateusSuite";
+		property test.liferay.virtual.instance = "false";
 
 		task ("View a Picklist after Upgrade") {
 			SetWindowSize.maximizeWindow();
