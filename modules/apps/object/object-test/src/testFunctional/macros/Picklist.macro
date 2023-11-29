@@ -430,6 +430,8 @@ definition {
 
 	@summary = "Default summary"
 	macro updatePicklistItemName(newItemName = null, itemkey = null) {
+		WaitForElementPresent(locator1 = "Picklist#PICKLIST_ITEM_KEBAB_MENU");
+
 		Picklist.optionsPicklistItem(
 			itemKey = ${itemkey},
 			menuItem = "View");
